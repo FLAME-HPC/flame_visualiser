@@ -21,6 +21,8 @@
 #include "enableddelegate.h"
 #include "graphdelegate.h"
 
+#define DEVELOP_SIMON true
+
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
  *  \param *parent
@@ -30,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     /* Initialise variables */
+    itLocked = false;
     fileOpen = false;
     iteration = 0;
     configPath = "";
@@ -96,7 +99,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionClose, SIGNAL(triggered()), this, SLOT(close_config_file()));
 
     /* To help debug */
-    //readConfigFile("/Users/stc/workspace/xagents/trunk/models/keratinocyte/visual/config.xml");
+    if(DEVELOP_SIMON)
+    {
+        readConfigFile("/Users/stc/workspace/xagents/trunk/models/keratinocyte/visual/config.xml");
+    }
 }
 
 /** \fn MainWindow::~MainWindow()
@@ -337,6 +343,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         connect(visual_window, SIGNAL(increase_iteration()), this, SLOT(increment_iteration()));
         connect(visual_window, SIGNAL(decrease_iteration()), this, SLOT(decrement_iteration()));
         connect(visual_window, SIGNAL(visual_window_closed()), this, SLOT(visual_window_closed()));
+        connect(this, SIGNAL(iterationLoaded()), visual_window, SLOT(iterationLoaded()));
+        connect(this, SIGNAL(animate()), visual_window, SLOT(animate()));
 
         visual_window->show();
         visual_window->setFocus();
@@ -359,6 +367,10 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
  */
 bool MainWindow::readZeroXML(int flag)
 {
+    if(itLocked) return false;
+
+    itLocked = true;
+
     QString fileName;
     fileName.append(configPath);
     fileName.append("/");
@@ -373,6 +385,7 @@ bool MainWindow::readZeroXML(int flag)
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
         ui->label_5->setText("Not found");
+        itLocked = false;
         return false;
     }
 
@@ -382,13 +395,17 @@ bool MainWindow::readZeroXML(int flag)
     if (!reader.read(&file, flag))
     {
          ui->label_5->setText("Not found");
+         emit( animate() );
+         itLocked = false;
          return false;
     }
     else
     {
-         if(opengl_window_open) emit( updateVisual() );
+        itLocked = false;
+         if(opengl_window_open) emit( iterationLoaded() ); //emit( updateVisual() );
          ui->label_5->setText("Found");
     }
+
 
     return true;
 }
@@ -715,6 +732,9 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
         case Qt::Key_X:
             increment_iteration();
             break;
+        case Qt::Key_A:
+            emit( animate() );
+            break;
         default:
             event->ignore();
             break;
@@ -751,4 +771,9 @@ void MainWindow::calcPositionRatio()
 
     if(smallest < 0.0 && largest < -smallest) ratio = 1.0 / -smallest;
     else ratio = 1.0 / largest;
+}
+
+void MainWindow::on_pushButton_Animate_clicked()
+{
+    emit( animate() );
 }

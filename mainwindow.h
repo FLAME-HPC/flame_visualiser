@@ -41,6 +41,8 @@ public slots:
 signals:
     void updateVisual();
     void unblock();
+    void animate();
+    void iterationLoaded();
 
 private slots:
     void on_pushButton_LocationFind_clicked();
@@ -60,6 +62,7 @@ private slots:
     //void on_doubleSpinBox_ratio_valueChanged(double arg1);
     //void on_pushButton_AutoDetect_clicked();
     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph);
+    void on_pushButton_Animate_clicked();
 
 private:
     bool readZeroXML(int flag);
@@ -82,6 +85,7 @@ private:
     QString configName; ///< The name of the config xml file
     QString resultsData; ///< The path to 0.xml data
     double ratio; ///< The visual location ratio
+    bool itLocked;
 };
 
 #endif // MAINWINDOW_H

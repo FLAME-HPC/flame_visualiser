@@ -24,6 +24,11 @@ public:
     QString getName() { return name; }
     void setName(QString n) { name = n; }
 
+public slots:
+    void animate();
+    void iterationLoaded();
+    void nextIteration();
+
 signals:
     void increase_iteration();
     void decrease_iteration();
@@ -61,6 +66,8 @@ private:
     QTime time;
     VisualSettingsModel * model;
     double *ratio;
+    bool animation;
+    bool locked;
 };
 
 #endif // GLWIDGET_H

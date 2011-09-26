@@ -28,6 +28,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     itforward = false;
     itback = false;
     block = false;
+    animation = false;
+    locked = false;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -50,6 +52,26 @@ void GLWidget::window_closed()
 {
     emit( visual_window_closed() );
     close();
+}
+
+void GLWidget::animate()
+{
+    animation = !animation;
+    qDebug() << "animation" << animation;
+    //if(animation) emit( increase_iteration() );
+}
+
+void GLWidget::iterationLoaded()
+{
+    locked = false;
+    //emit( updateGL() );
+    //if(animation) QTimer::singleShot(2000, this, SLOT(nextIteration()));
+    //if(animation) emit( increase_iteration() );
+}
+
+void GLWidget::nextIteration()
+{
+    emit( increase_iteration() );
 }
 
 void GLWidget::update_agents(QList<Agent> * a)
@@ -288,6 +310,8 @@ void GLWidget::paintGL()
         delay = 1;
     time = QTime::currentTime();
     timer->start(qMax(0, 20 - delay));
+
+    if(animation && !locked) emit( increase_iteration() );
 }
 
 void GLWidget::paintEvent(QPaintEvent * /*event*/)
@@ -352,7 +376,11 @@ void GLWidget::keyPressEvent(QKeyEvent* event)
         case Qt::Key_X:
             emit( increase_iteration() );
             break;
+        case Qt::Key_A:
+            animate();
+            break;
         default:
+            //if(animation) emit( increase_iteration() );
             event->ignore();
             break;
     }
