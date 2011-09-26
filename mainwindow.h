@@ -57,8 +57,8 @@ private slots:
     void getColourVisual(QModelIndex index);
     void getColourGraph(QModelIndex index);
     void enabledGraph(QModelIndex index);
-    void on_doubleSpinBox_ratio_valueChanged(double arg1);
-    void on_pushButton_AutoDetect_clicked();
+    //void on_doubleSpinBox_ratio_valueChanged(double arg1);
+    //void on_pushButton_AutoDetect_clicked();
     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph);
 
 private:
@@ -67,6 +67,7 @@ private:
     void createGraphWindow(GraphWidget * graph_window);
     void readConfigFile(QString fileName);
     void closeGraphWindows(QString graphName);
+    void calcPositionRatio();
     Ui::MainWindow *ui; ///< The User Interface
     bool opengl_window_open; ///< Indicates if the visual window is open
     GLWidget *visual_window; ///< The visual window
@@ -81,8 +82,6 @@ private:
     QString configName; ///< The name of the config xml file
     QString resultsData; ///< The path to 0.xml data
     double ratio; ///< The visual location ratio
-    double smallest; ///< The smallest agent x or y location
-    double largest; ///< The largest agent x or y location
 };
 
 #endif // MAINWINDOW_H

@@ -7,13 +7,15 @@
 #include "visualsettingsitem.h"
 #include "condition.h"
 
+#define ZMOVE -3.0
+
 GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
 {
     agents = 0;
     setMouseTracking(true);
     xrotate = 0.0;
     yrotate = 0.0;
-    zmove = -7.0;
+    zmove = ZMOVE;
     x_last_position = 0;
     y_last_position = 0;
     drawpoints = 1;
@@ -65,7 +67,7 @@ void GLWidget::reset_camera()
 {
     xrotate = 0.0;
     yrotate = 0.0;
-    zmove = -7.0;
+    zmove = ZMOVE;
 }
 
 void GLWidget::initializeGL()

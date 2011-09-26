@@ -32,9 +32,6 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Initialise variables */
     fileOpen = false;
     iteration = 0;
-    ratio = 0.01;
-    smallest = 0.0;
-    largest = 0.0;
     configPath = "";
     configName = "";
     visual_settings_model = new VisualSettingsModel();
@@ -327,6 +324,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
 {
     if(opengl_window_open == false)
     {
+        calcPositionRatio();
+
         visual_window = new GLWidget;
         visual_window->resize(800,600);
         visual_window->update_agents(&agents);
@@ -482,7 +481,6 @@ void MainWindow::readConfigFile(QString fileName)
         ui->spinBox->setValue(0);
 
         ui->lineEdit_ResultsLocation->setText(resultsData);
-        ui->doubleSpinBox_ratio->setValue(ratio);
         readZeroXML(1);
         readZeroXML(0);
 
@@ -700,15 +698,6 @@ bool MainWindow::writeConfigXML(QFile * file)
     return true;
 }
 
-/** \fn MainWindow::on_doubleSpinBox_ratio_valueChanged(double arg1)
- *  \brief Update the local ratio variable with the value from the ratio spin box.
- *  \param arg1 The value of the spin box.
- */
-void MainWindow::on_doubleSpinBox_ratio_valueChanged(double arg1)
-{
-    ratio = arg1;
-}
-
 /** \fn MainWindow::keyPressEvent(QKeyEvent* event)
  *  \brief Handle any key press events.
  *  \param event The key press event
@@ -732,11 +721,14 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
     }
 }
 
-/** \fn MainWindow::on_pushButton_AutoDetect_clicked()
+/** \fn MainWindow::calcPositionRatio()
  *  \brief Automatically work out a good ratio to use to view agents visually.
  */
-void MainWindow::on_pushButton_AutoDetect_clicked()
+void MainWindow::calcPositionRatio()
 {
+    double smallest = 0.0;
+    double largest = 0.0;
+
     for(int i= 0; i < agents.count(); i++)
     {
         for(int j = 0; j < visual_settings_model->getRules().count(); j++)
@@ -757,6 +749,6 @@ void MainWindow::on_pushButton_AutoDetect_clicked()
         }
     }
 
-    ratio = 3.0 / largest;
-    emit( ui->doubleSpinBox_ratio->setValue(ratio) );
+    if(smallest < 0.0 && largest < -smallest) ratio = 1.0 / -smallest;
+    else ratio = 1.0 / largest;
 }
