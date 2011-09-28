@@ -20,19 +20,25 @@ public:
     void set_rules(VisualSettingsModel * m);
     void set_ratio(double * r) { ratio = r; }
     void reset_camera();
-    void window_closed();
     QString getName() { return name; }
     void setName(QString n) { name = n; }
+    void setIteration(int * i) { iteration = i; }
+    void setConfigPath(QString * cp) { configpath = cp; }
 
 public slots:
     void animate();
     void iterationLoaded();
     void nextIteration();
+    void takeSnapshot();
+    void takeAnimation(bool);
+    void updateImagesLocation(QString);
+    void stopAnimation();
 
 signals:
     void increase_iteration();
     void decrease_iteration();
     void visual_window_closed();
+    void imageStatus(QString);
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -57,7 +63,7 @@ private:
     int x_last_position;
     int y_last_position;
     int drawpoints;
-    int iteration;
+    int * iteration;
     bool light;
     double alphaA;
     bool spinup, spindown, spinleft, spinright;
@@ -68,6 +74,10 @@ private:
     double *ratio;
     bool animation;
     bool locked;
+    bool animationImages;
+    bool imageLock;
+    QString imagesLocation;
+    QString * configpath;
 };
 
 #endif // GLWIDGET_H

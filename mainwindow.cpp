@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
     /* Initialise variables */
     itLocked = false;
     fileOpen = false;
+    images_dialog_open = false;
     iteration = 0;
     configPath = "";
     configName = "";
@@ -47,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
     enableInterface(false); /* Disable UI to start */
 
     /* Setup 3D OpenGL visual window */
-    ui->pushButton_OpenCloseVisual->setText("Open visual");
+    //ui->pushButton_OpenCloseVisual->setText("Open visual");
     opengl_window_open  = false;
 
     /* Setup tables in UI */
@@ -115,8 +116,30 @@ MainWindow::~MainWindow()
 
 void MainWindow::visual_window_closed()
 {
+    disconnect(this, SIGNAL(updateVisual()), visual_window, SLOT(updateGL()));
+    disconnect(visual_window, SIGNAL(increase_iteration()), this, SLOT(increment_iteration()));
+    disconnect(visual_window, SIGNAL(decrease_iteration()), this, SLOT(decrement_iteration()));
+    disconnect(visual_window, SIGNAL(visual_window_closed()), this, SLOT(visual_window_closed()));
+    disconnect(this, SIGNAL(iterationLoaded()), visual_window, SLOT(iterationLoaded()));
+    disconnect(this, SIGNAL(animate()), visual_window, SLOT(animate()));
+    disconnect(this, SIGNAL(takeSnapshotSignal()), visual_window, SLOT(takeSnapshot()));
+    disconnect(visual_window, SIGNAL(imageStatus(QString)), this, SLOT(imageStatusSlot(QString)));
+    disconnect(this, SIGNAL(takeAnimationSignal(bool)), visual_window, SIGNAL(takeAnimation(bool)));
+    disconnect(this, SIGNAL(updateImagesLocationSignal(QString)), visual_window, SLOT(updateImagesLocation(QString)));
+    disconnect(this, SIGNAL(stopAnimation()), visual_window, SLOT(stopAnimation()));
     opengl_window_open = false;
-    ui->pushButton_OpenCloseVisual->setText("Open visual");
+    ui->pushButton_OpenCloseVisual->setText("Open Visual Window");
+}
+
+void MainWindow::image_dialog_closed()
+{
+    disconnect(images_dialog, SIGNAL(image_dialog_closed()), this, SLOT(image_dialog_closed()));
+    disconnect(images_dialog, SIGNAL(take_snapshot()), this, SLOT(takeSnapshotSlot()));
+    disconnect(this, SIGNAL(imageStatusSignal(QString)), images_dialog, SLOT(imageStatus(QString)));
+    disconnect(images_dialog, SIGNAL(takeAnimationSignal(bool)), this, SLOT(takeAnimationSlot(bool)));
+    disconnect(images_dialog, SIGNAL(updateImagesLocation(QString)), this, SLOT(updateImagesLocationSlot(QString)));
+    images_dialog_open = false;
+    ui->pushButton_ImageSettings->setText("Open Image Settings");
 }
 
 void MainWindow::graph_window_closed(QString graphName)
@@ -311,12 +334,17 @@ void MainWindow::deletePlot()
  */
 void MainWindow::on_pushButton_LocationFind_clicked()
 {
+    QString s = configPath;
+    s.append("/");
+    s.append(ui->lineEdit_ResultsLocation->text());
     /* Provide dialog to select folder */
     QString filepath = QFileDialog::getExistingDirectory(this,
-                                                    tr("Open output location"), ui->lineEdit_ResultsLocation->text(), QFileDialog::ShowDirsOnly);
+                                                    tr("Open output location"), s, QFileDialog::ShowDirsOnly);
     /* Return relative path from currentPath to location */
     QDir dir(configPath);
-    QString s = dir.relativeFilePath(filepath);
+    QString s1 = dir.canonicalPath();
+    QDir dir2(s1);
+    s = dir2.relativeFilePath(filepath);
     ui->lineEdit_ResultsLocation->setText(s);
 
     readZeroXML(1); /* Read in new agent data */
@@ -337,6 +365,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         visual_window->update_agents(&agents);
         visual_window->set_rules(visual_settings_model);
         visual_window->set_ratio(&ratio);
+        visual_window->setIteration(&iteration);
+        visual_window->setConfigPath(&configPath);
 
         /* Connect signals between MainWindow and visual_window */
         connect(this, SIGNAL(updateVisual()), visual_window, SLOT(updateGL()));
@@ -345,18 +375,21 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         connect(visual_window, SIGNAL(visual_window_closed()), this, SLOT(visual_window_closed()));
         connect(this, SIGNAL(iterationLoaded()), visual_window, SLOT(iterationLoaded()));
         connect(this, SIGNAL(animate()), visual_window, SLOT(animate()));
+        connect(this, SIGNAL(takeSnapshotSignal()), visual_window, SLOT(takeSnapshot()));
+        connect(visual_window, SIGNAL(imageStatus(QString)), this, SLOT(imageStatusSlot(QString)));
+        connect(this, SIGNAL(takeAnimationSignal(bool)), visual_window, SLOT(takeAnimation(bool)));
+        connect(this, SIGNAL(updateImagesLocationSignal(QString)), visual_window, SLOT(updateImagesLocation(QString)));
+        connect(this, SIGNAL(stopAnimation()), visual_window, SLOT(stopAnimation()));
 
         visual_window->show();
         visual_window->setFocus();
-        ui->pushButton_OpenCloseVisual->setText("Close visual");
+        ui->pushButton_OpenCloseVisual->setText("Close Visual Window");
         opengl_window_open = true;
     }
     else
     {
+        //visual_window_closed();
         visual_window->close();
-        qDebug() << visual_window;
-        ui->pushButton_OpenCloseVisual->setText("Open visual");
-        opengl_window_open  = false;
     }
 }
 
@@ -426,7 +459,11 @@ void MainWindow::on_spinBox_valueChanged(int arg1)
 void MainWindow::increment_iteration()
 {
     iteration++;
-    if(readZeroXML(1) == false) iteration--;
+    if(readZeroXML(1) == false)
+    {
+        iteration--;
+        emit( stopAnimation() );
+    }
     ui->spinBox->setValue(iteration);
     for(int i = 0; i < graphs.count(); i++)
     {
@@ -776,4 +813,49 @@ void MainWindow::calcPositionRatio()
 void MainWindow::on_pushButton_Animate_clicked()
 {
     emit( animate() );
+}
+
+void MainWindow::on_pushButton_ImageSettings_clicked()
+{
+    if(images_dialog_open == false)
+    {
+        images_dialog_open = true;
+        images_dialog = new ImagesDialog();
+
+        connect(images_dialog, SIGNAL(image_dialog_closed()), this, SLOT(image_dialog_closed()));
+        connect(images_dialog, SIGNAL(take_snapshot()), this, SLOT(takeSnapshotSlot()));
+        connect(this, SIGNAL(imageStatusSignal(QString)), images_dialog, SLOT(imageStatus(QString)));
+        connect(images_dialog, SIGNAL(takeAnimationSignal(bool)), this, SLOT(takeAnimationSlot(bool)));
+        connect(images_dialog, SIGNAL(updateImagesLocation(QString)), this, SLOT(updateImagesLocationSlot(QString)));
+
+        images_dialog->setConfigPath(&configPath);
+        images_dialog->setLocation(ui->lineEdit_ResultsLocation->text());
+        images_dialog->sendImageAniUpdate();
+        images_dialog->show();
+        ui->pushButton_ImageSettings->setText("Close Image Settings");
+    }
+    else
+    {
+        images_dialog->close();
+    }
+}
+
+void MainWindow::takeSnapshotSlot()
+{
+    if(opengl_window_open) emit( takeSnapshotSignal() );
+}
+
+void MainWindow::imageStatusSlot(QString s)
+{
+    if(images_dialog_open) emit( imageStatusSignal(s) );
+}
+
+void MainWindow::takeAnimationSlot(bool b)
+{
+    if(opengl_window_open) emit( takeAnimationSignal(b) );
+}
+
+void MainWindow::updateImagesLocationSlot(QString s)
+{
+    if(opengl_window_open) emit( updateImagesLocationSignal(s) );
 }

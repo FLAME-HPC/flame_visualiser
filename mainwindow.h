@@ -9,6 +9,7 @@
 #include "agenttype.h"
 #include "visualsettingsmodel.h"
 #include "graphsettingsmodel.h"
+#include "imagesdialog.h"
 
 /** \namespace Ui
   * \brief
@@ -36,13 +37,23 @@ public slots:
     void increment_iteration();
     void decrement_iteration();
     void visual_window_closed();
+    void image_dialog_closed();
     void graph_window_closed(QString graphName);
+    void takeSnapshotSlot();
+    void imageStatusSlot(QString);
+    void takeAnimationSlot(bool);
+    void updateImagesLocationSlot(QString);
 
 signals:
     void updateVisual();
     void unblock();
     void animate();
     void iterationLoaded();
+    void takeSnapshotSignal();
+    void imageStatusSignal(QString);
+    void takeAnimationSignal(bool);
+    void updateImagesLocationSignal(QString);
+    void stopAnimation();
 
 private slots:
     void on_pushButton_LocationFind_clicked();
@@ -63,6 +74,7 @@ private slots:
     //void on_pushButton_AutoDetect_clicked();
     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph);
     void on_pushButton_Animate_clicked();
+    void on_pushButton_ImageSettings_clicked();
 
 private:
     bool readZeroXML(int flag);
@@ -73,6 +85,7 @@ private:
     void calcPositionRatio();
     Ui::MainWindow *ui; ///< The User Interface
     bool opengl_window_open; ///< Indicates if the visual window is open
+    bool images_dialog_open; ///< Indicates if the image settings window is open
     GLWidget *visual_window; ///< The visual window
     int iteration; ///< The current iteration number
     bool fileOpen; ///< Indicates if a file is open
@@ -81,6 +94,7 @@ private:
     QList<GraphWidget*> graphs; ///< The list of graph windows
     VisualSettingsModel * visual_settings_model; ///< The visual setting data model
     GraphSettingsModel * graph_settings_model; ///< The graph settings data model
+    ImagesDialog * images_dialog; ///< The image settings dialog
     QString configPath; ///< The path to the config xml file
     QString configName; ///< The name of the config xml file
     QString resultsData; ///< The path to 0.xml data

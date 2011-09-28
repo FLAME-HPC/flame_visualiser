@@ -33,7 +33,8 @@ SOURCES += main.cpp\
     graphsettingsitem.cpp \
     graphwidget.cpp \
     enableddelegate.cpp \
-    graphdelegate.cpp
+    graphdelegate.cpp \
+    imagesdialog.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -58,10 +59,12 @@ HEADERS  += mainwindow.h \
     graphsettingsitem.h \
     graphwidget.h \
     enableddelegate.h \
-    graphdelegate.h
+    graphdelegate.h \
+    imagesdialog.h
 
 FORMS    += mainwindow.ui \
     positiondialog.ui \
-    conditiondialog.ui
+    conditiondialog.ui \
+    imagesdialog.ui
 
 OTHER_FILES +=

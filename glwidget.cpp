@@ -1,11 +1,15 @@
-#include <QtGui/QMouseEvent>
+#include <QtGui>
 #include <QKeyEvent>
 #include <QTimer>
 #include "GLWidget.h"
 #include <QDebug>
+#include <QFile>
+#include <QMessageBox>
 #include "visualsettingsmodel.h"
 #include "visualsettingsitem.h"
 #include "condition.h"
+
+//Q_IMPORT_PLUGIN(qjpeg)
 
 #define ZMOVE -3.0
 
@@ -30,6 +34,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     block = false;
     animation = false;
     locked = false;
+    animationImages = false;
+    imageLock = false;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -48,17 +54,61 @@ void GLWidget::closeEvent(QCloseEvent *event)
      event->accept();
  }
 
-void GLWidget::window_closed()
+void GLWidget::updateImagesLocation(QString s)
 {
-    emit( visual_window_closed() );
-    close();
+    //qDebug() << s;
+    imagesLocation = s;
+}
+
+void GLWidget::takeSnapshot()
+{
+    imageLock = true;
+
+    QString filepath;
+    filepath.append(*configpath);
+    filepath.append("/");
+    filepath.append(imagesLocation);
+
+    QDir filedir(filepath);
+
+    QString filename = filedir.canonicalPath();
+    filename.append("/");
+    filename.append(QString("%1").arg(*iteration));
+    filename.append(".jpg");
+
+    qDebug() << filename;
+
+    QImage i = this->grabFrameBuffer();
+    QImageWriter writer(filename, "JPG");
+    writer.setQuality(90);
+    if( !writer.write(i) )
+    {
+        qDebug() << writer.errorString() << filename;
+        emit( imageStatus(QString("Error: %1 %2").arg(writer.errorString(),filename)) );
+    }
+    else
+    {
+        emit( imageStatus(QString("Saved: %1").arg(filename)) );
+    }
+    imageLock = false;
+}
+
+void GLWidget::stopAnimation()
+{
+    animation = false;
 }
 
 void GLWidget::animate()
 {
     animation = !animation;
-    qDebug() << "animation" << animation;
+    //qDebug() << "animation" << animation;
     //if(animation) emit( increase_iteration() );
+}
+
+void GLWidget::takeAnimation(bool b)
+{
+    animationImages = b;
+    //qDebug() << "animationImages" << b;
 }
 
 void GLWidget::iterationLoaded()
@@ -311,7 +361,11 @@ void GLWidget::paintGL()
     time = QTime::currentTime();
     timer->start(qMax(0, 20 - delay));
 
-    if(animation && !locked) emit( increase_iteration() );
+    if(animation && !locked && !imageLock)
+    {
+        if(animationImages) takeSnapshot();
+        emit( increase_iteration() );
+    }
 }
 
 void GLWidget::paintEvent(QPaintEvent * /*event*/)
@@ -356,7 +410,7 @@ void GLWidget::keyPressEvent(QKeyEvent* event)
     switch(event->key())
     {
         case Qt::Key_Escape:
-            window_closed();
+            close();
             break;
         case Qt::Key_Left:
             spinleft = true;
