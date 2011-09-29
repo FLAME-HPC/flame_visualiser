@@ -3,10 +3,11 @@
 #include "shapedialog.h"
 #include <QtGui>
 
-ShapeDelegate::ShapeDelegate(VisualSettingsModel *vsm, QObject *parent)
+ShapeDelegate::ShapeDelegate(QList<AgentType> *ats, VisualSettingsModel *vsm, QObject *parent)
     : QItemDelegate(parent)
 {
     vsmodel = vsm;
+    agentTypes = ats;
 }
 
 void ShapeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
@@ -34,11 +35,11 @@ void ShapeDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
 QWidget *ShapeDelegate::createEditor(QWidget */*parent*/,
     const QStyleOptionViewItem &/*option*/,
-    const QModelIndex &/*index*/) const
+    const QModelIndex &index) const
 {
         //qDebug() << "ShapeDelegate parent: " << windowParent;
 
-        ShapeDialog *editor = new ShapeDialog(vsmodel);
+        ShapeDialog *editor = new ShapeDialog(agentTypes, vsmodel, index.row());
 
         connect(editor, SIGNAL(accepted()), this, SLOT(commitAndCloseEditor()));
         connect(editor, SIGNAL(rejected()), this, SLOT(commitAndCloseEditor()));

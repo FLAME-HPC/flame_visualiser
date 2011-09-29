@@ -172,6 +172,7 @@ void ConfigXMLReader::readRule()
 Shape ConfigXMLReader::readShape()
 {
     Shape shape;
+    QString enable;
 
     while (!atEnd())
     {
@@ -183,8 +184,22 @@ Shape ConfigXMLReader::readShape()
          if (isStartElement()) {
              if (name() == "object")
                  shape.setShape(readElementText());
+             else if (name() == "useValue")
+             {
+                 enable = readElementText();
+                 if(QString::compare(enable,"true") == 0) shape.setUseValue(true);
+                 else shape.setUseValue(false);
+             }
              else if (name() == "dimension")
                  shape.setDimension((readElementText().toDouble()));
+             else if (name() == "useVariable")
+             {
+                 enable = readElementText();
+                 if(QString::compare(enable,"true") == 0) shape.setUseVariable(true);
+                 else shape.setUseVariable(false);
+             }
+             else if (name() == "dimensionVariable")
+                 shape.setDimensionVariable(readElementText());
              else
                  readUnknownElement();
          }

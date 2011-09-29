@@ -2,33 +2,29 @@
 #define SHAPEDIALOG_H
 
 #include <QDialog>
-#include <QComboBox>
-#include <QDoubleSpinBox>
-#include <QDialogButtonBox>
 #include "visualsettingsmodel.h"
 #include "shape.h"
+#include "agenttype.h"
+#include "ui_shapedialog.h"
 
-class QDialogButtonBox;
-
-class ShapeDialog : public QDialog
+class ShapeDialog : public QDialog, public Ui::ShapeDialog
 {
     Q_OBJECT
 
 public:
-    ShapeDialog(VisualSettingsModel * vsm, QWidget *parent = 0);
+    ShapeDialog(QList<AgentType> * ats = 0, VisualSettingsModel * vsm = 0, int r = 0, QWidget *parent = 0);
     void setShape(Shape s);
     Shape getShape();
 
-signals:
-    void setShapeComboBox(int i);
-    void setDimensionSpinBox(double d);
+private slots:
+    void valueClicked(bool);
+    void variableClicked(bool);
 
 private:
     VisualSettingsModel * vsmodel;
-    QComboBox * shapeComboBox;
-    QDoubleSpinBox * dimensionSpinBox;
-    QDialogButtonBox *buttonBox;
     Shape shape;
+    QList<AgentType> * agentTypes;
+    int row;
 };
 
 #endif // SHAPEDIALOG_H

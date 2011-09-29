@@ -65,6 +65,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     positiondialog.ui \
     conditiondialog.ui \
-    imagesdialog.ui
+    imagesdialog.ui \
+    shapedialog.ui
 
 OTHER_FILES +=

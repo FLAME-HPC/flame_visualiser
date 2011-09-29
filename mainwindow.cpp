@@ -65,7 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tableViewVisual->setItemDelegateForColumn(2, new PositionDelegate(&agentTypes, visual_settings_model));
     ui->tableViewVisual->setItemDelegateForColumn(3, new PositionDelegate(&agentTypes, visual_settings_model));
     ui->tableViewVisual->setItemDelegateForColumn(4, new PositionDelegate(&agentTypes, visual_settings_model));
-    ui->tableViewVisual->setItemDelegateForColumn(5, new ShapeDelegate(visual_settings_model));
+    ui->tableViewVisual->setItemDelegateForColumn(5, new ShapeDelegate(&agentTypes, visual_settings_model));
     ui->tableViewVisual->setItemDelegateForColumn(6, new ColourDelegate); /* Only to draw the cell */
     /* Connect signals that affect tableViewVisual */
     connect(ui->tableViewVisual, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(getColourVisual(QModelIndex))); /* Handles the color choosing */
@@ -698,7 +698,12 @@ bool MainWindow::writeConfigXML(QFile * file)
         stream.writeEndElement(); // z
         stream.writeStartElement("shape"); // shape
         stream.writeTextElement("object", vsitem->shape().getShape());
+        if(vsitem->shape().getUseValue()) stream.writeTextElement("useValue", "true");
+        else stream.writeTextElement("useValue", "false");
         stream.writeTextElement("dimension", QString("%1").arg(vsitem->shape().getDimension()));
+        if(vsitem->shape().getUseVariable()) stream.writeTextElement("useVariable", "true");
+        else stream.writeTextElement("useVariable", "false");
+        stream.writeTextElement("dimensionVariable", QString("%1").arg(vsitem->shape().getDimensionVariable()));
         stream.writeEndElement(); // shape
         stream.writeStartElement("colour"); // colour
         stream.writeTextElement("r", QString("%1").arg(vsitem->colour().red()));

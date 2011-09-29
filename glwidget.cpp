@@ -291,7 +291,16 @@ void GLWidget::paintGL()
                             }
                             if(drawAgent && ((rule->colour().alphaF() >= 0.95 && pass == 1)||(rule->colour().alphaF() < 0.95 && pass == 2)) )
                             {
-                                size = rule->shape().getDimension();
+                                if(rule->shape().getUseValue()) size = rule->shape().getDimension()*(*ratio);
+                                if(rule->shape().getUseVariable())
+                                {
+                                    for(int k = 0; k < agents->at(i).tags.count(); k++)
+                                    {
+                                        if(QString::compare(rule->shape().getDimensionVariable(),agents->at(i).tags.at(k)) == 0)
+                                            size = agents->at(i).values.at(k).toDouble()*(*ratio);
+                                    }
+                                }
+
                                 for(int k = 0; k < agents->at(i).tags.count(); k++)
                                 {
                                     if(QString::compare(rule->x().positionVariable,agents->at(i).tags.at(k)) == 0) x = agents->at(i).values.at(k).toDouble() + rule->x().opValue;
@@ -314,15 +323,15 @@ void GLWidget::paintGL()
                                     if(pass==2)
                                     {
                                         glCullFace(GL_FRONT);
-                                        gluSphere(qobj, size*(*ratio), grade, grade);
+                                        gluSphere(qobj, size, grade, grade);
                                     }
                                     glCullFace(GL_BACK);
-                                    gluSphere(qobj, size*(*ratio), grade, grade);
+                                    gluSphere(qobj, size, grade, grade);
                                     glDisable(GL_CULL_FACE);
                                 }
                                 else if(QString::compare("point",rule->shape().getShape()) == 0)
                                 {
-                                    glPointSize((int)size);
+                                    glPointSize((int)rule->shape().getDimension());
                                     glBegin(GL_POINTS);
                                     glVertex3f(0.0, 0.0, 0.0);
                                     glEnd();
@@ -336,31 +345,31 @@ void GLWidget::paintGL()
                                       glVertex3f(-size, size,  size); // Bottom-left of the quad (Top)
                                       glVertex3f( size, size,  size); // Bottom-right of the quad (Top)
 
-                                      glNormal3f( 0.0f,-size, 0.0f);
+                                      glNormal3f( 0.0f,-0.5f, 0.0f);
                                       glVertex3f( size, -size,  size); // Top-right of the quad (Bottom)
                                       glVertex3f(-size, -size,  size); // Top-left of the quad (Bottom)
                                       glVertex3f(-size, -size, -size); // Bottom-left of the quad (Bottom)
                                       glVertex3f( size, -size, -size); // Bottom-right of the quad (Bottom)
 
-                                      glNormal3f( 0.0f, 0.0f, size);
+                                      glNormal3f( 0.0f, 0.0f, 0.5f);
                                       glVertex3f( size,  size, size);  // Top-right of the quad (Front)
                                       glVertex3f(-size,  size, size);  // Top-left of the quad (Front)
                                       glVertex3f(-size, -size, size);  // Bottom-left of the quad (Front)
                                       glVertex3f( size, -size, size);  // Bottom-right of the quad (Front)
 
-                                      glNormal3f( 0.0f, 0.0f,-size);
+                                      glNormal3f( 0.0f, 0.0f,-0.5f);
                                       glVertex3f( size, -size, -size); // Bottom-left of the quad (Back)
                                       glVertex3f(-size, -size, -size); // Bottom-right of the quad (Back)
                                       glVertex3f(-size,  size, -size); // Top-right of the quad (Back)
                                       glVertex3f( size,  size, -size); // Top-left of the quad (Back)
 
-                                      glNormal3f(-size, 0.0f, 0.0f);
+                                      glNormal3f(-0.5f, 0.0f, 0.0f);
                                       glVertex3f(-size,  size,  size); // Top-right of the quad (Left)
                                       glVertex3f(-size,  size, -size); // Top-left of the quad (Left)
                                       glVertex3f(-size, -size, -size); // Bottom-left of the quad (Left)
                                       glVertex3f(-size, -size,  size); // Bottom-right of the quad (Left)
 
-                                      glNormal3f( size, 0.0f, 0.0f);
+                                      glNormal3f( 0.5f, 0.0f, 0.0f);
                                       glVertex3f( size,  size, -size); // Top-right of the quad (Right)
                                       glVertex3f( size,  size,  size); // Top-left of the quad (Right)
                                       glVertex3f( size, -size,  size); // Bottom-left of the quad (Right)

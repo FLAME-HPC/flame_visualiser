@@ -15,6 +15,12 @@ public:
     QStringList Shapes() { return shapes; }
     double getDimension() { return dimension; }
     void setDimension(double d) { dimension = d; }
+    QString getDimensionVariable() { return dimensionVariable; }
+    void setDimensionVariable(QString d) { dimensionVariable = d; }
+    void setUseValue(bool b) { useValue = b; }
+    bool getUseValue() { return useValue; }
+    void setUseVariable(bool b) { useVariable = b; }
+    bool getUseVariable() { return useVariable; }
 
     void paint(QPainter *painter, const QRect &rect,
                 const QPalette &palette, EditMode mode) const;
@@ -22,7 +28,10 @@ public:
 private:
     QString shape;
     double dimension;
+    QString dimensionVariable;
     QStringList shapes;
+    bool useValue;
+    bool useVariable;
 };
 
 Q_DECLARE_METATYPE(Shape)

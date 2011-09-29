@@ -5,6 +5,9 @@ Shape::Shape()
     shape = "";
     shapes << "sphere" << "cube" << "point";
     dimension = 0.0;
+    dimensionVariable = "";
+    useValue = true;
+    useVariable = false;
 }
 
 void Shape::paint(QPainter *painter, const QRect &rect,
@@ -20,7 +23,8 @@ void Shape::paint(QPainter *painter, const QRect &rect,
    {
        text.append(shape);
        text.append("(");
-       text.append(QString("%1").arg(dimension));
+       if(useValue) text.append(QString("%1").arg(dimension));
+       if(useVariable) text.append(dimensionVariable);
        text.append(")");
    }
 
