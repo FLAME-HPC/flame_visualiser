@@ -704,6 +704,7 @@ bool MainWindow::writeConfigXML(QFile * file)
         stream.writeTextElement("r", QString("%1").arg(vsitem->colour().red()));
         stream.writeTextElement("g", QString("%1").arg(vsitem->colour().green()));
         stream.writeTextElement("b", QString("%1").arg(vsitem->colour().blue()));
+        stream.writeTextElement("a", QString("%1").arg(vsitem->colour().alpha()));
         stream.writeEndElement(); // colour
         stream.writeEndElement(); // rule
 

@@ -2,7 +2,7 @@
 
 VisualSettingsItem::VisualSettingsItem()
 {
-    colourColor = QColor(255,255,255);
+    colourColor = QColor(255,255,255,255);
 }
 
 VisualSettingsItem::VisualSettingsItem(QString agentType, Condition condition, Position x, Position y, Position z, Shape shape, QColor colour)

@@ -268,6 +268,8 @@ QColor ConfigXMLReader::readColour()
                  colour.setGreen(readElementText().toInt());
              else if (name() == "b")
                  colour.setBlue(readElementText().toInt());
+             else if (name() == "a")
+                 colour.setAlpha(readElementText().toInt());
              else
                  readUnknownElement();
          }
