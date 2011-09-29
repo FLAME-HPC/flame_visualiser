@@ -310,12 +310,15 @@ void GLWidget::paintGL()
 
                                 if(QString::compare("sphere",rule->shape().getShape()) == 0)
                                 {
-                                    /*glEnable(GL_CULL_FACE);
-                                    glCullFace(GL_FRONT);
+                                    glEnable(GL_CULL_FACE);
+                                    if(pass==2)
+                                    {
+                                        glCullFace(GL_FRONT);
+                                        gluSphere(qobj, size*(*ratio), grade, grade);
+                                    }
+                                    glCullFace(GL_BACK);
                                     gluSphere(qobj, size*(*ratio), grade, grade);
-                                    glCullFace(GL_BACK);*/
-                                    gluSphere(qobj, size*(*ratio), grade, grade);
-                                    //glDisable(GL_CULL_FACE);
+                                    glDisable(GL_CULL_FACE);
                                 }
                                 else if(QString::compare("point",rule->shape().getShape()) == 0)
                                 {
