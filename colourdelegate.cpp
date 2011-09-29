@@ -19,7 +19,9 @@ void ColourDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
            painter->fillRect(option.rect, option.palette.highlight());
 
        painter->fillRect(option.rect, colour);
-       //painter->drawText(option.rect,"colour");
+       int percent = colour.alphaF()*100.0;
+       if(percent < 100)
+        painter->drawText(option.rect, Qt::AlignCenter, QString("%1%").arg(percent));
    }
    else
    {

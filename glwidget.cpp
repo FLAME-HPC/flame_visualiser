@@ -162,8 +162,8 @@ void GLWidget::initializeGL()
     glClearColor(1, 1, 1, 0);
     glShadeModel( GL_SMOOTH );
     glClearDepth( 1.0f );
-    glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LEQUAL );
+    //glEnable( GL_DEPTH_TEST );
+    //glDepthFunc( GL_LEQUAL );
     glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
     /* Lighting */
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
@@ -175,6 +175,8 @@ void GLWidget::initializeGL()
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient_light);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void GLWidget::resizeGL(int w, int h)
@@ -242,108 +244,133 @@ void GLWidget::paintGL()
     {
         //qDebug("agents visual = %d", agents->size());
 
-        for(int i = 0; i < agents->size(); i++)
+        for(int pass = 1; pass < 3; pass++)
         {
-            if(model == NULL) qDebug() << "WARNING: model is NULL";
-            else
+            if(pass == 1)
             {
-                //qDebug() << model->getRules().count();
-                for(int j = 0; j < model->getRules().count(); j++)
-                {
-                    //qDebug() << j << model->getRules().at(j)->agentType();
-                    VisualSettingsItem * rule = model->getRules()[j];
-                    if(QString::compare(agents->at(i).agentType, rule->agentType()) == 0)
-                    {
-                        drawAgent = true;
-                        if(rule->condition().enable)
-                        {
-                            drawAgent = false;
+                // if first pass
+                glEnable(GL_DEPTH_TEST); glDepthFunc( GL_LEQUAL );
+                glDisable(GL_BLEND);
+            }
+            else if(pass == 2)
+            {
+                // if second pass
+                glEnable(GL_DEPTH_TEST);
+                glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
 
-                            for(int k = 0; k < agents->at(i).tags.count(); k++)
+            for(int i = 0; i < agents->size(); i++)
+            {
+                if(model == NULL) qDebug() << "WARNING: model is NULL";
+                else
+                {
+                    //qDebug() << model->getRules().count();
+                    for(int j = 0; j < model->getRules().count(); j++)
+                    {
+                        //qDebug() << j << model->getRules().at(j)->agentType();
+                        VisualSettingsItem * rule = model->getRules()[j];
+                        if(QString::compare(agents->at(i).agentType, rule->agentType()) == 0)
+                        {
+                            drawAgent = true;
+                            if(rule->condition().enable)
                             {
-                                if(QString::compare(rule->condition().variable,agents->at(i).tags.at(k)) == 0)
+                                drawAgent = false;
+
+                                for(int k = 0; k < agents->at(i).tags.count(); k++)
                                 {
-                                    if(rule->condition().op == "==" && agents->at(i).values.at(k).toDouble() == rule->condition().value) drawAgent = true;
-                                    else if(rule->condition().op == "!=" && agents->at(i).values.at(k).toDouble() != rule->condition().value) drawAgent = true;
-                                    else if(rule->condition().op == ">" && agents->at(i).values.at(k).toDouble() > rule->condition().value) drawAgent = true;
-                                    else if(rule->condition().op == "<" && agents->at(i).values.at(k).toDouble() < rule->condition().value) drawAgent = true;
-                                    else if(rule->condition().op == ">=" && agents->at(i).values.at(k).toDouble() >= rule->condition().value) drawAgent = true;
-                                    else if(rule->condition().op == "<=" && agents->at(i).values.at(k).toDouble() <= rule->condition().value) drawAgent = true;
+                                    if(QString::compare(rule->condition().variable,agents->at(i).tags.at(k)) == 0)
+                                    {
+                                        if(rule->condition().op == "==" && agents->at(i).values.at(k).toDouble() == rule->condition().value) drawAgent = true;
+                                        else if(rule->condition().op == "!=" && agents->at(i).values.at(k).toDouble() != rule->condition().value) drawAgent = true;
+                                        else if(rule->condition().op == ">" && agents->at(i).values.at(k).toDouble() > rule->condition().value) drawAgent = true;
+                                        else if(rule->condition().op == "<" && agents->at(i).values.at(k).toDouble() < rule->condition().value) drawAgent = true;
+                                        else if(rule->condition().op == ">=" && agents->at(i).values.at(k).toDouble() >= rule->condition().value) drawAgent = true;
+                                        else if(rule->condition().op == "<=" && agents->at(i).values.at(k).toDouble() <= rule->condition().value) drawAgent = true;
+                                    }
                                 }
                             }
-                        }
-                        if(drawAgent)
-                        {
-                            size = rule->shape().getDimension();
-                            for(int k = 0; k < agents->at(i).tags.count(); k++)
+                            if(drawAgent && ((rule->colour().alphaF() >= 0.95 && pass == 1)||(rule->colour().alphaF() < 0.95 && pass == 2)) )
                             {
-                                if(QString::compare(rule->x().positionVariable,agents->at(i).tags.at(k)) == 0) x = agents->at(i).values.at(k).toDouble() + rule->x().opValue;
-                                if(QString::compare(rule->y().positionVariable,agents->at(i).tags.at(k)) == 0) y = agents->at(i).values.at(k).toDouble() + rule->y().opValue;
-                                if(QString::compare(rule->z().positionVariable,agents->at(i).tags.at(k)) == 0) z = agents->at(i).values.at(k).toDouble() + rule->z().opValue;
+                                size = rule->shape().getDimension();
+                                for(int k = 0; k < agents->at(i).tags.count(); k++)
+                                {
+                                    if(QString::compare(rule->x().positionVariable,agents->at(i).tags.at(k)) == 0) x = agents->at(i).values.at(k).toDouble() + rule->x().opValue;
+                                    if(QString::compare(rule->y().positionVariable,agents->at(i).tags.at(k)) == 0) y = agents->at(i).values.at(k).toDouble() + rule->y().opValue;
+                                    if(QString::compare(rule->z().positionVariable,agents->at(i).tags.at(k)) == 0) z = agents->at(i).values.at(k).toDouble() + rule->z().opValue;
+                                }
+
+                                glPushMatrix();
+
+                                glTranslatef(x*(*ratio), y*(*ratio), z*(*ratio));
+
+                                GLfloat mat_ambientA[] = { rule->colour().redF(), rule->colour().greenF(), rule->colour().blueF(), rule->colour().alphaF() };//alphaA };
+
+                                if(light) glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_ambientA );
+                                else glColor4fv(mat_ambientA);
+
+                                if(QString::compare("sphere",rule->shape().getShape()) == 0)
+                                {
+                                    /*glEnable(GL_CULL_FACE);
+                                    glCullFace(GL_FRONT);
+                                    gluSphere(qobj, size*(*ratio), grade, grade);
+                                    glCullFace(GL_BACK);*/
+                                    gluSphere(qobj, size*(*ratio), grade, grade);
+                                    //glDisable(GL_CULL_FACE);
+                                }
+                                else if(QString::compare("point",rule->shape().getShape()) == 0)
+                                {
+                                    glPointSize((int)size);
+                                    glBegin(GL_POINTS);
+                                    glVertex3f(0.0, 0.0, 0.0);
+                                    glEnd();
+                                }
+                                else if(QString::compare("cube",rule->shape().getShape()) == 0)
+                                {
+                                      glBegin(GL_QUADS);                 // Draw using quads
+                                      glNormal3f( 0.0f, 0.5f, 0.0f);
+                                      glVertex3f( size, size, -size); // Top-right of the quad (Top)
+                                      glVertex3f(-size, size, -size); // Top-left of the quad (Top)
+                                      glVertex3f(-size, size,  size); // Bottom-left of the quad (Top)
+                                      glVertex3f( size, size,  size); // Bottom-right of the quad (Top)
+
+                                      glNormal3f( 0.0f,-size, 0.0f);
+                                      glVertex3f( size, -size,  size); // Top-right of the quad (Bottom)
+                                      glVertex3f(-size, -size,  size); // Top-left of the quad (Bottom)
+                                      glVertex3f(-size, -size, -size); // Bottom-left of the quad (Bottom)
+                                      glVertex3f( size, -size, -size); // Bottom-right of the quad (Bottom)
+
+                                      glNormal3f( 0.0f, 0.0f, size);
+                                      glVertex3f( size,  size, size);  // Top-right of the quad (Front)
+                                      glVertex3f(-size,  size, size);  // Top-left of the quad (Front)
+                                      glVertex3f(-size, -size, size);  // Bottom-left of the quad (Front)
+                                      glVertex3f( size, -size, size);  // Bottom-right of the quad (Front)
+
+                                      glNormal3f( 0.0f, 0.0f,-size);
+                                      glVertex3f( size, -size, -size); // Bottom-left of the quad (Back)
+                                      glVertex3f(-size, -size, -size); // Bottom-right of the quad (Back)
+                                      glVertex3f(-size,  size, -size); // Top-right of the quad (Back)
+                                      glVertex3f( size,  size, -size); // Top-left of the quad (Back)
+
+                                      glNormal3f(-size, 0.0f, 0.0f);
+                                      glVertex3f(-size,  size,  size); // Top-right of the quad (Left)
+                                      glVertex3f(-size,  size, -size); // Top-left of the quad (Left)
+                                      glVertex3f(-size, -size, -size); // Bottom-left of the quad (Left)
+                                      glVertex3f(-size, -size,  size); // Bottom-right of the quad (Left)
+
+                                      glNormal3f( size, 0.0f, 0.0f);
+                                      glVertex3f( size,  size, -size); // Top-right of the quad (Right)
+                                      glVertex3f( size,  size,  size); // Top-left of the quad (Right)
+                                      glVertex3f( size, -size,  size); // Bottom-left of the quad (Right)
+                                      glVertex3f( size, -size, -size); // Bottom-right of the quad (Right)
+                                      glEnd();   // Done drawing the color cube
+                                }
+                                glPopMatrix();
                             }
-
-                            glPushMatrix();
-
-                            glTranslatef(x*(*ratio), y*(*ratio), z*(*ratio));
-
-                            GLfloat mat_ambientA[] = { rule->colour().red()/255.0, rule->colour().green()/255.0, rule->colour().blue()/255.0, alphaA };
-
-                            if(light) glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_ambientA );
-                            else glColor4fv(mat_ambientA);
-
-                            if(QString::compare("sphere",rule->shape().getShape()) == 0) gluSphere(qobj, size*(*ratio), grade, grade);
-                            else if(QString::compare("point",rule->shape().getShape()) == 0)
-                            {
-                                glPointSize((int)size);
-                                glBegin(GL_POINTS);
-                                glVertex3f(0.0, 0.0, 0.0);
-                                glEnd();
-                            }
-                            else if(QString::compare("cube",rule->shape().getShape()) == 0)
-                            {
-                                  glBegin(GL_QUADS);                 // Draw using quads
-                                  glNormal3f( 0.0f, 0.5f, 0.0f);
-                                  glVertex3f( size, size, -size); // Top-right of the quad (Top)
-                                  glVertex3f(-size, size, -size); // Top-left of the quad (Top)
-                                  glVertex3f(-size, size,  size); // Bottom-left of the quad (Top)
-                                  glVertex3f( size, size,  size); // Bottom-right of the quad (Top)
-
-                                  glNormal3f( 0.0f,-size, 0.0f);
-                                  glVertex3f( size, -size,  size); // Top-right of the quad (Bottom)
-                                  glVertex3f(-size, -size,  size); // Top-left of the quad (Bottom)
-                                  glVertex3f(-size, -size, -size); // Bottom-left of the quad (Bottom)
-                                  glVertex3f( size, -size, -size); // Bottom-right of the quad (Bottom)
-
-                                  glNormal3f( 0.0f, 0.0f, size);
-                                  glVertex3f( size,  size, size);  // Top-right of the quad (Front)
-                                  glVertex3f(-size,  size, size);  // Top-left of the quad (Front)
-                                  glVertex3f(-size, -size, size);  // Bottom-left of the quad (Front)
-                                  glVertex3f( size, -size, size);  // Bottom-right of the quad (Front)
-
-                                  glNormal3f( 0.0f, 0.0f,-size);
-                                  glVertex3f( size, -size, -size); // Bottom-left of the quad (Back)
-                                  glVertex3f(-size, -size, -size); // Bottom-right of the quad (Back)
-                                  glVertex3f(-size,  size, -size); // Top-right of the quad (Back)
-                                  glVertex3f( size,  size, -size); // Top-left of the quad (Back)
-
-                                  glNormal3f(-size, 0.0f, 0.0f);
-                                  glVertex3f(-size,  size,  size); // Top-right of the quad (Left)
-                                  glVertex3f(-size,  size, -size); // Top-left of the quad (Left)
-                                  glVertex3f(-size, -size, -size); // Bottom-left of the quad (Left)
-                                  glVertex3f(-size, -size,  size); // Bottom-right of the quad (Left)
-
-                                  glNormal3f( size, 0.0f, 0.0f);
-                                  glVertex3f( size,  size, -size); // Top-right of the quad (Right)
-                                  glVertex3f( size,  size,  size); // Top-left of the quad (Right)
-                                  glVertex3f( size, -size,  size); // Bottom-left of the quad (Right)
-                                  glVertex3f( size, -size, -size); // Bottom-right of the quad (Right)
-                                  glEnd();   // Done drawing the color cube
-                            }
-                            glPopMatrix();
                         }
                     }
                 }
             }
+            // end of pass
         }
     }
 

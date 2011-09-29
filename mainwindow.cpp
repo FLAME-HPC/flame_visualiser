@@ -21,7 +21,7 @@
 #include "enableddelegate.h"
 #include "graphdelegate.h"
 
-#define DEVELOP_SIMON true
+#define DEVELOP_SIMON false
 
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
@@ -102,6 +102,7 @@ MainWindow::MainWindow(QWidget *parent) :
     /* To help debug */
     if(DEVELOP_SIMON)
     {
+        iteration = 800;
         readConfigFile("/Users/stc/workspace/xagents/trunk/models/keratinocyte/visual/config.xml");
     }
 }
@@ -267,13 +268,26 @@ void MainWindow::getColourVisual(QModelIndex index)
 {
     if(index.column() == 6)
     {
-        QColor colour = QColorDialog::getColor( qVariantValue<QColor>(index.data()) );
+        colourIndex = index;
+        colour = qVariantValue<QColor>(index.data());
+        //QColor colour = QColorDialog::getColor( qVariantValue<QColor>(index.data()), this, "test", QColorDialog::ShowAlphaChannel);
+        QColorDialog *colourDialog = new QColorDialog(this);
+        colourDialog->setOption(QColorDialog::ShowAlphaChannel);
+        colourDialog->setCurrentColor(colour);
+        connect(colourDialog, SIGNAL(currentColorChanged(QColor)), this, SLOT(colourChanged(QColor)));
 
-        if(colour.isValid())
+        int rc = colourDialog->exec();
+        if(rc == QDialog::Rejected)
         {
             visual_settings_model->setData(index, qVariantFromValue(colour));
         }
+        delete colourDialog;
     }
+}
+
+void MainWindow::colourChanged(QColor c)
+{
+    visual_settings_model->setData(colourIndex, qVariantFromValue(c));
 }
 
 /** \fn MainWindow::getColourGraph(QModelIndex index)
@@ -531,8 +545,9 @@ void MainWindow::readConfigFile(QString fileName)
         wtitle.append(file.fileName());
         this->setWindowTitle(wtitle);
 
-        iteration = 0;
-        ui->spinBox->setValue(0);
+        if(!DEVELOP_SIMON)
+            iteration = 0;
+        ui->spinBox->setValue(iteration);
 
         ui->lineEdit_ResultsLocation->setText(resultsData);
         readZeroXML(1);

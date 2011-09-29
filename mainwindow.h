@@ -43,6 +43,7 @@ public slots:
     void imageStatusSlot(QString);
     void takeAnimationSlot(bool);
     void updateImagesLocationSlot(QString);
+    void colourChanged(QColor);
 
 signals:
     void updateVisual();
@@ -100,6 +101,8 @@ private:
     QString resultsData; ///< The path to 0.xml data
     double ratio; ///< The visual location ratio
     bool itLocked;
+    QColor colour;
+    QModelIndex colourIndex;
 };
 
 #endif // MAINWINDOW_H
