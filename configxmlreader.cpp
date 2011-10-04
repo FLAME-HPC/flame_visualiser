@@ -184,12 +184,6 @@ Shape ConfigXMLReader::readShape()
          if (isStartElement()) {
              if (name() == "object")
                  shape.setShape(readElementText());
-             else if (name() == "useValue")
-             {
-                 enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) shape.setUseValue(true);
-                 else shape.setUseValue(false);
-             }
              else if (name() == "dimension")
                  shape.setDimension((readElementText().toDouble()));
              else if (name() == "useVariable")
@@ -200,6 +194,26 @@ Shape ConfigXMLReader::readShape()
              }
              else if (name() == "dimensionVariable")
                  shape.setDimensionVariable(readElementText());
+             else if (name() == "dimensionY")
+                 shape.setDimensionY((readElementText().toDouble()));
+             else if (name() == "useVariableY")
+             {
+                 enable = readElementText();
+                 if(QString::compare(enable,"true") == 0) shape.setUseVariableY(true);
+                 else shape.setUseVariableY(false);
+             }
+             else if (name() == "dimensionVariableY")
+                 shape.setDimensionVariableY(readElementText());
+            else if (name() == "dimensionZ")
+                 shape.setDimensionZ((readElementText().toDouble()));
+             else if (name() == "useVariableZ")
+             {
+                 enable = readElementText();
+                 if(QString::compare(enable,"true") == 0) shape.setUseVariableZ(true);
+                 else shape.setUseVariableZ(false);
+             }
+             else if (name() == "dimensionVariableZ")
+                 shape.setDimensionVariableZ(readElementText());
              else
                  readUnknownElement();
          }
@@ -211,6 +225,7 @@ Shape ConfigXMLReader::readShape()
 Position ConfigXMLReader::readPosition()
 {
     Position position;
+    QString enable;
 
     while (!atEnd())
     {
@@ -220,7 +235,13 @@ Position ConfigXMLReader::readPosition()
              break;
 
          if (isStartElement()) {
-             if (name() == "variable")
+             if (name() == "useVariable")
+              {
+                  enable = readElementText();
+                  if(QString::compare(enable,"true") == 0) position.useVariable = true;
+                  else position.useVariable = false;
+              }
+             else if (name() == "variable")
                  position.positionVariable = readElementText();
              else if (name() == "offSet")
                  position.opValue = readElementText().toDouble();

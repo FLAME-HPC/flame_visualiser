@@ -28,10 +28,10 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>310</x>
-     <y>10</y>
+     <x>313</x>
+     <y>8</y>
      <width>81</width>
-     <height>71</height>
+     <height>66</height>
     </rect>
    </property>
    <property name="orientation">
@@ -44,27 +44,21 @@
   <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>15</x>
      <y>10</y>
-     <width>291</width>
-     <height>61</height>
+     <width>186</width>
+     <height>27</height>
     </rect>
    </property>
-   <layout class="QFormLayout" name="formLayout">
-    <property name="fieldGrowthPolicy">
-     <enum>QFormLayout::FieldsStayAtSizeHint</enum>
-    </property>
-    <property name="labelAlignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-    <item row="0" column="1">
-     <widget class="QLabel" name="label_2">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QCheckBox" name="checkBox_Variable">
       <property name="text">
-       <string>Offset</string>
+       <string>Variable</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
+    <item>
      <widget class="QComboBox" name="variableComboBox">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -74,18 +68,27 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1">
-     <widget class="QDoubleSpinBox" name="valueSpinBox"/>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
+   </layout>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>45</x>
+     <y>43</y>
+     <width>113</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QLabel" name="label_2">
       <property name="text">
-       <string>Variable</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       <string>Offset</string>
       </property>
      </widget>
+    </item>
+    <item>
+     <widget class="QDoubleSpinBox" name="valueSpinBox"/>
     </item>
    </layout>
   </widget>

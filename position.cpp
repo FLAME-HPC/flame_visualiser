@@ -7,6 +7,7 @@ Position::Position()
     opVariable = "";
     opValue = 0.0;
     useOp = true;
+    useVariable = true;
 }
 
 void Position::paint(QPainter *painter, const QRect &rect,
@@ -17,13 +18,17 @@ void Position::paint(QPainter *painter, const QRect &rect,
    painter->setRenderHint(QPainter::Antialiasing, true);
 
    QString text;
-   text = positionVariable;
-   if(opValue != 0.0)
+   if(useVariable)
    {
-       //text.append(" ");
-       //text.append(op);
-       //text.append(" ");
-       if(opValue > 0.0) text.append("+");
+       text = positionVariable;
+       if(opValue != 0.0)
+       {
+           if(opValue > 0.0) text.append("+");
+           text.append(QString("%1").arg(opValue));
+       }
+   }
+   else
+   {
        text.append(QString("%1").arg(opValue));
    }
 

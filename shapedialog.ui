@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>343</width>
-    <height>232</height>
+    <width>705</width>
+    <height>275</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,42 +37,153 @@
      <property name="title">
       <string>Dimension</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QCheckBox" name="checkBox_Value">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>1</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Value</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_Dimension"/>
-        </item>
-       </layout>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_X">
+        <property name="text">
+         <string>X axis</string>
+        </property>
+       </widget>
       </item>
-      <item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_Y">
+        <property name="text">
+         <string>Y axis</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_Z">
+        <property name="text">
+         <string>Z axis</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
         <item>
-         <widget class="QCheckBox" name="checkBox_Variable">
+         <widget class="QCheckBox" name="checkBox_X">
           <property name="text">
            <string>Variable</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox_Dimension"/>
+         <widget class="QComboBox" name="comboBox_X"/>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QCheckBox" name="checkBox_Y">
+          <property name="text">
+           <string>Variable</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBox_Y"/>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QCheckBox" name="checkBox_Z">
+          <property name="text">
+           <string>Variable</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="comboBox_Z"/>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Offset</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_X">
+          <property name="minimum">
+           <double>-999999.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>99999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Offset</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_Y">
+          <property name="minimum">
+           <double>-999999.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>99999.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <item>
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Offset</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_Z">
+          <property name="minimum">
+           <double>-999999.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>999999.000000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
      </layout>
+     <zorder>doubleSpinBox_X</zorder>
+     <zorder>checkBox_Variable_X</zorder>
+     <zorder>checkBox_Value_X</zorder>
+     <zorder>radioButton_Value_Y</zorder>
+     <zorder>radioButton_Variable_Y</zorder>
+     <zorder>radioButton_Value_Z</zorder>
+     <zorder>radioButton_Variable_Z</zorder>
+     <zorder>doubleSpinBox_Y</zorder>
+     <zorder>doubleSpinBox_Z</zorder>
+     <zorder>label_X</zorder>
+     <zorder>label_Z</zorder>
+     <zorder>label_Y</zorder>
+     <zorder>comboBox_X</zorder>
+     <zorder>comboBox_Y</zorder>
+     <zorder>comboBox_Z</zorder>
+     <zorder>checkBox_X</zorder>
+     <zorder>checkBox_Y</zorder>
+     <zorder>checkBox_Z</zorder>
+     <zorder>doubleSpinBox_Y</zorder>
     </widget>
    </item>
    <item>

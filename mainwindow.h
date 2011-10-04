@@ -76,6 +76,7 @@ private slots:
     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph);
     void on_pushButton_Animate_clicked();
     void on_pushButton_ImageSettings_clicked();
+    void ruleUpdated(int);
 
 private:
     bool readZeroXML(int flag);

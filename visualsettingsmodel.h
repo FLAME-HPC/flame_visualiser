@@ -31,6 +31,7 @@ public:
      VisualSettingsItem * getRule(int row) const { return rules[row]; }
 
 signals:
+     void ruleUpdated(int);
 
 public slots:
      void addRule();

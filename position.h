@@ -19,6 +19,7 @@ public:
     QString opVariable;
     double opValue;
     bool useOp;
+    bool useVariable;
 };
 
 Q_DECLARE_METATYPE(Position)

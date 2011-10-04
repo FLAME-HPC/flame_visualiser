@@ -21,7 +21,7 @@
 #include "enableddelegate.h"
 #include "graphdelegate.h"
 
-#define DEVELOP_SIMON false
+#define DEVELOP_SIMON true
 
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     configPath = "";
     configName = "";
     visual_settings_model = new VisualSettingsModel();
+    connect(visual_settings_model, SIGNAL(ruleUpdated(int)), this, SLOT(ruleUpdated(int)));
     graph_settings_model = new GraphSettingsModel(&agents);
     connect(graph_settings_model, SIGNAL(plotGraphChanged(GraphSettingsItem*,QString,QString)), this, SLOT(plotGraphChanged(GraphSettingsItem*,QString,QString)));
 
@@ -372,13 +373,19 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
 {
     if(opengl_window_open == false)
     {
+        // Set ratio to be 1
+        ratio = 1.0;
+        // Read in agents with model dimensions
+        readZeroXML(1);
+        // Calculate model to opengl dimension ratio
         calcPositionRatio();
+        // Reread agents with opengl dimension using new ratio
+        readZeroXML(1);
 
         visual_window = new GLWidget;
         visual_window->resize(800,600);
         visual_window->update_agents(&agents);
         visual_window->set_rules(visual_settings_model);
-        visual_window->set_ratio(&ratio);
         visual_window->setIteration(&iteration);
         visual_window->setConfigPath(&configPath);
 
@@ -436,9 +443,19 @@ bool MainWindow::readZeroXML(int flag)
         return false;
     }
 
-    if(flag == 1) agents.clear();
+    if(flag == 1)
+    {
+        // old
+        //agents.clear();
 
-    ZeroXMLReader reader(&agents, &agentTypes);
+        // new
+        for(int i = 0; i < visual_settings_model->rowCount(); i++)
+        {
+            visual_settings_model->getRule(i)->agents.clear();
+        }
+    }
+
+    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio);
     if (!reader.read(&file, flag))
     {
          ui->label_5->setText("Not found");
@@ -685,25 +702,37 @@ bool MainWindow::writeConfigXML(QFile * file)
         stream.writeEndElement(); // rhs
         stream.writeEndElement(); // condition
         stream.writeStartElement("x"); // x
+        if(vsitem->x().useVariable) stream.writeTextElement("useVariable", "true");
+        else stream.writeTextElement("useVariable", "false");
         stream.writeTextElement("variable", vsitem->x().positionVariable);
         stream.writeTextElement("offSet", QString("%1").arg(vsitem->x().opValue));
         stream.writeEndElement(); // x
         stream.writeStartElement("y"); // y
+        if(vsitem->y().useVariable) stream.writeTextElement("useVariable", "true");
+        else stream.writeTextElement("useVariable", "false");
         stream.writeTextElement("variable", vsitem->y().positionVariable);
         stream.writeTextElement("offSet", QString("%1").arg(vsitem->y().opValue));
         stream.writeEndElement(); // y
         stream.writeStartElement("z"); // z
+        if(vsitem->z().useVariable) stream.writeTextElement("useVariable", "true");
+        else stream.writeTextElement("useVariable", "false");
         stream.writeTextElement("variable", vsitem->z().positionVariable);
         stream.writeTextElement("offSet", QString("%1").arg(vsitem->z().opValue));
         stream.writeEndElement(); // z
         stream.writeStartElement("shape"); // shape
         stream.writeTextElement("object", vsitem->shape().getShape());
-        if(vsitem->shape().getUseValue()) stream.writeTextElement("useValue", "true");
-        else stream.writeTextElement("useValue", "false");
         stream.writeTextElement("dimension", QString("%1").arg(vsitem->shape().getDimension()));
         if(vsitem->shape().getUseVariable()) stream.writeTextElement("useVariable", "true");
         else stream.writeTextElement("useVariable", "false");
         stream.writeTextElement("dimensionVariable", QString("%1").arg(vsitem->shape().getDimensionVariable()));
+        stream.writeTextElement("dimensionY", QString("%1").arg(vsitem->shape().getDimensionY()));
+        if(vsitem->shape().getUseVariableY()) stream.writeTextElement("useVariableY", "true");
+        else stream.writeTextElement("useVariableY", "false");
+        stream.writeTextElement("dimensionVariableY", QString("%1").arg(vsitem->shape().getDimensionVariableY()));
+        stream.writeTextElement("dimensionZ", QString("%1").arg(vsitem->shape().getDimensionZ()));
+        if(vsitem->shape().getUseVariableZ()) stream.writeTextElement("useVariableZ", "true");
+        else stream.writeTextElement("useVariableZ", "false");
+        stream.writeTextElement("dimensionVariableZ", QString("%1").arg(vsitem->shape().getDimensionVariableZ()));
         stream.writeEndElement(); // shape
         stream.writeStartElement("colour"); // colour
         stream.writeTextElement("r", QString("%1").arg(vsitem->colour().red()));
@@ -807,23 +836,14 @@ void MainWindow::calcPositionRatio()
     double smallest = 0.0;
     double largest = 0.0;
 
-    for(int i= 0; i < agents.count(); i++)
+    for(int j = 0; j < visual_settings_model->rowCount(); j++)
     {
-        for(int j = 0; j < visual_settings_model->getRules().count(); j++)
+        for(int i= 0; i < visual_settings_model->getRule(j)->agents.count(); i++)
         {
-            if(QString::compare(visual_settings_model->getRules().at(j)->agentType(),agents.at(i).agentType) == 0)
-            {
-                for(int k = 0; k < agents.at(i).tags.count(); k++)
-                {
-                    if(QString::compare(agents.at(i).tags.at(k),visual_settings_model->getRules().at(j)->x().positionVariable) == 0 ||
-                       QString::compare(agents.at(i).tags.at(k),visual_settings_model->getRules().at(j)->y().positionVariable) == 0)
-                    {
-                        double v = agents[i].values[k].toDouble();
-                        if(smallest > v) smallest = v;
-                        if(largest  < v) largest  = v;
-                    }
-                }
-            }
+            if(smallest > visual_settings_model->getRule(j)->agents.at(i).x) smallest = visual_settings_model->getRule(j)->agents.at(i).x;
+            if(smallest > visual_settings_model->getRule(j)->agents.at(i).y) smallest = visual_settings_model->getRule(j)->agents.at(i).y;
+            if(largest  < visual_settings_model->getRule(j)->agents.at(i).x) largest  = visual_settings_model->getRule(j)->agents.at(i).x;
+            if(largest  < visual_settings_model->getRule(j)->agents.at(i).y) largest  = visual_settings_model->getRule(j)->agents.at(i).y;
         }
     }
 
@@ -879,4 +899,10 @@ void MainWindow::takeAnimationSlot(bool b)
 void MainWindow::updateImagesLocationSlot(QString s)
 {
     if(opengl_window_open) emit( updateImagesLocationSignal(s) );
+}
+
+void MainWindow::ruleUpdated(int /*row*/)
+{
+    // Reread agents using updated rules
+    if(opengl_window_open) readZeroXML(1);
 }

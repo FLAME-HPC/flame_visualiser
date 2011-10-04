@@ -7,11 +7,13 @@
 class AgentType
 {
 public:
-    AgentType();
-    AgentType(QString n) { name = n; }
+    AgentType() { agent = true; }
+    AgentType(QString n) { name = n; agent = true; isEnvironment = false; }
 
     QString name;
     QList<QString> variables;
+    bool agent;
+    bool isEnvironment;
 };
 
 #endif // AGENTTYPE_H

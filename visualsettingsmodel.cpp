@@ -68,11 +68,7 @@ bool VisualSettingsModel::setData(const QModelIndex &index,
  {
      if (index.isValid() && role == Qt::EditRole)
     {
-        if(index.column() == 0)
-        {
-            //emit( updateStateName(rules.at(index.row())->currentState()->name(), value.toString()) );
-            rules.at(index.row())->setAgentType(value.toString());
-        }
+        if(index.column() == 0) rules.at(index.row())->setAgentType(value.toString());
         if(index.column() == 1) rules.at(index.row())->setCondition(qVariantValue<Condition>(value));
         if(index.column() == 2) rules.at(index.row())->setX(qVariantValue<Position>(value));
         if(index.column() == 3) rules.at(index.row())->setY(qVariantValue<Position>(value));
@@ -80,6 +76,7 @@ bool VisualSettingsModel::setData(const QModelIndex &index,
         if(index.column() == 5) rules.at(index.row())->setShape(qVariantValue<Shape>(value));
         if(index.column() == 6) rules.at(index.row())->setColour(qVariantValue<QColor>(value));
          emit dataChanged(index, index);
+         emit ruleUpdated(index.row());
          return true;
      }
      return false;

@@ -6,6 +6,7 @@
 #include "shape.h"
 #include "position.h"
 #include "condition.h"
+#include "agent.h"
 
 class VisualSettingsItem
 {
@@ -28,6 +29,8 @@ public:
     Shape shape() const { return shapeShape; }
     void setColour(QColor c) { colourColor = c; }
     QColor colour() const { return colourColor; }
+
+    QList<Agent> agents; ///< The list of agents
 
 private:
     QString agentTypeString;

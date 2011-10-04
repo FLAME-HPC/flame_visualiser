@@ -18,7 +18,6 @@ public:
     ~GLWidget();
     void update_agents(QList<Agent> * a);
     void set_rules(VisualSettingsModel * m);
-    void set_ratio(double * r) { ratio = r; }
     void reset_camera();
     QString getName() { return name; }
     void setName(QString n) { name = n; }
@@ -71,7 +70,6 @@ private:
     QTimer *timer;
     QTime time;
     VisualSettingsModel * model;
-    double *ratio;
     bool animation;
     bool locked;
     bool animationImages;

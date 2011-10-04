@@ -9,16 +9,20 @@
 class ZeroXMLReader : public QXmlStreamReader
 {
 public:
-    ZeroXMLReader(QList<Agent> * a, QList<AgentType> * at);
+    ZeroXMLReader(QList<Agent> * a, QList<AgentType> * at, VisualSettingsModel * vsm, double * r);
     bool read(QIODevice * device, int flag);
 
 private:
     void readUnknownElement();
+    void readEnvironmentXML(int flag);
     void readAgentXML(int flag);
     void readAgentsXML(int flag);
     void readZeroXML(int flag);
+    void applyRulesToAgent(Agent * agent);
     QList<Agent> * agents;
     QList<AgentType> * agentTypes;
+    VisualSettingsModel * vsmodel;
+    double * ratio;
 };
 
 #endif // ZEROXMLREADER_H

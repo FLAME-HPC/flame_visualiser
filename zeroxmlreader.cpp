@@ -1,10 +1,13 @@
 #include <QtGui>
 #include "zeroxmlreader.h"
+#include "visualsettingsitem.h"
 
-ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at)
+ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at, VisualSettingsModel *vsm, double * r)
 {
     agents = a;
     agentTypes = at;
+    vsmodel = vsm;
+    ratio = r;
 }
 
 bool ZeroXMLReader::read(QIODevice * device, int flag)
@@ -59,7 +62,9 @@ void ZeroXMLReader::readZeroXML(int flag)
              break;
 
          if (isStartElement()) {
-             if (name() == "agents")
+             if (name() == "environment")
+                 readEnvironmentXML(flag);
+             else if (name() == "agents")
                  readAgentsXML(flag);
              else if (name() == "xagent")
                  readAgentXML(flag);
@@ -67,6 +72,73 @@ void ZeroXMLReader::readZeroXML(int flag)
                  readUnknownElement();
          }
      }
+}
+
+void ZeroXMLReader::readEnvironmentXML(int flag)
+{
+    Agent agent = Agent();
+    QString agentname = "environment";
+    QString elementName = "";
+    int index = 0;
+    agent.isEnvironment = true;
+
+    if(flag == 0)
+    {
+        /* Look for agent type in list */
+        index = -1;
+        for(int i = 0; i < agentTypes->count(); i++)
+        {
+            if(QString::compare(agentTypes->at(i).name, agentname) == 0) index = i;
+        }
+        if(index == -1)
+        {
+            agentTypes->append(AgentType(agentname));
+            index = agentTypes->count() - 1;
+        }
+        else index = -1;
+    }
+    else if(flag == 1)
+    {
+        agent.agentType = "environment";
+    }
+
+    while (!atEnd())
+    {
+         readNext();
+
+         if (isEndElement())
+             break;
+
+         if(flag == 0)
+         {
+             if (isStartElement())
+             {
+                 if(index != -1)
+                 {
+                    elementName = name().toString();
+                    (*agentTypes)[index].variables.append(elementName);
+                 }
+
+                 readUnknownElement();
+             }
+         }
+         else if(flag == 1)
+         {
+             if (isStartElement())
+             {
+                 if (name() != "name")
+                 {
+                     agent.tags.append(name().toString());
+                     agent.values.append(readElementText());
+                 }
+             }
+         }
+     }
+
+    if(flag == 1)
+    {
+        applyRulesToAgent(&agent);
+    }
 }
 
 void ZeroXMLReader::readAgentsXML(int flag)
@@ -150,43 +222,88 @@ void ZeroXMLReader::readAgentXML(int flag)
                      agent.tags.append(name().toString());
                      agent.values.append(readElementText());
                  }
-
-                 /*else if (name() == "posx")
-                     x = readElementText().toDouble();
-                 else if (name() == "posy")
-                     y = readElementText().toDouble();
-                 else if (name() == "posz")
-                     z = readElementText().toDouble();
-                 else if (name() == "state")
-                 {
-                    state = readElementText().toInt();
-                    if(state == 0) { r=1.0; g=0.0; b=0.0; }
-                    else if(state == 1) { r=1.0; g=0.0; b=0.0; }
-                    else if(state == 40) { r=0.0; g=1.0; b=0.0; }
-                    else if(state == 41) { r=1.0; g=0.0; b=0.0; }
-                    else if(state == 100) { r=1.0; g=1.0; b=0.0; }
-                    else if(state == 300) { r=0.0; g=0.0; b=0.5; }
-                    else if(state == 400) { r=1.0; g=0.5; b=0.0; }
-                    else if(state == 401) { r=0.5; g=0.33; b=0.0; }
-                    else if(state == 500) { r=1.0; g=0.5; b=0.5; }
-                    else if(state == 501) { r=0.5; g=0.0; b=0.8; }
-                    else if(state == 600) { r=0.8; g=0.0; b=0.5; }
-                    else if(state == 601) { r=0.5; g=0.0; b=0.8; }
-                    else if(state == 200) { r=1.0; g=0.0; b=0.0; }
-                    else if(state == 201) { r=0.0; g=1.0; b=0.0; }
-                    else if(state == 700) { r=1.0; g=0.0; b=1.0; }
-                    else if(state == 701) { r=0.0; g=1.0; b=0.5; }
-                    else if(state == 800) { r=1.0; g=0.3; b=1.0; }
-                    else if(state == 801) { r=0.0; g=1.0; b=1.0; }
-                    else if(state == 900) { r=0.0; g=0.3; b=1.0; }
-                    else if(state == 901) { r=0.7; g=0.5; b=1.0; }
-                 }
-                 else
-                     readUnknownElement();*/
              }
          }
      }
 
-    //qDebug("%s %f %f %f", qPrintable(agentname), x, y, z);
-    if(flag == 1) agents->append(agent);  //agents->append(Agent(agentname, x, y, z, r, g, b));
+    if(flag == 1)
+    {
+        // Old
+        //agents->append(agent);
+
+        // New
+        applyRulesToAgent(&agent);
+    }
+}
+
+void ZeroXMLReader::applyRulesToAgent(Agent *agent)
+{
+    for(int i = 0; i < vsmodel->rowCount(); i++)
+    {
+        VisualSettingsItem * vsi = vsmodel->getRule(i);
+
+        if(agent->agentType == vsi->agentType())
+        {
+            bool pass = true;
+
+            // Check condition variable
+            if(vsi->condition().enable)
+            {
+                pass = false;
+
+                for(int k = 0; k < agent->tags.count(); k++)
+                {
+                    if(QString::compare(vsi->condition().variable, agent->tags.at(k)) == 0)
+                    {
+                        if(vsi->condition().op == "==" && agent->values.at(k).toDouble() == vsi->condition().value) pass = true;
+                        else if(vsi->condition().op == "!=" && agent->values.at(k).toDouble() != vsi->condition().value) pass = true;
+                        else if(vsi->condition().op == ">" && agent->values.at(k).toDouble() > vsi->condition().value) pass = true;
+                        else if(vsi->condition().op == "<" && agent->values.at(k).toDouble() < vsi->condition().value) pass = true;
+                        else if(vsi->condition().op == ">=" && agent->values.at(k).toDouble() >= vsi->condition().value) pass = true;
+                        else if(vsi->condition().op == "<=" && agent->values.at(k).toDouble() <= vsi->condition().value) pass = true;
+                    }
+                }
+            }
+
+            if(pass)
+            {
+                agent->x = vsi->x().opValue;
+                agent->y = vsi->y().opValue;
+                agent->z = vsi->z().opValue;
+                agent->shapeDimension = vsi->shape().getDimension();
+                agent->shapeDimensionY = vsi->shape().getDimensionY();
+                agent->shapeDimensionZ = vsi->shape().getDimensionZ();
+
+                for(int k = 0; k < agent->tags.count(); k++)
+                {
+                    if(vsi->x().useVariable)
+                        if(QString::compare(vsi->x().positionVariable, agent->tags.at(k)) == 0)
+                            agent->x += agent->values.at(k).toDouble();
+                    if(vsi->y().useVariable)
+                        if(QString::compare(vsi->y().positionVariable, agent->tags.at(k)) == 0)
+                            agent->y += agent->values.at(k).toDouble();
+                    if(vsi->z().useVariable)
+                        if(QString::compare(vsi->z().positionVariable, agent->tags.at(k)) == 0)
+                            agent->z += agent->values.at(k).toDouble();
+                    if(vsi->shape().getUseVariable())
+                        if(QString::compare(vsi->shape().getDimensionVariable(), agent->tags.at(k)) == 0)
+                            agent->shapeDimension += agent->values.at(k).toDouble();
+                    if(vsi->shape().getUseVariableY())
+                        if(QString::compare(vsi->shape().getDimensionVariableY(), agent->tags.at(k)) == 0)
+                            agent->shapeDimensionY += agent->values.at(k).toDouble();
+                    if(vsi->shape().getUseVariableZ())
+                        if(QString::compare(vsi->shape().getDimensionVariableZ(), agent->tags.at(k)) == 0)
+                            agent->shapeDimensionZ += agent->values.at(k).toDouble();
+                }
+
+                agent->x *= *ratio;
+                agent->y *= *ratio;
+                agent->z *= *ratio;
+                agent->shapeDimension *= *ratio;
+                agent->shapeDimensionY *= *ratio;
+                agent->shapeDimensionZ *= *ratio;
+                vsi->agents.append(*agent);
+            }
+        }
+    }
 }

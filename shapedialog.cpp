@@ -17,19 +17,25 @@ ShapeDialog::ShapeDialog(QList<AgentType> *ats, VisualSettingsModel *vsm, int r,
         {
             for(int j = 0; j < agentTypes->at(i).variables.count(); j++)
             {
-                comboBox_Dimension->insertItem(j, agentTypes->at(i).variables.at(j));
+                comboBox_X->insertItem(j, agentTypes->at(i).variables.at(j));
+                comboBox_Y->insertItem(j, agentTypes->at(i).variables.at(j));
+                comboBox_Z->insertItem(j, agentTypes->at(i).variables.at(j));
             }
         }
     }
-    doubleSpinBox_Dimension->setMaximum(9999.99);
+    doubleSpinBox_X->setMaximum(9999.99);
+    doubleSpinBox_Y->setMaximum(9999.99);
+    doubleSpinBox_Z->setMaximum(9999.99);
     comboBox_Shape->addItems(shape.Shapes());
-
-
 
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-    connect(checkBox_Value, SIGNAL(clicked(bool)), this, SLOT(valueClicked(bool)));
-    connect(checkBox_Variable, SIGNAL(clicked(bool)), this, SLOT(variableClicked(bool)));
+
+    connect(comboBox_Shape, SIGNAL(currentIndexChanged(QString)), this, SLOT(shapeUpdated(QString)));
+
+    connect(checkBox_X, SIGNAL(clicked(bool)), comboBox_X, SLOT(setEnabled(bool)));
+    connect(checkBox_Y, SIGNAL(clicked(bool)), comboBox_Y, SLOT(setEnabled(bool)));
+    connect(checkBox_Z, SIGNAL(clicked(bool)), comboBox_Z, SLOT(setEnabled(bool)));
 }
 
 void ShapeDialog::setShape(Shape s)
@@ -39,50 +45,79 @@ void ShapeDialog::setShape(Shape s)
     int index = shape.Shapes().indexOf(shape.getShape());
     if(index == -1) index = 0;
     comboBox_Shape->setCurrentIndex(index);
+    shapeUpdated(shape.getShape());
 
     index = 0;
-    for(int i = 0; i < comboBox_Dimension->count(); i++)
-    {
-        if(QString::compare(comboBox_Dimension->itemText(i),shape.getDimensionVariable()) == 0)
-            index = i;
-    }
-    comboBox_Dimension->setCurrentIndex(index);
+    for(int i = 0; i < comboBox_X->count(); i++)
+    { if(QString::compare(comboBox_X->itemText(i),shape.getDimensionVariable()) == 0) index = i; }
+    comboBox_X->setCurrentIndex(index);
+    index = 0;
+    for(int i = 0; i < comboBox_Y->count(); i++)
+    { if(QString::compare(comboBox_Y->itemText(i),shape.getDimensionVariableY()) == 0) index = i; }
+    comboBox_Y->setCurrentIndex(index);
+    index = 0;
+    for(int i = 0; i < comboBox_Z->count(); i++)
+    { if(QString::compare(comboBox_Z->itemText(i),shape.getDimensionVariableZ()) == 0) index = i; }
+    comboBox_Z->setCurrentIndex(index);
 
-    doubleSpinBox_Dimension->setValue(shape.getDimension());
+    doubleSpinBox_X->setValue(shape.getDimension());
+    doubleSpinBox_Y->setValue(shape.getDimensionY());
+    doubleSpinBox_Z->setValue(shape.getDimensionZ());
 
-    if(shape.getUseValue())
-    {
-        checkBox_Value->setChecked(true);
-        checkBox_Variable->setChecked(false);
-        comboBox_Dimension->setEnabled(false);
-    }
-    if(shape.getUseVariable())
-    {
-        checkBox_Variable->setChecked(true);
-        checkBox_Value->setChecked(false);
-        doubleSpinBox_Dimension->setEnabled(false);
-    }
+    comboBox_X->setEnabled(shape.getUseVariable());
+    comboBox_Y->setEnabled(shape.getUseVariableY());
+    comboBox_Z->setEnabled(shape.getUseVariableZ());
+
+    checkBox_X->setChecked(shape.getUseVariable());
+    checkBox_Y->setChecked(shape.getUseVariableY());
+    checkBox_Z->setChecked(shape.getUseVariableZ());
 }
 
 Shape ShapeDialog::getShape()
 {
     shape.setShape(comboBox_Shape->currentText());
-    shape.setDimension(doubleSpinBox_Dimension->value());
-    shape.setDimensionVariable(comboBox_Dimension->currentText());
-    shape.setUseValue(checkBox_Value->isChecked());
-    shape.setUseVariable(checkBox_Variable->isChecked());
+
+    shape.setDimension(doubleSpinBox_X->value());
+    shape.setDimensionVariable(comboBox_X->currentText());
+    shape.setUseVariable(checkBox_X->isChecked());
+
+    shape.setDimensionY(doubleSpinBox_Y->value());
+    shape.setDimensionVariableY(comboBox_Y->currentText());
+    shape.setUseVariableY(checkBox_Y->isChecked());
+
+    shape.setDimensionZ(doubleSpinBox_Z->value());
+    shape.setDimensionVariableZ(comboBox_Z->currentText());
+    shape.setUseVariableZ(checkBox_Z->isChecked());
+
     return shape;
 }
-void ShapeDialog::valueClicked(bool b)
+
+void ShapeDialog::enableYZ(bool e)
 {
-    doubleSpinBox_Dimension->setEnabled(b);
-    checkBox_Variable->setChecked(!b);
-    comboBox_Dimension->setEnabled(!b);
+    checkBox_Y->setEnabled(e);
+    checkBox_Z->setEnabled(e);
+    doubleSpinBox_Y->setEnabled(e);
+    doubleSpinBox_Z->setEnabled(e);
+    if(!e || shape.getUseVariableY()) comboBox_Y->setEnabled(e);
+    if(!e || shape.getUseVariableZ()) comboBox_Z->setEnabled(e);
+    if(e) label_X->setText("X axis");
+    else label_X->setText("XYZ axis");
+
+    QPalette palet;
+    if(e) palet.setColor(label_Y->foregroundRole(),QColor(0,0,0));
+    else palet.setColor(label_Y->foregroundRole(),QColor(120,120,120));
+    label_Y->setPalette(palet);
+    label_Z->setPalette(palet);
 }
 
-void ShapeDialog::variableClicked(bool b)
+void ShapeDialog::shapeUpdated(QString s)
 {
-    comboBox_Dimension->setEnabled(b);
-    checkBox_Value->setChecked(!b);
-    doubleSpinBox_Dimension->setEnabled(!b);
+    if(QString::compare("cube",s) == 0)
+    {
+        enableYZ(true);
+    }
+    else
+    {
+        enableYZ(false);
+    }
 }

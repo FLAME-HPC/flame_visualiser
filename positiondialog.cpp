@@ -24,7 +24,7 @@ PositionDialog::PositionDialog(QList<AgentType> *ats, VisualSettingsModel * mode
     valueSpinBox->setMaximum(9999.99);
     valueSpinBox->setMinimum(-9999.99);
 
-    connect(this, SIGNAL(setVariableComboBox(int)), variableComboBox, SLOT(setCurrentIndex(int)));
+    connect(checkBox_Variable, SIGNAL(clicked(bool)), variableComboBox, SLOT(setEnabled(bool)));
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 }
@@ -39,14 +39,19 @@ void PositionDialog::setPosition(Position p)
         if(variableComboBox->itemText(i) == position.positionVariable)
             index = i;
     }
-    emit ( setVariableComboBox(index) );
+    variableComboBox->setCurrentIndex(index);
 
     valueSpinBox->setValue(position.opValue);
+
+    checkBox_Variable->setChecked(position.useVariable);
+
+    variableComboBox->setEnabled(position.useVariable);
 }
 
 Position PositionDialog::getPosition()
 {
     position.positionVariable = variableComboBox->currentText();
     position.opValue = valueSpinBox->value();
+    position.useVariable = checkBox_Variable->checkState();
     return position;
 }

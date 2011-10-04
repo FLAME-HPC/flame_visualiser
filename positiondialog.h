@@ -17,10 +17,6 @@ public:
     void setPosition(Position p);
     Position getPosition();
 
-signals:
-    void setVariableComboBox(int i);
-    void setValueSpinBox(double d);
-
 private:
     QList<AgentType> * agentTypes;
     VisualSettingsModel * vsm;

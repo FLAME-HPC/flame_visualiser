@@ -17,10 +17,10 @@ public:
     Shape getShape();
 
 private slots:
-    void valueClicked(bool);
-    void variableClicked(bool);
+    void shapeUpdated(QString);
 
 private:
+    void enableYZ(bool e);
     VisualSettingsModel * vsmodel;
     Shape shape;
     QList<AgentType> * agentTypes;

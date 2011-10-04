@@ -5,9 +5,14 @@ Shape::Shape()
     shape = "";
     shapes << "sphere" << "cube" << "point";
     dimension = 0.0;
+    dimensionY = 0.0;
+    dimensionZ = 0.0;
     dimensionVariable = "";
-    useValue = true;
+    dimensionVariableY = "";
+    dimensionVariableZ = "";
     useVariable = false;
+    useVariableY = false;
+    useVariableZ = false;
 }
 
 void Shape::paint(QPainter *painter, const QRect &rect,
@@ -22,10 +27,19 @@ void Shape::paint(QPainter *painter, const QRect &rect,
    else
    {
        text.append(shape);
-       text.append("(");
+       /*text.append("(");
        if(useValue) text.append(QString("%1").arg(dimension));
        if(useVariable) text.append(dimensionVariable);
-       text.append(")");
+       if(QString::compare(shape,"cube") == 0)
+       {
+           text.append(",");
+           if(useValueY) text.append(QString("%1").arg(dimensionY));
+           if(useVariableY) text.append(dimensionVariableY);
+           text.append(",");
+           if(useValueZ) text.append(QString("%1").arg(dimensionZ));
+           if(useVariableZ) text.append(dimensionVariableZ);
+       }
+       text.append(")");*/
    }
 
    painter->drawText(rect,Qt::AlignCenter,text);
