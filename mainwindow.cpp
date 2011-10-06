@@ -114,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+    //destroy(true, true);
 }
 
 void MainWindow::visual_window_closed()
@@ -382,7 +383,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         // Reread agents with opengl dimension using new ratio
         readZeroXML(1);
 
-        visual_window = new GLWidget;
+        visual_window = new GLWidget();
+        visual_window->setAttribute(Qt::WA_DeleteOnClose); // Make the window destory on close rather than hide
         visual_window->resize(800,600);
         visual_window->update_agents(&agents);
         visual_window->set_rules(visual_settings_model);
@@ -445,8 +447,8 @@ bool MainWindow::readZeroXML(int flag)
 
     if(flag == 1)
     {
-        // old
-        //agents.clear();
+        // old (keep for graphs)
+        agents.clear();
 
         // new
         for(int i = 0; i < visual_settings_model->rowCount(); i++)

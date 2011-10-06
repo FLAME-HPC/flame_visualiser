@@ -228,8 +228,8 @@ void ZeroXMLReader::readAgentXML(int flag)
 
     if(flag == 1)
     {
-        // Old
-        //agents->append(agent);
+        // Old (keep for graphs)
+        agents->append(agent);
 
         // New
         applyRulesToAgent(&agent);

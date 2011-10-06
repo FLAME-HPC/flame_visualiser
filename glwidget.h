@@ -53,6 +53,8 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private:
+    void processSelection(int mx, int my);
+    void drawAgents(GLenum mode);
     QString name;
     QList<Agent> * agents;
     bool block;
@@ -76,6 +78,8 @@ private:
     bool imageLock;
     QString imagesLocation;
     QString * configpath;
+    bool pickOn;
+    float window_ratio;
 };
 
 #endif // GLWIDGET_H
