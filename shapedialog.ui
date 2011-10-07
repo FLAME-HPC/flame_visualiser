@@ -165,25 +165,6 @@
        </layout>
       </item>
      </layout>
-     <zorder>doubleSpinBox_X</zorder>
-     <zorder>checkBox_Variable_X</zorder>
-     <zorder>checkBox_Value_X</zorder>
-     <zorder>radioButton_Value_Y</zorder>
-     <zorder>radioButton_Variable_Y</zorder>
-     <zorder>radioButton_Value_Z</zorder>
-     <zorder>radioButton_Variable_Z</zorder>
-     <zorder>doubleSpinBox_Y</zorder>
-     <zorder>doubleSpinBox_Z</zorder>
-     <zorder>label_X</zorder>
-     <zorder>label_Z</zorder>
-     <zorder>label_Y</zorder>
-     <zorder>comboBox_X</zorder>
-     <zorder>comboBox_Y</zorder>
-     <zorder>comboBox_Z</zorder>
-     <zorder>checkBox_X</zorder>
-     <zorder>checkBox_Y</zorder>
-     <zorder>checkBox_Z</zorder>
-     <zorder>doubleSpinBox_Y</zorder>
     </widget>
    </item>
    <item>

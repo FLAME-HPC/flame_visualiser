@@ -6,6 +6,7 @@
 #include <QMessageBox>
 #include <QColorDialog>
 #include <QtGui/QMouseEvent>
+#include <QTextEdit>
 #include "zeroxmlreader.h"
 #include "visualsettingsmodel.h"
 #include "visualsettingsitem.h"
@@ -21,7 +22,7 @@
 #include "enableddelegate.h"
 #include "graphdelegate.h"
 
-#define DEVELOP_SIMON false
+#define DEVELOP_SIMON true
 
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
@@ -104,7 +105,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if(DEVELOP_SIMON)
     {
         iteration = 800;
-        readConfigFile("/Users/stc/workspace/xagents/trunk/models/keratinocyte/visual/config.xml");
+        readConfigFile("/Users/stc/workspace/xagents/trunk/models/keratinocyte/visual/visual_config.xml");
     }
 }
 
@@ -540,7 +541,8 @@ void MainWindow::readConfigFile(QString fileName)
         return;
     }
 
-    visual_settings_model->deleteRules();
+    emit visual_settings_model->deleteRules();
+    emit graph_settings_model->deletePlots();
     agents.clear();
     agentTypes.clear();
     graphs.clear();
@@ -907,4 +909,24 @@ void MainWindow::ruleUpdated(int /*row*/)
 {
     // Reread agents using updated rules
     if(opengl_window_open) readZeroXML(1);
+}
+
+void MainWindow::on_actionQuit_triggered()
+{
+    close();
+}
+
+void MainWindow::on_actionAbout_triggered()
+{
+   QTextEdit *about=new QTextEdit(this);
+   about->setWindowFlags(Qt::Dialog);
+   about->setReadOnly(true);
+   about->append("<h1>FLAME Visualiser</h1>");
+   about->append("<h3>Simon Coakley</h3>");
+   about->append("<h2>Version 1</h2>");
+   about->append("<h3>Changelog</h3>");
+   /* Add new release notes here */
+   about->append("<h4>Version 1 (released 2011-10-07)</h4><ul><li>Beta first release</li></ul>");
+   about->moveCursor(QTextCursor::Start);
+   about->show();
 }

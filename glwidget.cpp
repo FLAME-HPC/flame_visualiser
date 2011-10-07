@@ -77,8 +77,6 @@ void GLWidget::takeSnapshot()
     filename.append(QString("%1").arg(*iteration));
     filename.append(".jpg");
 
-    qDebug() << filename;
-
     QImage i = this->grabFrameBuffer();
     QImageWriter writer(filename, "JPG");
     writer.setQuality(90);

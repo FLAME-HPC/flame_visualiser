@@ -77,6 +77,9 @@ private slots:
     void on_pushButton_Animate_clicked();
     void on_pushButton_ImageSettings_clicked();
     void ruleUpdated(int);
+    void on_actionQuit_triggered();
+
+    void on_actionAbout_triggered();
 
 private:
     bool readZeroXML(int flag);
