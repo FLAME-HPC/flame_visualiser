@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 #include <QFile>
-#include "GLWidget.h"
+#include "glwidget.h"
 #include "graphwidget.h"
 #include "agent.h"
 #include "agenttype.h"
