@@ -8,8 +8,12 @@
 #include "visualsettingsmodel.h"
 #include "visualsettingsitem.h"
 #include "condition.h"
+#include <QtPlugin>
 
-//Q_IMPORT_PLUGIN(qjpeg)
+/* If Windows then include importing plugins for static compilation */
+#ifdef Q_WS_WIN
+    Q_IMPORT_PLUGIN(qjpeg)
+#endif
 
 #define ZMOVE -3.0
 
@@ -230,7 +234,7 @@ void GLWidget::drawAgents(GLenum mode)
     double size = 0.0;
     double sizeY = 0.0;
     double sizeZ = 0.0;
-    int grade;
+    //int grade;
     int name = 0;
 
     int style = 0;
@@ -291,8 +295,9 @@ void GLWidget::drawAgents(GLenum mode)
                     if(QString::compare("sphere",rule->shape().getShape()) == 0)
                     {
                         // if the sphere is large then draw with a higher grade
-                        grade = 16;
-                        if(size > 0.1) grade = 32;
+                        /*grade = 16;
+                        if(size > 0.1) grade = 32;*/
+                        int grade = rule->shape().getQuality();
 
                         glEnable(GL_CULL_FACE);
                         if(pass==2)

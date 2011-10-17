@@ -6,6 +6,7 @@
 
 QT       += core gui
 QT       += opengl
+QTPLUGIN += qjpeg
 
 TARGET = flame_visualiser
 TEMPLATE = app

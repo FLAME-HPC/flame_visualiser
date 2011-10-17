@@ -22,7 +22,7 @@
 #include "enableddelegate.h"
 #include "graphdelegate.h"
 
-#define DEVELOP_SIMON false
+#define DEVELOP_SIMON true
 
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
@@ -115,7 +115,6 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-    //destroy(true, true);
 }
 
 void MainWindow::visual_window_closed()
@@ -725,6 +724,8 @@ bool MainWindow::writeConfigXML(QFile * file)
         stream.writeEndElement(); // z
         stream.writeStartElement("shape"); // shape
         stream.writeTextElement("object", vsitem->shape().getShape());
+        if(QString::compare(vsitem->shape().getShape(),"sphere") == 0)
+            stream.writeTextElement("quality", QString("%1").arg(vsitem->shape().getQuality()));
         stream.writeTextElement("dimension", QString("%1").arg(vsitem->shape().getDimension()));
         if(vsitem->shape().getUseVariable()) stream.writeTextElement("useVariable", "true");
         else stream.writeTextElement("useVariable", "false");
@@ -913,6 +914,7 @@ void MainWindow::ruleUpdated(int /*row*/)
 
 void MainWindow::on_actionQuit_triggered()
 {
+    if(opengl_window_open) visual_window->close();
     close();
 }
 

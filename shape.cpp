@@ -13,6 +13,7 @@ Shape::Shape()
     useVariable = false;
     useVariableY = false;
     useVariableZ = false;
+    quality = 16;
 }
 
 void Shape::paint(QPainter *painter, const QRect &rect,

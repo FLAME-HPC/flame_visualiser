@@ -31,6 +31,8 @@ public:
     bool getUseVariableY() { return useVariableY; }
     void setUseVariableZ(bool b) { useVariableZ = b; }
     bool getUseVariableZ() { return useVariableZ; }
+    void setQuality(int q) { quality = q; }
+    int getQuality() { return quality; }
 
     void paint(QPainter *painter, const QRect &rect,
                 const QPalette &palette, EditMode mode) const;
@@ -47,6 +49,7 @@ private:
     bool useVariable;
     bool useVariableY;
     bool useVariableZ;
+    int quality;
 };
 
 Q_DECLARE_METATYPE(Shape)

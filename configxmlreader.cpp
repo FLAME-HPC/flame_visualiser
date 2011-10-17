@@ -186,6 +186,8 @@ Shape ConfigXMLReader::readShape()
                  shape.setShape(readElementText());
              else if (name() == "dimension")
                  shape.setDimension((readElementText().toDouble()));
+             else if (name() == "quality")
+                 shape.setQuality((readElementText().toInt()));
              else if (name() == "useVariable")
              {
                  enable = readElementText();
