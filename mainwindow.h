@@ -10,6 +10,8 @@
 #include "visualsettingsmodel.h"
 #include "graphsettingsmodel.h"
 #include "imagesdialog.h"
+#include "timedialog.h"
+#include "timescale.h"
 
 /** \namespace Ui
   * \brief
@@ -38,12 +40,14 @@ public slots:
     void decrement_iteration();
     void visual_window_closed();
     void image_dialog_closed();
+    void time_dialog_closed();
     void graph_window_closed(QString graphName);
     void takeSnapshotSlot();
     void imageStatusSlot(QString);
     void takeAnimationSlot(bool);
     void updateImagesLocationSlot(QString);
     void colourChanged(QColor);
+    void calcTimeScale();
 
 signals:
     void updateVisual();
@@ -64,6 +68,7 @@ private slots:
     void deleteRule();
     void addPlot();
     void deletePlot();
+    void new_config_file();
     void open_config_file();
     void save_config_file();
     void save_as_config_file();
@@ -78,8 +83,9 @@ private slots:
     void on_pushButton_ImageSettings_clicked();
     void ruleUpdated(int);
     void on_actionQuit_triggered();
-
     void on_actionAbout_triggered();
+    void on_pushButton_timeScale_clicked();
+    void enableTimeScale(bool);
 
 private:
     bool readZeroXML(int flag);
@@ -91,6 +97,7 @@ private:
     Ui::MainWindow *ui; ///< The User Interface
     bool opengl_window_open; ///< Indicates if the visual window is open
     bool images_dialog_open; ///< Indicates if the image settings window is open
+    bool time_dialog_open; ///< Indicates if the time scale settings window is open
     GLWidget *visual_window; ///< The visual window
     int iteration; ///< The current iteration number
     bool fileOpen; ///< Indicates if a file is open
@@ -100,6 +107,7 @@ private:
     VisualSettingsModel * visual_settings_model; ///< The visual setting data model
     GraphSettingsModel * graph_settings_model; ///< The graph settings data model
     ImagesDialog * images_dialog; ///< The image settings dialog
+    TimeDialog * time_dialog; ///< The image settings dialog
     QString configPath; ///< The path to the config xml file
     QString configName; ///< The name of the config xml file
     QString resultsData; ///< The path to 0.xml data
@@ -107,6 +115,8 @@ private:
     bool itLocked;
     QColor colour;
     QModelIndex colourIndex;
+    TimeScale * timeScale;
+    QString timeString;
 };
 
 #endif // MAINWINDOW_H

@@ -6,11 +6,12 @@
 #include "graphsettingsmodel.h"
 #include "shape.h"
 #include <QColor>
+#include "timescale.h"
 
 class ConfigXMLReader : public QXmlStreamReader
 {
 public:
-    ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm, QString * rD, double * r);
+    ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm, QString * rD, TimeScale * ts, double * r);
 
     bool read(QIODevice * device);
 
@@ -18,6 +19,7 @@ private:
     void readUnknownElement();
     void readConfig();
     void readResultsData();
+    void readTimeScale();
     void readVisual();
     void readRules();
     void readRule();
@@ -36,6 +38,7 @@ private:
     GraphSettingsModel * gsmodel;
     QString * resultsData;
     double * ratio;
+    TimeScale * timeScale;
 };
 
 #endif // CONFIGXMLREADER_H

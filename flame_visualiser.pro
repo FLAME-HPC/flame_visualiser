@@ -35,7 +35,8 @@ SOURCES += main.cpp\
     graphwidget.cpp \
     enableddelegate.cpp \
     graphdelegate.cpp \
-    imagesdialog.cpp
+    imagesdialog.cpp \
+    timedialog.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -61,12 +62,15 @@ HEADERS  += mainwindow.h \
     graphwidget.h \
     enableddelegate.h \
     graphdelegate.h \
-    imagesdialog.h
+    imagesdialog.h \
+    timedialog.h \
+    timescale.h
 
 FORMS    += mainwindow.ui \
     positiondialog.ui \
     conditiondialog.ui \
     imagesdialog.ui \
-    shapedialog.ui
+    shapedialog.ui \
+    timedialog.ui
 
 OTHER_FILES +=

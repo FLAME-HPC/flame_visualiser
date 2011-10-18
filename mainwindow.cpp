@@ -21,6 +21,7 @@
 #include "graphwidget.h"
 #include "enableddelegate.h"
 #include "graphdelegate.h"
+#include <math.h>
 
 #define DEVELOP_SIMON true
 
@@ -36,9 +37,12 @@ MainWindow::MainWindow(QWidget *parent) :
     itLocked = false;
     fileOpen = false;
     images_dialog_open = false;
+    time_dialog_open = false;
+    timeString = "";
     iteration = 0;
     configPath = "";
     configName = "";
+    timeScale = new TimeScale();
     visual_settings_model = new VisualSettingsModel();
     connect(visual_settings_model, SIGNAL(ruleUpdated(int)), this, SLOT(ruleUpdated(int)));
     graph_settings_model = new GraphSettingsModel(&agents);
@@ -90,7 +94,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_AddPlot, SIGNAL(clicked()), this, SLOT(addPlot()));
     connect(ui->pushButton_DeletePlot, SIGNAL(clicked()), this, SLOT(deletePlot()));
     connect(ui->tableViewGraph, SIGNAL(clicked(QModelIndex)), this, SLOT(enabledGraph(QModelIndex))); /* Handles the enabling of graphs */
-
+    /* Connect signals of time scale */
+    connect(ui->checkBox_timeScale, SIGNAL(clicked(bool)), this, SLOT(enableTimeScale(bool)));
     /* Connect signals of iteration buttons */
     connect(ui->pushButton_ForwardIteration, SIGNAL(clicked()), this, SLOT(increment_iteration()));
     connect(ui->pushButton_BackIteration, SIGNAL(clicked()), this, SLOT(decrement_iteration()));
@@ -143,6 +148,14 @@ void MainWindow::image_dialog_closed()
     disconnect(images_dialog, SIGNAL(updateImagesLocation(QString)), this, SLOT(updateImagesLocationSlot(QString)));
     images_dialog_open = false;
     ui->pushButton_ImageSettings->setText("Open Image Settings");
+}
+
+void MainWindow::time_dialog_closed()
+{
+    disconnect(time_dialog, SIGNAL(time_dialog_closed()), this, SLOT(time_dialog_closed()));
+    time_dialog_open = false;
+    ui->pushButton_timeScale->setText("Open Time Settings");
+    calcTimeScale();
 }
 
 void MainWindow::graph_window_closed(QString graphName)
@@ -390,6 +403,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         visual_window->set_rules(visual_settings_model);
         visual_window->setIteration(&iteration);
         visual_window->setConfigPath(&configPath);
+        visual_window->setTimeDisplayed(&(timeScale->displayInVisual));
+        visual_window->setTimeString(&timeString);
 
         /* Connect signals between MainWindow and visual_window */
         connect(this, SIGNAL(updateVisual()), visual_window, SLOT(updateGL()));
@@ -484,6 +499,7 @@ void MainWindow::on_spinBox_valueChanged(int arg1)
 {
     iteration = arg1;
     readZeroXML(1); /* Read in new agent data */
+    if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
 }
 
 /** \fn MainWindow::increment_iteration()
@@ -502,6 +518,7 @@ void MainWindow::increment_iteration()
     {
         graphs.at(i)->updateData(iteration);
     }
+    if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
 }
 
 /** \fn MainWindow::decrement_iteration()
@@ -512,6 +529,7 @@ void MainWindow::decrement_iteration()
     if(iteration > 0) iteration--;
     ui->spinBox->setValue(iteration);
     readZeroXML(1);
+    if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
 }
 
 /** \fn MainWindow::open_config_file()
@@ -545,8 +563,9 @@ void MainWindow::readConfigFile(QString fileName)
     agents.clear();
     agentTypes.clear();
     graphs.clear();
+    enableTimeScale(false);
 
-    ConfigXMLReader reader(visual_settings_model, graph_settings_model, &resultsData, &ratio);
+    ConfigXMLReader reader(visual_settings_model, graph_settings_model, &resultsData, timeScale, &ratio);
     if (!reader.read(&file))
     {
         QMessageBox::warning(this, tr("flame visualiser"),
@@ -555,6 +574,10 @@ void MainWindow::readConfigFile(QString fileName)
     else
     {
         if(opengl_window_open) visual_window->reset_camera();
+
+        /* Setup time scale */
+        timeScale->calcTotalSeconds();
+        enableTimeScale(timeScale->enabled);
 
         QFileInfo fileInfo(file.fileName());
         configPath = fileInfo.absolutePath();
@@ -583,6 +606,27 @@ void MainWindow::readConfigFile(QString fileName)
         fileOpen = true;
     }
     file.close();
+}
+
+void MainWindow::enableTimeScale(bool b)
+{
+    ui->checkBox_timeScale->setChecked(b);
+    ui->lineEdit_timeScale->setEnabled(b);
+    ui->pushButton_timeScale->setEnabled(b);
+
+    QPalette palet;
+    if(b) palet.setColor(ui->checkBox_timeScale->foregroundRole(),QColor(0,0,0));
+    else palet.setColor(ui->checkBox_timeScale->foregroundRole(),QColor(120,120,120));
+    ui->checkBox_timeScale->setPalette(palet);
+
+    if(b) calcTimeScale();
+    else emit( ui->lineEdit_timeScale->setText("") );
+}
+
+void MainWindow::new_config_file()
+{
+    enableTimeScale(false);
+    save_as_config_file();
 }
 
 /** \fn MainWindow::save_as_config_file()
@@ -681,6 +725,18 @@ bool MainWindow::writeConfigXML(QFile * file)
     stream.writeStartElement("resultsData"); // resultsData
     stream.writeTextElement("directory", ui->lineEdit_ResultsLocation->text());
     stream.writeEndElement(); // resultsData
+
+    stream.writeStartElement("timeScale"); // timeScale
+    if(ui->checkBox_timeScale->isChecked()) stream.writeTextElement("enable", "true");
+    else stream.writeTextElement("enable", "false");
+    stream.writeTextElement("milliseconds", QString("%1").arg(timeScale->millisecond));
+    stream.writeTextElement("seconds", QString("%1").arg(timeScale->second));
+    stream.writeTextElement("minutes", QString("%1").arg(timeScale->minute));
+    stream.writeTextElement("hours", QString("%1").arg(timeScale->hour));
+    stream.writeTextElement("days", QString("%1").arg(timeScale->day));
+    if(timeScale->displayInVisual) stream.writeTextElement("displayTimeInVisual", "true");
+    else stream.writeTextElement("displayTimeInVisual", "false");
+    stream.writeEndElement(); // timeScale
 
     stream.writeStartElement("visual");
     stream.writeTextElement("ratio", QString("%1").arg(ratio));
@@ -931,4 +987,62 @@ void MainWindow::on_actionAbout_triggered()
    about->append("<h4>Version 1 (released 2011-10-07)</h4><ul><li>Beta first release</li></ul>");
    about->moveCursor(QTextCursor::Start);
    about->show();
+}
+
+void MainWindow::on_pushButton_timeScale_clicked()
+{
+    if(time_dialog_open == false)
+    {
+        time_dialog_open = true;
+        time_dialog = new TimeDialog(timeScale);
+
+        connect(time_dialog, SIGNAL(time_dialog_closed()), this, SLOT(time_dialog_closed()));
+
+        time_dialog->show();
+
+        ui->pushButton_timeScale->setText("Close Time Settings");
+    }
+    else
+    {
+        time_dialog->close();
+    }
+}
+
+void MainWindow::calcTimeScale()
+{
+    double tsecs;
+    double tmsecs = timeScale->millisecond*iteration/1000.0;
+    tmsecs = modf(tmsecs, &tsecs);
+    int totalseconds = (int)tsecs;
+    totalseconds += timeScale->totalseconds*iteration;
+
+    QString ts;
+    int days = (int)(totalseconds/86400);
+    int hours = (int)((totalseconds%86400)/3600);
+    int minutes = (int)(((totalseconds%86400)%3600)/60);
+    int seconds = (int)(((totalseconds%86400)%3600)%60);
+    if(days > 0 || timeScale->lowestScale == 4)
+    {
+        ts.append(QString("%1 day").arg(days));
+        if(days > 1) ts.append("s");
+        ts.append(" ");
+    }
+    if(hours > 0 || timeScale->lowestScale < 4)
+    {
+        ts.append(QString("%1 hour").arg(hours));
+        if(hours > 1) ts.append("s");
+        ts.append(" ");
+    }
+    if(minutes > 0 || timeScale->lowestScale < 3)
+    {
+        ts.append(QString("%1 min").arg(minutes));
+        if(minutes > 1) ts.append("s");
+        ts.append(" ");
+    }
+    if(timeScale->lowestScale == 1) ts.append(QString("%1 second").arg(seconds));
+    else if(timeScale->lowestScale == 0) ts.append(QString("%1 seconds").arg(seconds+tmsecs));
+
+    timeString = ts;
+
+    emit( ui->lineEdit_timeScale->setText(ts) );
 }

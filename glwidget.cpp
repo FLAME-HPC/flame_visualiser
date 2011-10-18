@@ -45,7 +45,9 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     time = QTime::currentTime();
     timer = new QTimer(this);
     timer->setSingleShot(true);
-    connect(timer, SIGNAL(timeout()), this, SLOT(updateGL()));
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+
+    setAutoFillBackground(false); // To instruct OpenGL not to paint a background for the widget when QPainter::begin() is called.
 }
 
 GLWidget::~GLWidget()
@@ -61,7 +63,6 @@ void GLWidget::closeEvent(QCloseEvent *event)
 
 void GLWidget::updateImagesLocation(QString s)
 {
-    //qDebug() << s;
     imagesLocation = s;
 }
 
@@ -104,22 +105,16 @@ void GLWidget::stopAnimation()
 void GLWidget::animate()
 {
     animation = !animation;
-    //qDebug() << "animation" << animation;
-    //if(animation) emit( increase_iteration() );
 }
 
 void GLWidget::takeAnimation(bool b)
 {
     animationImages = b;
-    //qDebug() << "animationImages" << b;
 }
 
 void GLWidget::iterationLoaded()
 {
     locked = false;
-    //emit( updateGL() );
-    //if(animation) QTimer::singleShot(2000, this, SLOT(nextIteration()));
-    //if(animation) emit( increase_iteration() );
 }
 
 void GLWidget::nextIteration()
@@ -135,7 +130,6 @@ void GLWidget::update_agents(QList<Agent> * a)
 void GLWidget::set_rules(VisualSettingsModel * m)
 {
     model = m;
-    //qDebug() << "set_rules" << m;
 }
 
 void GLWidget::reset_camera()
@@ -208,7 +202,7 @@ void GLWidget::paintGL()
 
     glPopMatrix();
 
-    glFlush();
+    //glFlush();
 
     if(spinup)    yrotate -= 1.0;
     if(spindown)  yrotate += 1.0;
@@ -373,12 +367,24 @@ void GLWidget::drawAgents(GLenum mode)
     }
 }
 
-void GLWidget::paintEvent(QPaintEvent * /*event*/)
+void GLWidget::paintEvent(QPaintEvent */*event*/)
 {
-    /*QPainter painter(this);
-    drawBackground(&painter);
     paintGL();
-    drawLegend(&painter);*/
+
+    if(*displayTime)
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0), Qt::AlignLeft, *timeString));
+        QSize windowSize = size();
+
+        painter.drawText(windowSize.width()-bbox.width()-15,windowSize.height()-bbox.height(),*timeString);
+
+        painter.end();
+    }
+
+    glFlush();
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
@@ -402,13 +408,13 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     }
     x_last_position = event->x();
     y_last_position = event->y();
-    updateGL();
+    update();
 }
 
 void GLWidget::wheelEvent(QWheelEvent * event)
 {
     zmove += (float)(event->delta()/500.0);
-    updateGL();
+    update();
 }
 
 void GLWidget::keyPressEvent(QKeyEvent* event)

@@ -4,12 +4,13 @@
 #include <QColor>
 #include <QDebug>
 
-ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm, GraphSettingsModel *gsm, QString *rD, double *r)
+ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm, GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r)
 {
     vsmodel = vsm;
     gsmodel = gsm;
     resultsData = rD;
     ratio = r;
+    timeScale = ts;
 }
 
 bool ConfigXMLReader::read(QIODevice * device)
@@ -62,6 +63,8 @@ void ConfigXMLReader::readConfig()
          if (isStartElement()) {
              if (name() == "resultsData")
                  readResultsData();
+             else if (name() == "timeScale")
+                 readTimeScale();
              else if (name() == "visual")
                  readVisual();
              else if (name() == "graph")
@@ -84,6 +87,46 @@ void ConfigXMLReader::readResultsData()
          if (isStartElement()) {
              if (name() == "directory")
                  *resultsData = readElementText();
+             else
+                 readUnknownElement();
+         }
+     }
+}
+
+void ConfigXMLReader::readTimeScale()
+{
+    QString enable;
+
+    while (!atEnd())
+    {
+         readNext();
+
+         if (isEndElement())
+             break;
+
+         if (isStartElement()) {
+             if (name() == "enable")
+             {
+                 enable = readElementText();
+                 if(QString::compare(enable,"true") == 0) timeScale->enabled = true;
+                 else timeScale->enabled = false;
+             }
+             else if (name() == "displayTimeInVisual")
+             {
+                 enable = readElementText();
+                 if(QString::compare(enable,"true") == 0) timeScale->displayInVisual = true;
+                 else timeScale->displayInVisual = false;
+             }
+             else if (name() == "milliseconds")
+                 timeScale->millisecond = readElementText().toInt();
+             else if (name() == "seconds")
+                 timeScale->second = readElementText().toInt();
+             else if (name() == "minutes")
+                 timeScale->minute = readElementText().toInt();
+             else if (name() == "hours")
+                 timeScale->hour = readElementText().toInt();
+             else if (name() == "days")
+                 timeScale->day = readElementText().toInt();
              else
                  readUnknownElement();
          }

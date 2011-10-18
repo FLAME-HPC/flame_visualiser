@@ -23,6 +23,8 @@ public:
     void setName(QString n) { name = n; }
     void setIteration(int * i) { iteration = i; }
     void setConfigPath(QString * cp) { configpath = cp; }
+    void setTimeDisplayed(bool * b) { displayTime = b; }
+    void setTimeString(QString * t) { timeString = t; }
 
 public slots:
     void animate();
@@ -80,6 +82,8 @@ private:
     QString * configpath;
     bool pickOn;
     float window_ratio;
+    bool * displayTime;
+    QString * timeString;
 };
 
 #endif // GLWIDGET_H
