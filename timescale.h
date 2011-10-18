@@ -31,8 +31,6 @@ public:
         else if(minute > 0) lowestScale = 2;
         else if(hour   > 0) lowestScale = 3;
         else if(day    > 0) lowestScale = 4;
-
-        qDebug() << lowestScale;
     }
 
     int millisecond;
