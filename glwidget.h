@@ -57,6 +57,7 @@ protected:
 private:
     void processSelection(int mx, int my);
     void drawAgents(GLenum mode);
+    void drawCube(float sizeX, float sizeY, float sizeZ);
     QString name;
     QList<Agent> * agents;
     bool block;
@@ -84,6 +85,12 @@ private:
     float window_ratio;
     bool * displayTime;
     QString * timeString;
+    float zNear; ///< The near clipping plane
+    bool clippingOn;
+    int windowWidth, windowHeight;
+    QHash<int, Agent*> nameAgents;
+    Agent nameAgent; ///< A copy of the picked agent
+    bool drawNameAgent;
 };
 
 #endif // GLWIDGET_H

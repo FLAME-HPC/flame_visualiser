@@ -23,7 +23,7 @@
 #include "graphdelegate.h"
 #include <math.h>
 
-#define DEVELOP_SIMON false
+#define DEVELOP_SIMON true
 
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.

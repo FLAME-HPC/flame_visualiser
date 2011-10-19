@@ -9,12 +9,14 @@
 #include "visualsettingsitem.h"
 #include "condition.h"
 #include <QtPlugin>
+#include "agentdialog.h"
 
 /* If Windows then include importing plugins for static compilation */
 #ifdef Q_WS_WIN
     Q_IMPORT_PLUGIN(qjpeg)
 #endif
 
+/* The default camera zoom */
 #define ZMOVE -3.0
 
 GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
@@ -41,6 +43,9 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     animationImages = false;
     imageLock = false;
     pickOn = false;
+    zNear = 0.1f;
+    clippingOn = false;
+    drawNameAgent = false;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -179,12 +184,14 @@ void GLWidget::initializeGL()
 void GLWidget::resizeGL(int w, int h)
 {
     window_ratio = (GLfloat)((float)w/(float)h);
+    windowWidth = w;
+    windowHeight = h;
 
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     //gluOrtho2D(0, 0, w, h); // set origin to centre
-    gluPerspective( 45.0f, window_ratio, 0.1f, 20.0f );
+    gluPerspective( 45.0f, window_ratio, zNear, 20.0f );
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -230,6 +237,7 @@ void GLWidget::drawAgents(GLenum mode)
     double sizeZ = 0.0;
     //int grade;
     int name = 0;
+    nameAgents.clear();
 
     int style = 0;
     GLUquadricObj * qobj = gluNewQuadric();
@@ -264,16 +272,19 @@ void GLWidget::drawAgents(GLenum mode)
             glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
 
+        /* For every rule */
         for(int j = 0; j < model->getRules().count(); j++)
         {
             VisualSettingsItem * rule = model->getRules()[j];
 
+            /* For every agent associated with the current rule */
             for(int i = 0; i < rule->agents.size(); i++)
             {
+                /* If the object is opaque and first pass, or
+                   if the object is transparent and is the second or third pass */
                 if(((rule->colour().alphaF() >= 0.95 && pass == 1)||(rule->colour().alphaF() < 0.95 && pass >= 2)) )
                 {
                     glPushMatrix();
-                    if(mode == GL_SELECT) glLoadName(name++);
 
                     glTranslatef(rule->agents.at(i).x, rule->agents.at(i).y, rule->agents.at(i).z);
 
@@ -296,12 +307,14 @@ void GLWidget::drawAgents(GLenum mode)
                         glEnable(GL_CULL_FACE);
                         if(pass==2)
                         {
+                            if(mode == GL_SELECT) { glLoadName(0); }
                             // Draw back face
                             glCullFace(GL_FRONT);
                             gluSphere(qobj, size, grade, grade);
                         }
                         else
                         {
+                            if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
                             // Draw front face
                             glCullFace(GL_BACK);
                             gluSphere(qobj, size, grade, grade);
@@ -310,56 +323,40 @@ void GLWidget::drawAgents(GLenum mode)
                     }
                     else if(QString::compare("point",rule->shape().getShape()) == 0)
                     {
-                        glDisable(GL_LIGHTING);
-                        glColor4fv(mat_ambientA);
-                        glPointSize((int)rule->shape().getDimension());
-                        glBegin(GL_POINTS);
-                        glVertex3f(0.0, 0.0, 0.0);
-                        glEnd();
-                        glEnable(GL_LIGHTING);
+                        if(pass != 2)
+                        {
+                            if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
+
+                            glDisable(GL_LIGHTING);
+                            glColor4fv(mat_ambientA);
+                            glPointSize((int)rule->shape().getDimension());
+                            glBegin(GL_POINTS);
+                            glVertex3f(0.0, 0.0, 0.0);
+                            glEnd();
+                            glEnable(GL_LIGHTING);
+                        }
                     }
                     else if(QString::compare("cube",rule->shape().getShape()) == 0)
                     {
-                        glBegin(GL_QUADS);                 // Draw using quads
-                        glNormal3f( 0.0f, 0.5f, 0.0f);
-                        glVertex3f( size/2.0, sizeY/2.0, -sizeZ/2.0); // Top-right of the quad (Top)
-                        glVertex3f(-size/2.0, sizeY/2.0, -sizeZ/2.0); // Top-left of the quad (Top)
-                        glVertex3f(-size/2.0, sizeY/2.0,  sizeZ/2.0); // Bottom-left of the quad (Top)
-                        glVertex3f( size/2.0, sizeY/2.0,  sizeZ/2.0); // Bottom-right of the quad (Top)
-
-                        glNormal3f( 0.0f,-0.5f, 0.0f);
-                        glVertex3f( size/2.0, -sizeY/2.0,  sizeZ/2.0); // Top-right of the quad (Bottom)
-                        glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0); // Top-left of the quad (Bottom)
-                        glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-left of the quad (Bottom)
-                        glVertex3f( size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-right of the quad (Bottom)
-
-                        glNormal3f( 0.0f, 0.0f, 0.5f);
-                        glVertex3f( size/2.0,  sizeY/2.0, sizeZ/2.0);  // Top-right of the quad (Front)
-                        glVertex3f(-size/2.0,  sizeY/2.0, sizeZ/2.0);  // Top-left of the quad (Front)
-                        glVertex3f(-size/2.0, -sizeY/2.0, sizeZ/2.0);  // Bottom-left of the quad (Front)
-                        glVertex3f( size/2.0, -sizeY/2.0, sizeZ/2.0);  // Bottom-right of the quad (Front)
-
-                        glNormal3f( 0.0f, 0.0f,-0.5f);
-                        glVertex3f( size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-left of the quad (Back)
-                        glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-right of the quad (Back)
-                        glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-right of the quad (Back)
-                        glVertex3f( size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-left of the quad (Back)
-
-                        glNormal3f(-0.5f, 0.0f, 0.0f);
-                        glVertex3f(-size/2.0,  sizeY/2.0,  sizeZ/2.0); // Top-right of the quad (Left)
-                        glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-left of the quad (Left)
-                        glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-left of the quad (Left)
-                        glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0); // Bottom-right of the quad (Left)
-
-                        glNormal3f( 0.5f, 0.0f, 0.0f);
-                        glVertex3f( size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-right of the quad (Right)
-                        glVertex3f( size/2.0,  sizeY/2.0,  sizeZ/2.0); // Top-left of the quad (Right)
-                        glVertex3f( size/2.0, -sizeY/2.0,  sizeZ/2.0); // Bottom-left of the quad (Right)
-                        glVertex3f( size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-right of the quad (Right)
-                        glEnd();   // Done drawing the color cube
+                        glEnable(GL_CULL_FACE);
+                        if(pass==2)
+                        {
+                            if(mode == GL_SELECT) { glLoadName(0); }
+                            // Draw back face
+                            glCullFace(GL_FRONT);
+                            drawCube(size, sizeY, sizeZ);
+                        }
+                        else
+                        {
+                            if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
+                            // Draw front face
+                            glCullFace(GL_BACK);
+                            drawCube(size, sizeY, sizeZ);
+                        }
+                        glDisable(GL_CULL_FACE);
                     }
 
-                    if(mode == GL_SELECT) glPopName();
+                    //if(mode == GL_SELECT) glPopName();
                     glPopMatrix();
                 }
             }
@@ -367,19 +364,70 @@ void GLWidget::drawAgents(GLenum mode)
     }
 }
 
+void GLWidget::drawCube(float size, float sizeY, float sizeZ)
+{
+    glBegin(GL_QUADS);                 // Draw using quads
+    glNormal3f( 0.0f, 0.5f, 0.0f);
+    glVertex3f( size/2.0, sizeY/2.0, -sizeZ/2.0); // Top-right of the quad (Top)
+    glVertex3f(-size/2.0, sizeY/2.0, -sizeZ/2.0); // Top-left of the quad (Top)
+    glVertex3f(-size/2.0, sizeY/2.0,  sizeZ/2.0); // Bottom-left of the quad (Top)
+    glVertex3f( size/2.0, sizeY/2.0,  sizeZ/2.0); // Bottom-right of the quad (Top)
+
+    glNormal3f( 0.0f,-0.5f, 0.0f);
+    glVertex3f( size/2.0, -sizeY/2.0,  sizeZ/2.0); // Top-right of the quad (Bottom)
+    glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0); // Top-left of the quad (Bottom)
+    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-left of the quad (Bottom)
+    glVertex3f( size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-right of the quad (Bottom)
+
+    glNormal3f( 0.0f, 0.0f, 0.5f);
+    glVertex3f( size/2.0,  sizeY/2.0, sizeZ/2.0);  // Top-right of the quad (Front)
+    glVertex3f(-size/2.0,  sizeY/2.0, sizeZ/2.0);  // Top-left of the quad (Front)
+    glVertex3f(-size/2.0, -sizeY/2.0, sizeZ/2.0);  // Bottom-left of the quad (Front)
+    glVertex3f( size/2.0, -sizeY/2.0, sizeZ/2.0);  // Bottom-right of the quad (Front)
+
+    glNormal3f( 0.0f, 0.0f,-0.5f);
+    glVertex3f( size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-left of the quad (Back)
+    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-right of the quad (Back)
+    glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-right of the quad (Back)
+    glVertex3f( size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-left of the quad (Back)
+
+    glNormal3f(-0.5f, 0.0f, 0.0f);
+    glVertex3f(-size/2.0,  sizeY/2.0,  sizeZ/2.0); // Top-right of the quad (Left)
+    glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-left of the quad (Left)
+    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-left of the quad (Left)
+    glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0); // Bottom-right of the quad (Left)
+
+    glNormal3f( 0.5f, 0.0f, 0.0f);
+    glVertex3f( size/2.0,  sizeY/2.0, -sizeZ/2.0); // Top-right of the quad (Right)
+    glVertex3f( size/2.0,  sizeY/2.0,  sizeZ/2.0); // Top-left of the quad (Right)
+    glVertex3f( size/2.0, -sizeY/2.0,  sizeZ/2.0); // Bottom-left of the quad (Right)
+    glVertex3f( size/2.0, -sizeY/2.0, -sizeZ/2.0); // Bottom-right of the quad (Right)
+    glEnd();   // Done drawing the color cube
+}
+
 void GLWidget::paintEvent(QPaintEvent */*event*/)
 {
     paintGL();
 
-    if(*displayTime)
+    if(*displayTime || drawNameAgent)
     {
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0), Qt::AlignLeft, *timeString));
-        QSize windowSize = size();
+        if(*displayTime)
+        {
+            const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0), Qt::AlignLeft, *timeString));
+            QSize windowSize = size();
 
-        painter.drawText(windowSize.width()-bbox.width()-15,windowSize.height()-bbox.height(),*timeString);
+            painter.drawText(windowSize.width()-bbox.width()-15,windowSize.height()-bbox.height(),*timeString);
+        }
+        if(drawNameAgent)
+        {
+            for(int i = 0; i < nameAgent.tags.size(); i++)
+            {
+                painter.drawText(10, 15*(i+1), QString("%1\t%2").arg(nameAgent.tags[i], nameAgent.values[i]));
+            }
+        }
 
         painter.end();
     }
@@ -404,8 +452,16 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     }
     else if (event->buttons() & Qt::RightButton)
     {
-        zmove += (float)((y_last_position - event->y())/100.0);
+        if(clippingOn)
+        {
+            zNear += (float)((y_last_position - event->y())/100.0);
+            if(zNear < 0.2) zNear = 0.2;
+            resizeGL(windowWidth, windowHeight);
+        }
+        else
+            zmove += (float)((y_last_position - event->y())/100.0);
     }
+
     x_last_position = event->x();
     y_last_position = event->y();
     update();
@@ -448,6 +504,9 @@ void GLWidget::keyPressEvent(QKeyEvent* event)
         case Qt::Key_P:
             pickOn = true;
             break;
+        case Qt::Key_C:
+            clippingOn = true;
+            break;
         default:
             //if(animation) emit( increase_iteration() );
             event->ignore();
@@ -474,76 +533,100 @@ void GLWidget::keyReleaseEvent(QKeyEvent* event)
         case Qt::Key_P:
             pickOn = false;
             break;
+        case Qt::Key_C:
+            clippingOn = false;
+            break;
         default:
             event->ignore();
             break;
     }
 }
 
+/* The buffer size for picking objects */
 #define BUFSIZE 512
 void GLWidget::processSelection(int mx, int my)
 {
-    qDebug() << "processSelection" << mx << my;
-
-    /*GLuint select_buf[BUFSIZE]; //selection buffer
-    GLuint hits; //number of hits
+    GLuint select_buf[BUFSIZE]; //selection buffer
+    GLint hits; //number of hits
     GLint  viewport[4];
 
-    //glGetIntegerv (GL_VIEWPORT, viewport);
+    glGetIntegerv (GL_VIEWPORT, viewport);
 
     glSelectBuffer(BUFSIZE, select_buf);
     glRenderMode(GL_SELECT);
     glInitNames();
     glPushName(0);
 
-    //glGetIntegerv(GL_VIEWPORT, viewport);
-    //glSelectBuffer (BUFSIZE, select_buf);
-    //   (void) glRenderMode (GL_SELECT);
+    //glViewport(0, 0, windowWidth, windowHeight);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPickMatrix ((GLdouble) mx, (GLdouble) (viewport[3] - my), 5.0, 5.0, viewport);
+    gluPerspective( 45.0f, window_ratio, zNear, 20.0f );
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-       //glInitNames();
-       //glPushName(0);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glPushMatrix();
 
-       glMatrixMode (GL_PROJECTION);
-       //glPushMatrix ();
-       glLoadIdentity ();
+    glTranslatef(0.0, 0.0, zmove);
+    glRotatef(yrotate, 1.0f, 0.0f, 0.0f);
+    glRotatef(xrotate, 0.0f, 0.0f, 1.0f);
 
-       gluPickMatrix ((GLdouble) mx, (GLdouble) (viewport[3] - my), 5.0, 5.0, viewport);
-          gluPerspective( 45.0f, window_ratio, 0.1f, 20.0f );
-          drawAgents(GL_SELECT);
+    drawAgents(GL_SELECT);
 
-          glMatrixMode (GL_PROJECTION);
-          //glPopMatrix ();
-          glFlush ();
+    glPopMatrix();
 
-          hits = glRenderMode (GL_RENDER);
-          //processHits (hits, select_buf);
-          //update();
+    hits = glRenderMode (GL_RENDER);
 
-          unsigned int i, j;
-             GLuint ii, jj, names, *ptr;
-             int board[3][3];
+    drawNameAgent = false;
 
-             //printf ("hits = %d\n", hits);
-             qDebug() << QString("hits = %1").arg(hits);
+    int i, j;
+    int nitems, zmin, zmax, item;
+    int minimumDepth;
+    int pickItem;
 
-             ptr = (GLuint *) select_buf;
-             for (i = 0; i < hits; i++)
-            {
-                names = *ptr;
-                printf (" number of names for this hit = %d\n", names); ptr++;
-                printf("  z1 is %g;", (float) *ptr/0x7fffffff); ptr++;
-                printf(" z2 is %g\n", (float) *ptr/0x7fffffff); ptr++;
-                printf ("   names are ");
-                for (j = 0; j < names; j++) { //  for each name
-                   printf ("%d ", *ptr);
-                   if (j == 0)  //  set row and column
-                      ii = *ptr;
-                   else if (j == 1)
-                      jj = *ptr;
-                   ptr++;
-                }
-                printf ("\n");
-                board[ii][jj] = (board[ii][jj] + 1) % 3;
-             }
-             */
+    //qDebug() << "hits = " << hits;
+    int index = 0;
+    for (i = 0; i < hits; i++)
+    {
+        nitems = select_buf[index++];
+        zmin = select_buf[index++];
+        zmax = select_buf[index++];
+
+        //qDebug() << zmin << zmax;
+        for(j = 0; j < nitems; j++)
+        {
+            item = select_buf[index++];
+            //qDebug() << j << item ;
+        }
+
+        /* Ignore item=0 as these are the backside of objects if transparent */
+        if(item > 0)
+        {
+            //qDebug() << item << zmin << zmax;
+
+            if(i == 0) { minimumDepth = zmin; pickItem = item; }
+            else if(zmin < minimumDepth) { minimumDepth = zmin; pickItem = item; }
+        }
+    }
+    if(hits > 0)
+    {
+        //qDebug() << "Hit item = " << pickItem;
+        Agent * a = nameAgents.value(pickItem);
+        nameAgent.tags = QStringList(a->tags);
+        nameAgent.values = QStringList(a->values);
+        drawNameAgent = true;
+        /*for(int i = 0; i < a->tags.size(); i++)
+        {
+            qDebug() << a->tags[i] << a->values[i];
+        }*/
+
+        /* Release of button p is not caught because the focus is given to the agent dialog */
+        pickOn = false;
+        /* Create dialog */
+        //AgentDialog * agentDialog = new AgentDialog(a, this);
+        //agentDialog->show();
+    }
+
+    resizeGL(windowWidth, windowHeight);
 }
