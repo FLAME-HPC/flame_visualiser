@@ -63,6 +63,8 @@ private:
     bool block;
     float xrotate;
     float yrotate;
+    float xmove;
+    float ymove;
     float zmove;
     int x_last_position;
     int y_last_position;
@@ -91,6 +93,7 @@ private:
     QHash<int, Agent*> nameAgents;
     Agent nameAgent; ///< A copy of the picked agent
     bool drawNameAgent;
+    bool moveOn;
 };
 
 #endif // GLWIDGET_H

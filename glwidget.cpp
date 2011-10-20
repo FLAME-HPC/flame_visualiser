@@ -25,6 +25,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     setMouseTracking(true);
     xrotate = 0.0;
     yrotate = 0.0;
+    xmove = 0.0;
+    ymove = 0.0;
     zmove = ZMOVE;
     x_last_position = 0;
     y_last_position = 0;
@@ -46,6 +48,7 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     zNear = 0.1f;
     clippingOn = false;
     drawNameAgent = false;
+    moveOn = false;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -201,7 +204,7 @@ void GLWidget::paintGL()
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glPushMatrix();
 
-    glTranslatef(0.0, 0.0, zmove);
+    glTranslatef(xmove, ymove, zmove);
     glRotatef(yrotate, 1.0f, 0.0f, 0.0f);
     glRotatef(xrotate, 0.0f, 0.0f, 1.0f);
 
@@ -409,9 +412,10 @@ void GLWidget::paintEvent(QPaintEvent */*event*/)
 {
     paintGL();
 
+    QPainter painter(this);
+
     if(*displayTime || drawNameAgent)
     {
-        QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
         if(*displayTime)
@@ -428,9 +432,9 @@ void GLWidget::paintEvent(QPaintEvent */*event*/)
                 painter.drawText(10, 15*(i+1), QString("%1\t%2").arg(nameAgent.tags[i], nameAgent.values[i]));
             }
         }
-
-        painter.end();
     }
+
+    painter.end();
 
     glFlush();
 }
@@ -447,8 +451,16 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     // if left button
     if (event->buttons() & Qt::LeftButton)
     {
-        xrotate -= (float)((x_last_position - event->x())/2.0);
-        yrotate -= (float)((y_last_position - event->y())/2.0);
+        if(moveOn)
+        {
+            xmove -= (float)((x_last_position - event->x())/90.0);
+            ymove += (float)((y_last_position - event->y())/90.0);
+        }
+        else
+        {
+            xrotate -= (float)((x_last_position - event->x())/2.0);
+            yrotate -= (float)((y_last_position - event->y())/2.0);
+        }
     }
     else if (event->buttons() & Qt::RightButton)
     {
@@ -507,8 +519,10 @@ void GLWidget::keyPressEvent(QKeyEvent* event)
         case Qt::Key_C:
             clippingOn = true;
             break;
+        case Qt::Key_Space:
+            moveOn = true;
+            break;
         default:
-            //if(animation) emit( increase_iteration() );
             event->ignore();
             break;
     }
@@ -535,6 +549,9 @@ void GLWidget::keyReleaseEvent(QKeyEvent* event)
             break;
         case Qt::Key_C:
             clippingOn = false;
+            break;
+        case Qt::Key_Space:
+            moveOn = false;
             break;
         default:
             event->ignore();
@@ -568,7 +585,7 @@ void GLWidget::processSelection(int mx, int my)
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glPushMatrix();
 
-    glTranslatef(0.0, 0.0, zmove);
+    glTranslatef(xmove, ymove, zmove);
     glRotatef(yrotate, 1.0f, 0.0f, 0.0f);
     glRotatef(xrotate, 0.0f, 0.0f, 1.0f);
 
