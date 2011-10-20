@@ -91,9 +91,10 @@ private:
     bool readZeroXML(int flag);
     bool writeConfigXML(QFile * file);
     void createGraphWindow(GraphWidget * graph_window);
-    void readConfigFile(QString fileName);
+    void readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
     void calcPositionRatio();
+    void findLoadSettings();
     Ui::MainWindow *ui; ///< The User Interface
     bool opengl_window_open; ///< Indicates if the visual window is open
     bool images_dialog_open; ///< Indicates if the image settings window is open

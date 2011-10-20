@@ -23,8 +23,6 @@
 #include "graphdelegate.h"
 #include <math.h>
 
-#define DEVELOP_SIMON false
-
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
  *  \param *parent
@@ -106,12 +104,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSave_As, SIGNAL(triggered()), this, SLOT(save_as_config_file()));
     connect(ui->actionClose, SIGNAL(triggered()), this, SLOT(close_config_file()));
 
-    /* To help debug */
-    if(DEVELOP_SIMON)
-    {
-        iteration = 800;
-        readConfigFile("/Users/stc/workspace/xagents/trunk/models/keratinocyte/visual/visual_config.xml");
-    }
+    findLoadSettings();
 }
 
 /** \fn MainWindow::~MainWindow()
@@ -120,6 +113,47 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+
+    /* Output settings */
+    QFile file(".flamevisualisersettings");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+     return;
+
+    if(fileOpen)
+    {
+        QString configFile;
+        configFile.append(configPath);
+        configFile.append("/");
+        configFile.append(configName);
+
+        QTextStream out(&file);
+        out << "true|" << configFile << "|" << iteration << "\n";
+    }
+    else
+    {
+        QTextStream out(&file);
+        out << "false|\n";
+    }
+
+    file.close();
+}
+
+void MainWindow::findLoadSettings()
+{
+    QFile file(".flamevisualisersettings");
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+     return;
+
+    QTextStream in(&file);
+    if(!in.atEnd())
+    {
+        QString line = in.readLine();
+        QStringList list = line.split("|");
+        if(QString::compare(list.at(0),"true") == 0)
+        {
+            readConfigFile(list.at(1), list.at(2).toInt());
+        }
+    }
 }
 
 void MainWindow::visual_window_closed()
@@ -544,10 +578,10 @@ void MainWindow::open_config_file()
      if (fileName.isEmpty())
          return;
 
-     readConfigFile(fileName);
+     readConfigFile(fileName, 0);
 }
 
-void MainWindow::readConfigFile(QString fileName)
+void MainWindow::readConfigFile(QString fileName, int it)
 {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -588,8 +622,7 @@ void MainWindow::readConfigFile(QString fileName)
         wtitle.append(file.fileName());
         this->setWindowTitle(wtitle);
 
-        if(!DEVELOP_SIMON)
-            iteration = 0;
+        iteration = it;
         ui->spinBox->setValue(iteration);
 
         ui->lineEdit_ResultsLocation->setText(resultsData);
@@ -704,6 +737,9 @@ void MainWindow::close_config_file()
     agentTypes.clear();
     enableInterface(false);
     fileOpen = false;
+    iteration = 0;
+    configPath = "";
+    configName = "";
 }
 
 /** \fn MainWindow::writeConfigXML(QFile * file)
