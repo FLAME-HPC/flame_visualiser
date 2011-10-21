@@ -7,6 +7,8 @@
 #include <QColorDialog>
 #include <QtGui/QMouseEvent>
 #include <QTextEdit>
+#include <QDir>
+#include <math.h>
 #include "zeroxmlreader.h"
 #include "visualsettingsmodel.h"
 #include "visualsettingsitem.h"
@@ -21,7 +23,6 @@
 #include "graphwidget.h"
 #include "enableddelegate.h"
 #include "graphdelegate.h"
-#include <math.h>
 
 /** \fn MainWindow::MainWindow(QWidget *parent)
  *  \brief Setup the main window.
@@ -104,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSave_As, SIGNAL(triggered()), this, SLOT(save_as_config_file()));
     connect(ui->actionClose, SIGNAL(triggered()), this, SLOT(close_config_file()));
 
+    /* Try and find .flamevisualisersettings and load last known model and iteration number */
     findLoadSettings();
 }
 
@@ -138,24 +140,34 @@ MainWindow::~MainWindow()
     file.close();
 }
 
+/** \fn MainWindow::findLoadSettings()
+ *  \brief Try and find .flamevisualisersettings and load last known model and iteration number.
+ */
 void MainWindow::findLoadSettings()
 {
+    /* Try and open file, return if fail */
     QFile file(".flamevisualisersettings");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
      return;
 
+    /* Read in each line */
     QTextStream in(&file);
     if(!in.atEnd())
     {
         QString line = in.readLine();
-        QStringList list = line.split("|");
+        QStringList list = line.split("|"); /* Split using | into a string list */
+        /* If the first value is true */
         if(QString::compare(list.at(0),"true") == 0)
         {
+            /* Try and read in the config file */
             readConfigFile(list.at(1), list.at(2).toInt());
         }
     }
 }
 
+/** \fn MainWindow::visual_window_closed()
+ *  \brief When the visual window is closed, disconnect all signal/slots and set variables.
+ */
 void MainWindow::visual_window_closed()
 {
     disconnect(this, SIGNAL(updateVisual()), visual_window, SLOT(updateGL()));
@@ -169,10 +181,14 @@ void MainWindow::visual_window_closed()
     disconnect(this, SIGNAL(takeAnimationSignal(bool)), visual_window, SIGNAL(takeAnimation(bool)));
     disconnect(this, SIGNAL(updateImagesLocationSignal(QString)), visual_window, SLOT(updateImagesLocation(QString)));
     disconnect(this, SIGNAL(stopAnimation()), visual_window, SLOT(stopAnimation()));
+
     opengl_window_open = false;
     ui->pushButton_OpenCloseVisual->setText("Open Visual Window");
 }
 
+/** \fn MainWindow::image_dialog_closed()
+ *  \brief When the image dialog is closed, disconnect all signal/slots and set variables.
+ */
 void MainWindow::image_dialog_closed()
 {
     disconnect(images_dialog, SIGNAL(image_dialog_closed()), this, SLOT(image_dialog_closed()));
@@ -184,6 +200,9 @@ void MainWindow::image_dialog_closed()
     ui->pushButton_ImageSettings->setText("Open Image Settings");
 }
 
+/** \fn MainWindow::time_dialog_closed()
+ *  \brief When the time dialog is closed, disconnect all signal/slots and set variables.
+ */
 void MainWindow::time_dialog_closed()
 {
     disconnect(time_dialog, SIGNAL(time_dialog_closed()), this, SLOT(time_dialog_closed()));
@@ -192,6 +211,10 @@ void MainWindow::time_dialog_closed()
     calcTimeScale();
 }
 
+/** \fn MainWindow::graph_window_closed(QString graphName)
+ *  \brief When a graph window is closed, close all windows with the same graph name.
+ *  \param graphName The graph name.
+ */
 void MainWindow::graph_window_closed(QString graphName)
 {
     closeGraphWindows(graphName);
@@ -220,11 +243,10 @@ void MainWindow::enableInterface(bool enable)
 void MainWindow::addPlot()
 {
     graph_settings_model->addPlot();
-    //createGraphWindow(graph_window);
 }
 
 /** \fn MainWindow::createGraphWindow(GraphWidget *graph_window)
- *  \brief Create a new graph window, setup, then hide.
+ *  \brief Create a new graph window, setup.
  */
 void MainWindow::createGraphWindow(GraphWidget *graph_window)
 {
@@ -235,22 +257,20 @@ void MainWindow::createGraphWindow(GraphWidget *graph_window)
     connect(graph_window, SIGNAL(increase_iteration()), this, SLOT(increment_iteration()));
     connect(graph_window, SIGNAL(decrease_iteration()), this, SLOT(decrement_iteration()));
     connect(graph_window, SIGNAL(graph_window_closed(QString)), this, SLOT(graph_window_closed(QString)));
-    //graph_window->hide();
 }
-
+/** \fn MainWindow::closeGraphWindows(QString graphName)
+ *  \brief Set all rules with the graph name as disabled and close and remove all associated graph windows.
+ *  \param graphName The graph name
+ */
 void MainWindow::closeGraphWindows(QString graphName)
 {
-    //qDebug() << "closeGraphWindows " << graphName;
-
     graph_settings_model->setDisabled(graphName);
 
     /* Check open graphs */
     for(int i = 0; i < graphs.count(); i++)
     {
-        //qDebug() << "[" << i << "] " << graphs[i]->getGraph();
         if(QString::compare(graphs[i]->getGraph(),graphName) == 0)
         {
-            //qDebug() << "close";
             graphs[i]->close();
             graphs.removeAt(i);
             i--;
@@ -285,9 +305,14 @@ void MainWindow::enabledGraph(QModelIndex index)
     }
 }
 
+/** \fn MainWindow::plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph)
+ *  \brief Handle a graph name change of a plot rule.
+ *  \param gsi The GraphSettingsItem.
+ *  \param oldGraph The old graph name
+ *  \param newGraph The new graph name
+ */
 void MainWindow::plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph)
 {
-    //qDebug() << oldGraph << newGraph;x
     for(int i = 0; i < graphs.count(); i++)
     {
         qDebug() << i << graphs[i]->getGraph() << newGraph;
@@ -319,7 +344,6 @@ void MainWindow::getColourVisual(QModelIndex index)
     {
         colourIndex = index;
         colour = qVariantValue<QColor>(index.data());
-        //QColor colour = QColorDialog::getColor( qVariantValue<QColor>(index.data()), this, "test", QColorDialog::ShowAlphaChannel);
         QColorDialog *colourDialog = new QColorDialog(this);
         colourDialog->setOption(QColorDialog::ShowAlphaChannel);
         colourDialog->setCurrentColor(colour);
@@ -334,6 +358,10 @@ void MainWindow::getColourVisual(QModelIndex index)
     }
 }
 
+/** \fn MainWindow::colourChanged(QColor c)
+ *  \brief Update the visual settings model with any change in colour.
+ *  \param c The new colour.
+ */
 void MainWindow::colourChanged(QColor c)
 {
     visual_settings_model->setData(colourIndex, qVariantFromValue(c));
@@ -401,8 +429,8 @@ void MainWindow::on_pushButton_LocationFind_clicked()
     s.append("/");
     s.append(ui->lineEdit_ResultsLocation->text());
     /* Provide dialog to select folder */
-    QString filepath = QFileDialog::getExistingDirectory(this,
-                                                    tr("Open output location"), s, QFileDialog::ShowDirsOnly);
+    QString filepath =
+            QFileDialog::getExistingDirectory(this, tr("Open output location"), s, QFileDialog::ShowDirsOnly);
     /* Return relative path from currentPath to location */
     QDir dir(configPath);
     QString s1 = dir.canonicalPath();
@@ -460,7 +488,6 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
     }
     else
     {
-        //visual_window_closed();
         visual_window->close();
     }
 }
@@ -484,8 +511,6 @@ bool MainWindow::readZeroXML(int flag)
     fileName.append(QString().number(iteration));
     fileName.append(".xml");
 
-    //qDebug() << "fileName " << fileName;
-
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text))
     {
@@ -496,10 +521,10 @@ bool MainWindow::readZeroXML(int flag)
 
     if(flag == 1)
     {
-        // old (keep for graphs)
+        // used by graphs
         agents.clear();
 
-        // new
+        // used by visual
         for(int i = 0; i < visual_settings_model->rowCount(); i++)
         {
             visual_settings_model->getRule(i)->agents.clear();
@@ -517,10 +542,9 @@ bool MainWindow::readZeroXML(int flag)
     else
     {
         itLocked = false;
-         if(opengl_window_open) emit( iterationLoaded() ); //emit( updateVisual() );
+         if(opengl_window_open) emit( iterationLoaded() );
          ui->label_5->setText("Found");
     }
-
 
     return true;
 }
@@ -544,15 +568,23 @@ void MainWindow::increment_iteration()
     iteration++;
     if(readZeroXML(1) == false)
     {
-        iteration--;
-        emit( stopAnimation() );
+        if(checkDirectoryForNextIteration(iteration, 0))
+        {
+            readZeroXML(1);
+        }
+        else
+        {
+            iteration--;
+            emit( stopAnimation() );
+        }
     }
     ui->spinBox->setValue(iteration);
+    if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
+
     for(int i = 0; i < graphs.count(); i++)
     {
         graphs.at(i)->updateData(iteration);
     }
-    if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
 }
 
 /** \fn MainWindow::decrement_iteration()
@@ -561,8 +593,18 @@ void MainWindow::increment_iteration()
 void MainWindow::decrement_iteration()
 {
     if(iteration > 0) iteration--;
+    if(readZeroXML(1) == false)
+    {
+        if(checkDirectoryForNextIteration(iteration, 1))
+        {
+            readZeroXML(1);
+        }
+        else
+        {
+            iteration++;
+        }
+    }
     ui->spinBox->setValue(iteration);
-    readZeroXML(1);
     if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
 }
 
@@ -572,15 +614,54 @@ void MainWindow::decrement_iteration()
 void MainWindow::open_config_file()
 {
     QString fileName =
-             QFileDialog::getOpenFileName(this, tr("Open model"),
-                                          "",
-                                          tr("XML Files (*.xml)"));
+             QFileDialog::getOpenFileName(this, tr("Open model"), "", tr("XML Files (*.xml)"));
      if (fileName.isEmpty())
          return;
 
      readConfigFile(fileName, 0);
 }
 
+bool MainWindow::checkDirectoryForNextIteration(int it, int flag)
+{
+    QString fileName;
+    fileName.append(configPath);
+    fileName.append("/");
+    fileName.append(ui->lineEdit_ResultsLocation->text());
+    fileName.append("/");
+
+    QDir dir(fileName);
+    QStringList filters;
+    filters << "*.xml";
+    dir.setNameFilters(filters);
+    QStringList list = dir.entryList();
+    QList<int> ilist;
+    for(int i=0; i < list.size(); i++)
+    {
+        QString f = list.at(i);
+        f.chop(4);
+        bool s;
+        int i = f.toInt(&s);
+        if(s) ilist.append(i);
+    }
+    qSort(ilist);
+    for(int i = 0; i < ilist.size(); i++)
+    {
+        if((ilist.at(i) > it && flag == 0) || (ilist.at(ilist.size()-1-i) < it && flag == 1))
+        {
+            if(flag == 0) iteration = ilist.at(i);
+            if(flag == 1) iteration = ilist.at(ilist.size()-1-i);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** \fn MainWindow::readConfigFile(QString fileName, int it)
+ *  \brief Read in a config file.
+ *  \param fileName The file name
+ *  \param it The iteration number to be set
+ */
 void MainWindow::readConfigFile(QString fileName, int it)
 {
     QFile file(fileName);
@@ -598,6 +679,7 @@ void MainWindow::readConfigFile(QString fileName, int it)
     agentTypes.clear();
     graphs.clear();
     enableTimeScale(false);
+    timeScale->reset();
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model, &resultsData, timeScale, &ratio);
     if (!reader.read(&file))
@@ -641,6 +723,10 @@ void MainWindow::readConfigFile(QString fileName, int it)
     file.close();
 }
 
+/** \fn MainWindow::enableTimeScale(bool b)
+ *  \brief Enable or disable the time scale UI.
+ *  \param b The enable or disable flag
+ */
 void MainWindow::enableTimeScale(bool b)
 {
     ui->checkBox_timeScale->setChecked(b);
@@ -656,6 +742,9 @@ void MainWindow::enableTimeScale(bool b)
     else emit( ui->lineEdit_timeScale->setText("") );
 }
 
+/** \fn MainWindow::new_config_file()
+ *  \brief Open a new config file.
+ */
 void MainWindow::new_config_file()
 {
     enableTimeScale(false);
@@ -737,6 +826,8 @@ void MainWindow::close_config_file()
     agentTypes.clear();
     enableInterface(false);
     fileOpen = false;
+    timeScale->reset();
+    enableTimeScale(false);
     iteration = 0;
     configPath = "";
     configName = "";
@@ -948,11 +1039,17 @@ void MainWindow::calcPositionRatio()
     else ratio = 1.0 / largest;
 }
 
+/** \fn MainWindow::on_pushButton_Animate_clicked()
+ *  \brief Emit animate signal when the animate button is pressed.
+ */
 void MainWindow::on_pushButton_Animate_clicked()
 {
     emit( animate() );
 }
 
+/** \fn MainWindow::on_pushButton_ImageSettings_clicked()
+ *  \brief Open or close the image settings dialog.
+ */
 void MainWindow::on_pushButton_ImageSettings_clicked()
 {
     if(images_dialog_open == false)
@@ -978,6 +1075,9 @@ void MainWindow::on_pushButton_ImageSettings_clicked()
     }
 }
 
+/** \fn MainWindow::takeSnapshotSlot()
+ *  \brief Emit take snapshot signal if snapshot button is pressed.
+ */
 void MainWindow::takeSnapshotSlot()
 {
     if(opengl_window_open) emit( takeSnapshotSignal() );
@@ -1015,12 +1115,27 @@ void MainWindow::on_actionAbout_triggered()
    QTextEdit *about=new QTextEdit(this);
    about->setWindowFlags(Qt::Dialog);
    about->setReadOnly(true);
-   about->append("<h1>FLAME Visualiser</h1>");
-   about->append("<h3>Simon Coakley</h3>");
-   about->append("<h2>Version 1</h2>");
-   about->append("<h3>Changelog</h3>");
+   about->setAutoFormatting(QTextEdit::AutoNone);
+
+   QString aboutText;
+   aboutText.append("<h1>FLAME Visualiser</h1>");
+   aboutText.append("<h3>Simon Coakley</h3>");
+   aboutText.append("<h2>Version 2</h2>");
+   aboutText.append("<h3>Changelog</h3>");
    /* Add new release notes here */
-   about->append("<h4>Version 1 (released 2011-10-07)</h4><ul><li>Beta first release</li></ul>");
+   aboutText.append("<h4>Version 2 (released tba)</h4><ul><li>Ability to change the quality of spheres being drawn</li>");
+        aboutText.append("<li>Ability to add a time scale that can be displayed</li>");
+        aboutText.append("<li>Ability to change the near clip plane</li>");
+        aboutText.append("<li>Ability to pick an agent and its memory be displayed</li>");
+        aboutText.append("<li>Ability to move the centre of the visual scene with the mouse</li>");
+        aboutText.append("<li>Program searches for iterations if they are not sequential</li>");
+        aboutText.append("<li>Program remembers the model last open and the iteration number</li>");
+        aboutText.append("<li>Addition of a simple help dialog</li>");
+        aboutText.append("<li>Bugfix: cubes and points were being drawn more than once</li></ul>");
+   aboutText.append("<h4>Version 1 (released 2011-10-07)</h4><ul><li>Beta first release</li></ul>");
+
+   about->setGeometry(50,50,600,400);
+   about->insertHtml(aboutText);
    about->moveCursor(QTextCursor::Start);
    about->show();
 }
@@ -1081,4 +1196,27 @@ void MainWindow::calcTimeScale()
     timeString = ts;
 
     emit( ui->lineEdit_timeScale->setText(ts) );
+}
+
+void MainWindow::on_actionHelp_triggered()
+{
+    QTextEdit *help=new QTextEdit(this);
+    help->setWindowFlags(Qt::Dialog);
+    help->setReadOnly(true);
+    help->setAutoFormatting(QTextEdit::AutoNone);
+    QString helpText;
+    helpText.append("<h1>FLAME Visualiser Help</h1>");
+    helpText.append("<h4>Sphere Quality Setting</h4>");
+    helpText.append("The quality of spheres being drawn affects the speed of the visualiser. To make the visualiser faster reduce the quality of the spheres. Also if any large spheres look blocky then increase their quality.");
+    helpText.append("<ul><li>8  - low quality</li>");
+    helpText.append("<li>16 - medium quality</li>");
+    helpText.append("<li>32 - high quality</li></ul>");
+    helpText.append("<h4>Change the Near Clip Plane</h4>The near clip plane can be changed by holding down the C key and the right mouse button and moving the mouse up and down.");
+    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its memory displayed by holding down the P key and left mouse clicking on an agent.");
+    helpText.append("<h4>Move the Centre of the Visual Scene</h4>The scene can be shifted up,down,left and right by holding down the Spacebar and the left mouse button and moving the mouse.");
+
+    help->setGeometry(50,50,600,400);
+    help->insertHtml(helpText);
+    help->moveCursor(QTextCursor::Start);
+    help->show();
 }

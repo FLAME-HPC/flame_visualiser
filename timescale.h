@@ -8,15 +8,7 @@ class TimeScale
 public:
     TimeScale()
     {
-        lowestScale = 0;
-        millisecond = 0;
-        second = 0;
-        minute = 0;
-        hour = 0;
-        day = 0;
-        totalseconds = 0;
-        enabled = false;
-        displayInVisual = false;
+        reset();
     }
 
     void calcTotalSeconds()
@@ -31,6 +23,19 @@ public:
         else if(minute > 0) lowestScale = 2;
         else if(hour   > 0) lowestScale = 3;
         else if(day    > 0) lowestScale = 4;
+    }
+
+    void reset()
+    {
+        lowestScale = 0;
+        millisecond = 0;
+        second = 0;
+        minute = 0;
+        hour = 0;
+        day = 0;
+        totalseconds = 0;
+        enabled = false;
+        displayInVisual = false;
     }
 
     int millisecond;

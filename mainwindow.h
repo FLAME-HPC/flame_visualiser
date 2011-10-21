@@ -86,6 +86,7 @@ private slots:
     void on_actionAbout_triggered();
     void on_pushButton_timeScale_clicked();
     void enableTimeScale(bool);
+    void on_actionHelp_triggered();
 
 private:
     bool readZeroXML(int flag);
@@ -95,6 +96,7 @@ private:
     void closeGraphWindows(QString graphName);
     void calcPositionRatio();
     void findLoadSettings();
+    bool checkDirectoryForNextIteration(int it, int flag);
     Ui::MainWindow *ui; ///< The User Interface
     bool opengl_window_open; ///< Indicates if the visual window is open
     bool images_dialog_open; ///< Indicates if the image settings window is open
