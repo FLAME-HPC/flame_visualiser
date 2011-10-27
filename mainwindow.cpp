@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     fileOpen = false;
     images_dialog_open = false;
     time_dialog_open = false;
+    restrict_dimension_open = false;
     timeString = "";
     iteration = 0;
     configPath = "";
@@ -46,6 +47,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(visual_settings_model, SIGNAL(ruleUpdated(int)), this, SLOT(ruleUpdated(int)));
     graph_settings_model = new GraphSettingsModel(&agents);
     connect(graph_settings_model, SIGNAL(plotGraphChanged(GraphSettingsItem*,QString,QString)), this, SLOT(plotGraphChanged(GraphSettingsItem*,QString,QString)));
+    /* Visual window camera variables */
+    xrotate = 0.0;
+    yrotate = 0.0;
+    xmove = 0.0;
+    ymove = 0.0;
+    zmove = -3.0;
+    restrictDimension = new Dimension();
+    agentDimension = new Dimension();
+    restrictAgentDimension = new Dimension();
 
     /* Setup User Interface */
     ui->setupUi(this);
@@ -140,6 +150,11 @@ MainWindow::~MainWindow()
     file.close();
 }
 
+void MainWindow::closeEvent(QCloseEvent */*event*/)
+{
+    on_actionQuit_triggered();
+}
+
 /** \fn MainWindow::findLoadSettings()
  *  \brief Try and find .flamevisualisersettings and load last known model and iteration number.
  */
@@ -181,6 +196,7 @@ void MainWindow::visual_window_closed()
     disconnect(this, SIGNAL(takeAnimationSignal(bool)), visual_window, SIGNAL(takeAnimation(bool)));
     disconnect(this, SIGNAL(updateImagesLocationSignal(QString)), visual_window, SLOT(updateImagesLocation(QString)));
     disconnect(this, SIGNAL(stopAnimation()), visual_window, SLOT(stopAnimation()));
+    disconnect(this, SIGNAL(restrictAxes(bool)), visual_window, SLOT(restrictAxes(bool)));
 
     opengl_window_open = false;
     ui->pushButton_OpenCloseVisual->setText("Open Visual Window");
@@ -209,6 +225,13 @@ void MainWindow::time_dialog_closed()
     time_dialog_open = false;
     ui->pushButton_timeScale->setText("Open Time Settings");
     calcTimeScale();
+}
+
+void MainWindow::restrict_axes_closed()
+{
+    qDebug() << "restrict_axes_closed()";
+    restrict_dimension_open = false;
+    emit( restrictAxes(false) );
 }
 
 /** \fn MainWindow::graph_window_closed(QString graphName)
@@ -454,11 +477,11 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         // Read in agents with model dimensions
         readZeroXML(1);
         // Calculate model to opengl dimension ratio
-        calcPositionRatio();
+        calcPositionRatio(0);
         // Reread agents with opengl dimension using new ratio
         readZeroXML(1);
 
-        visual_window = new GLWidget();
+        visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove, restrictDimension);
         visual_window->setAttribute(Qt::WA_DeleteOnClose); // Make the window destory on close rather than hide
         visual_window->resize(800,600);
         visual_window->update_agents(&agents);
@@ -480,7 +503,9 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         connect(this, SIGNAL(takeAnimationSignal(bool)), visual_window, SLOT(takeAnimation(bool)));
         connect(this, SIGNAL(updateImagesLocationSignal(QString)), visual_window, SLOT(updateImagesLocation(QString)));
         connect(this, SIGNAL(stopAnimation()), visual_window, SLOT(stopAnimation()));
+        connect(this, SIGNAL(restrictAxes(bool)), visual_window, SLOT(restrictAxes(bool)));
 
+        if(restrict_dimension_open) emit( restrictAxes(true) );
         visual_window->show();
         visual_window->setFocus();
         ui->pushButton_OpenCloseVisual->setText("Close Visual Window");
@@ -585,6 +610,8 @@ void MainWindow::increment_iteration()
     {
         graphs.at(i)->updateData(iteration);
     }
+
+    if(restrict_dimension_open) calcPositionRatio(1);
 }
 
 /** \fn MainWindow::decrement_iteration()
@@ -606,6 +633,8 @@ void MainWindow::decrement_iteration()
     }
     ui->spinBox->setValue(iteration);
     if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
+
+    if(restrict_dimension_open) calcPositionRatio(1);
 }
 
 /** \fn MainWindow::open_config_file()
@@ -680,8 +709,13 @@ void MainWindow::readConfigFile(QString fileName, int it)
     graphs.clear();
     enableTimeScale(false);
     timeScale->reset();
+    xrotate = 0.0;
+    yrotate = 0.0;
+    xmove = 0.0;
+    ymove = 0.0;
+    zmove = -3.0;
 
-    ConfigXMLReader reader(visual_settings_model, graph_settings_model, &resultsData, timeScale, &ratio);
+    ConfigXMLReader reader(visual_settings_model, graph_settings_model, &resultsData, timeScale, &ratio, &xrotate, &yrotate, &xmove, &ymove, &zmove);
     if (!reader.read(&file))
     {
         QMessageBox::warning(this, tr("flame visualiser"),
@@ -867,6 +901,11 @@ bool MainWindow::writeConfigXML(QFile * file)
 
     stream.writeStartElement("visual");
     stream.writeTextElement("ratio", QString("%1").arg(ratio));
+    stream.writeTextElement("xrotate", QString("%1").arg(xrotate));
+    stream.writeTextElement("yrotate", QString("%1").arg(yrotate));
+    stream.writeTextElement("xmove", QString("%1").arg(xmove));
+    stream.writeTextElement("ymove", QString("%1").arg(ymove));
+    stream.writeTextElement("zmove", QString("%1").arg(zmove));
     stream.writeStartElement("rules");
     for(int i = 0; i < this->visual_settings_model->rowCount(); i++)
     {
@@ -1019,7 +1058,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 /** \fn MainWindow::calcPositionRatio()
  *  \brief Automatically work out a good ratio to use to view agents visually.
  */
-void MainWindow::calcPositionRatio()
+void MainWindow::calcPositionRatio(int flag)
 {
     double smallest = 0.0;
     double largest = 0.0;
@@ -1028,15 +1067,30 @@ void MainWindow::calcPositionRatio()
     {
         for(int i= 0; i < visual_settings_model->getRule(j)->agents.count(); i++)
         {
-            if(smallest > visual_settings_model->getRule(j)->agents.at(i).x) smallest = visual_settings_model->getRule(j)->agents.at(i).x;
-            if(smallest > visual_settings_model->getRule(j)->agents.at(i).y) smallest = visual_settings_model->getRule(j)->agents.at(i).y;
-            if(largest  < visual_settings_model->getRule(j)->agents.at(i).x) largest  = visual_settings_model->getRule(j)->agents.at(i).x;
-            if(largest  < visual_settings_model->getRule(j)->agents.at(i).y) largest  = visual_settings_model->getRule(j)->agents.at(i).y;
+            if(agentDimension->xmin > visual_settings_model->getRule(j)->agents.at(i).x) agentDimension->xmin = visual_settings_model->getRule(j)->agents.at(i).x;
+            if(agentDimension->xmax < visual_settings_model->getRule(j)->agents.at(i).x) agentDimension->xmax = visual_settings_model->getRule(j)->agents.at(i).x;
+            if(agentDimension->ymin > visual_settings_model->getRule(j)->agents.at(i).y) agentDimension->ymin = visual_settings_model->getRule(j)->agents.at(i).y;
+            if(agentDimension->ymax < visual_settings_model->getRule(j)->agents.at(i).y) agentDimension->ymax = visual_settings_model->getRule(j)->agents.at(i).y;
+            if(agentDimension->zmin > visual_settings_model->getRule(j)->agents.at(i).z) agentDimension->zmin = visual_settings_model->getRule(j)->agents.at(i).z;
+            if(agentDimension->zmax < visual_settings_model->getRule(j)->agents.at(i).z) agentDimension->zmax = visual_settings_model->getRule(j)->agents.at(i).z;
+
+            if(flag == 0)
+            {
+                if(smallest > visual_settings_model->getRule(j)->agents.at(i).x) smallest = visual_settings_model->getRule(j)->agents.at(i).x;
+                if(smallest > visual_settings_model->getRule(j)->agents.at(i).y) smallest = visual_settings_model->getRule(j)->agents.at(i).y;
+                if(largest  < visual_settings_model->getRule(j)->agents.at(i).x) largest  = visual_settings_model->getRule(j)->agents.at(i).x;
+                if(largest  < visual_settings_model->getRule(j)->agents.at(i).y) largest  = visual_settings_model->getRule(j)->agents.at(i).y;
+            }
         }
     }
 
-    if(smallest < 0.0 && largest < -smallest) ratio = 1.0 / -smallest;
-    else ratio = 1.0 / largest;
+    emit(updatedAgentDimension());
+
+    if(flag == 0)
+    {
+        if(smallest < 0.0 && largest < -smallest) ratio = 1.0 / -smallest;
+        else ratio = 1.0 / largest;
+    }
 }
 
 /** \fn MainWindow::on_pushButton_Animate_clicked()
@@ -1107,6 +1161,7 @@ void MainWindow::ruleUpdated(int /*row*/)
 void MainWindow::on_actionQuit_triggered()
 {
     if(opengl_window_open) visual_window->close();
+    if(images_dialog_open) images_dialog->close();
     close();
 }
 
@@ -1128,8 +1183,11 @@ void MainWindow::on_actionAbout_triggered()
         aboutText.append("<li>Ability to change the near clip plane</li>");
         aboutText.append("<li>Ability to pick an agent and its memory be displayed</li>");
         aboutText.append("<li>Ability to move the centre of the visual scene with the mouse</li>");
+        aboutText.append("<li>Ability to restrict the drawing of agents on different axes</li>");
         aboutText.append("<li>Program searches for iterations if they are not sequential</li>");
         aboutText.append("<li>Program remembers the model last open and the iteration number</li>");
+        aboutText.append("<li>Program saves the visual scene rotation and translation to the config file</li>");
+        aboutText.append("<li>Program closes when the main window is closed</li>");
         aboutText.append("<li>Addition of a simple help dialog</li>");
         aboutText.append("<li>Bugfix: cubes and points were being drawn more than once</li></ul>");
    aboutText.append("<h4>Version 1 (released 2011-10-07)</h4><ul><li>Beta first release</li></ul>");
@@ -1174,24 +1232,24 @@ void MainWindow::calcTimeScale()
     int seconds = (int)(((totalseconds%86400)%3600)%60);
     if(days > 0 || timeScale->lowestScale == 4)
     {
-        ts.append(QString("%1 day").arg(days));
-        if(days > 1) ts.append("s");
+        ts.append(QString().sprintf("%3d day", days));
+        if(days > 1) ts.append("s"); else ts.append(" ");
         ts.append(" ");
     }
     if(hours > 0 || timeScale->lowestScale < 4)
     {
-        ts.append(QString("%1 hour").arg(hours));
-        if(hours > 1) ts.append("s");
+        ts.append(QString().sprintf("%02d hrs", hours));
+        //if(hours > 1) ts.append("s"); else ts.append(" ");
         ts.append(" ");
     }
     if(minutes > 0 || timeScale->lowestScale < 3)
     {
-        ts.append(QString("%1 min").arg(minutes));
-        if(minutes > 1) ts.append("s");
+        ts.append(QString().sprintf("%02d min", minutes));
+        //if(minutes > 1) ts.append("s"); else ts.append(" ");
         ts.append(" ");
     }
-    if(timeScale->lowestScale == 1) ts.append(QString("%1 second").arg(seconds));
-    else if(timeScale->lowestScale == 0) ts.append(QString("%1 seconds").arg(seconds+tmsecs));
+    if(timeScale->lowestScale == 1) ts.append(QString().sprintf("%02d s", seconds));
+    else if(timeScale->lowestScale == 0) ts.append(QString().sprintf("%02.3f s", seconds+tmsecs));
 
     timeString = ts;
 
@@ -1211,12 +1269,26 @@ void MainWindow::on_actionHelp_triggered()
     helpText.append("<ul><li>8  - low quality</li>");
     helpText.append("<li>16 - medium quality</li>");
     helpText.append("<li>32 - high quality</li></ul>");
-    helpText.append("<h4>Change the Near Clip Plane</h4>The near clip plane can be changed by holding down the C key and the right mouse button and moving the mouse up and down.");
-    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its memory displayed by holding down the P key and left mouse clicking on an agent.");
-    helpText.append("<h4>Move the Centre of the Visual Scene</h4>The scene can be shifted up,down,left and right by holding down the Spacebar and the left mouse button and moving the mouse.");
+    helpText.append("<h4>Change the Near Clip Plane</h4>The near clip plane can be changed by holding down the <b>C key</b> and the <b>right mouse button</b> and moving the mouse up and down.");
+    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its memory displayed by holding down the <b>P key</b> and <b>left mouse clicking</b> on an agent.");
+    helpText.append("<h4>Move the Centre of the Visual Scene</h4>The scene can be shifted up,down,left and right by holding down the <b>Spacebar</b> and the <b>left mouse button</b> and moving the mouse.");
+    helpText.append("<h4>Restricting Drawing Axes</h4>By selecting 'restrict axes' from 'tools' on the menubar the drawing of agents can be restricted on the x,y and z axes.");
 
     help->setGeometry(50,50,600,400);
     help->insertHtml(helpText);
     help->moveCursor(QTextCursor::Start);
     help->show();
+}
+
+void MainWindow::on_actionRestrict_Axes_triggered()
+{
+    if(!restrict_dimension_open)
+    {
+        restrict_dimension_open = true;
+        restrictAxesDialog = new RestrictAxesDialog(restrictDimension, agentDimension, restrictAgentDimension, &ratio, this);
+        connect(restrictAxesDialog, SIGNAL(closed()), this, SLOT(restrict_axes_closed()));
+        connect(this, SIGNAL(updatedAgentDimension()), restrictAxesDialog, SLOT(updatedAgentDimensions()));
+        emit( restrictAxes(true) );
+    }
+    restrictAxesDialog->show();
 }

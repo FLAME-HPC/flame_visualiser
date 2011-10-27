@@ -12,6 +12,8 @@
 #include "imagesdialog.h"
 #include "timedialog.h"
 #include "timescale.h"
+#include "restrictaxesdialog.h"
+#include "dimension.h"
 
 /** \namespace Ui
   * \brief
@@ -34,6 +36,7 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *event);
     void enableInterface(bool enable);
+    void closeEvent(QCloseEvent *event);
 
 public slots:
     void increment_iteration();
@@ -48,6 +51,7 @@ public slots:
     void updateImagesLocationSlot(QString);
     void colourChanged(QColor);
     void calcTimeScale();
+    void restrict_axes_closed();
 
 signals:
     void updateVisual();
@@ -59,6 +63,8 @@ signals:
     void takeAnimationSignal(bool);
     void updateImagesLocationSignal(QString);
     void stopAnimation();
+    void restrictAxes(bool);
+    void updatedAgentDimension();
 
 private slots:
     void on_pushButton_LocationFind_clicked();
@@ -87,6 +93,7 @@ private slots:
     void on_pushButton_timeScale_clicked();
     void enableTimeScale(bool);
     void on_actionHelp_triggered();
+    void on_actionRestrict_Axes_triggered();
 
 private:
     bool readZeroXML(int flag);
@@ -94,7 +101,7 @@ private:
     void createGraphWindow(GraphWidget * graph_window);
     void readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
-    void calcPositionRatio();
+    void calcPositionRatio(int flag);
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
     Ui::MainWindow *ui; ///< The User Interface
@@ -120,6 +127,16 @@ private:
     QModelIndex colourIndex;
     TimeScale * timeScale;
     QString timeString;
+    float xrotate;
+    float yrotate;
+    float xmove;
+    float ymove;
+    float zmove;
+    Dimension * restrictAgentDimension;
+    Dimension * restrictDimension;
+    Dimension * agentDimension;
+    bool restrict_dimension_open;
+    RestrictAxesDialog * restrictAxesDialog;
 };
 
 #endif // MAINWINDOW_H

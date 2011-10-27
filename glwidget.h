@@ -6,6 +6,7 @@
 #include <QTime>
 #include "agent.h"
 #include "visualsettingsmodel.h"
+#include "dimension.h"
 
 class QTimer;
 
@@ -14,7 +15,7 @@ class GLWidget : public QGLWidget
     Q_OBJECT
 
 public:
-    GLWidget(QWidget *parent = 0);
+    GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm, Dimension * rd, QWidget *parent = 0);
     ~GLWidget();
     void update_agents(QList<Agent> * a);
     void set_rules(VisualSettingsModel * m);
@@ -34,6 +35,7 @@ public slots:
     void takeAnimation(bool);
     void updateImagesLocation(QString);
     void stopAnimation();
+    void restrictAxes(bool);
 
 signals:
     void increase_iteration();
@@ -61,11 +63,11 @@ private:
     QString name;
     QList<Agent> * agents;
     bool block;
-    float xrotate;
-    float yrotate;
-    float xmove;
-    float ymove;
-    float zmove;
+    float * xrotate;
+    float * yrotate;
+    float * xmove;
+    float * ymove;
+    float * zmove;
     int x_last_position;
     int y_last_position;
     int drawpoints;
@@ -94,6 +96,8 @@ private:
     Agent nameAgent; ///< A copy of the picked agent
     bool drawNameAgent;
     bool moveOn;
+    Dimension * restrictDimension;
+    bool restrictAxesOn;
 };
 
 #endif // GLWIDGET_H

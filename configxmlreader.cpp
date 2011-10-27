@@ -4,13 +4,19 @@
 #include <QColor>
 #include <QDebug>
 
-ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm, GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r)
+ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm, GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r,
+                                 float * xr, float *yr, float *xm, float * ym, float * zm)
 {
     vsmodel = vsm;
     gsmodel = gsm;
     resultsData = rD;
     ratio = r;
     timeScale = ts;
+    xrotate = xr;
+    yrotate = yr;
+    xmove = xm;
+    ymove = ym;
+    zmove = zm;
 }
 
 bool ConfigXMLReader::read(QIODevice * device)
@@ -145,6 +151,16 @@ void ConfigXMLReader::readVisual()
          if (isStartElement()) {
              if (name() == "ratio")
                  *ratio = readElementText().toDouble();
+             else if (name() == "xrotate")
+                 *xrotate = readElementText().toFloat();
+             else if (name() == "yrotate")
+                 *yrotate = readElementText().toFloat();
+             else if (name() == "xmove")
+                 *xmove = readElementText().toFloat();
+             else if (name() == "ymove")
+                 *ymove = readElementText().toFloat();
+             else if (name() == "zmove")
+                 *zmove = readElementText().toFloat();
              else if (name() == "rules")
                  readRules();
              else

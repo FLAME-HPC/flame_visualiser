@@ -16,18 +16,15 @@
     Q_IMPORT_PLUGIN(qjpeg)
 #endif
 
-/* The default camera zoom */
-#define ZMOVE -3.0
-
-GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
+GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm, Dimension * rd, QWidget *parent) : QGLWidget(parent)
 {
     agents = 0;
     setMouseTracking(true);
-    xrotate = 0.0;
-    yrotate = 0.0;
-    xmove = 0.0;
-    ymove = 0.0;
-    zmove = ZMOVE;
+    xrotate = xr;
+    yrotate = yr;
+    xmove = xm;
+    ymove = ym;
+    zmove = zm;
     x_last_position = 0;
     y_last_position = 0;
     drawpoints = 1;
@@ -49,6 +46,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent)
     clippingOn = false;
     drawNameAgent = false;
     moveOn = false;
+    restrictDimension = rd;
+    restrictAxesOn = false;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -142,9 +141,9 @@ void GLWidget::set_rules(VisualSettingsModel * m)
 
 void GLWidget::reset_camera()
 {
-    xrotate = 0.0;
-    yrotate = 0.0;
-    zmove = ZMOVE;
+    *xrotate = 0.0;
+    *yrotate = 0.0;
+    *zmove = -3.0;
 }
 
 void GLWidget::initializeGL()
@@ -204,33 +203,13 @@ void GLWidget::paintGL()
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glPushMatrix();
 
-    glTranslatef(xmove, ymove, zmove);
-    glRotatef(yrotate, 1.0f, 0.0f, 0.0f);
-    glRotatef(xrotate, 0.0f, 0.0f, 1.0f);
+    glTranslatef(*xmove, *ymove, *zmove);
+    glRotatef(*yrotate, 1.0f, 0.0f, 0.0f);
+    glRotatef(*xrotate, 0.0f, 0.0f, 1.0f);
 
     drawAgents(GL_RENDER);
 
     glPopMatrix();
-
-    //glFlush();
-
-    if(spinup)    yrotate -= 1.0;
-    if(spindown)  yrotate += 1.0;
-    if(spinleft)  xrotate -= 1.0;
-    if(spinright) xrotate += 1.0;
-
-    // Framerate control
-    int delay = time.msecsTo(QTime::currentTime());
-    if (delay == 0)
-        delay = 1;
-    time = QTime::currentTime();
-    timer->start(qMax(0, 20 - delay));
-
-    if(animation && !locked && !imageLock)
-    {
-        if(animationImages) takeSnapshot();
-        emit( increase_iteration() );
-    }
 }
 
 void GLWidget::drawAgents(GLenum mode)
@@ -283,84 +262,94 @@ void GLWidget::drawAgents(GLenum mode)
             /* For every agent associated with the current rule */
             for(int i = 0; i < rule->agents.size(); i++)
             {
-                /* If the object is opaque and first pass, or
-                   if the object is transparent and is the second or third pass */
-                if(((rule->colour().alphaF() >= 0.95 && pass == 1)||(rule->colour().alphaF() < 0.95 && pass >= 2)) )
+                /* Check the restrict dimensions */
+                if(!restrictAxesOn || (restrictAxesOn &&
+                ( (!restrictDimension->xminon || (restrictDimension->xminon && rule->agents.at(i).x > restrictDimension->xmin)) &&
+                    (!restrictDimension->xmaxon || (restrictDimension->xmaxon && rule->agents.at(i).x < restrictDimension->xmax)) &&
+                    (!restrictDimension->yminon || (restrictDimension->yminon && rule->agents.at(i).y > restrictDimension->ymin)) &&
+                    (!restrictDimension->ymaxon || (restrictDimension->ymaxon && rule->agents.at(i).y < restrictDimension->ymax)) &&
+                    (!restrictDimension->zminon || (restrictDimension->zminon && rule->agents.at(i).z > restrictDimension->zmin)) &&
+                    (!restrictDimension->zmaxon || (restrictDimension->zmaxon && rule->agents.at(i).z < restrictDimension->zmax)) )))
                 {
-                    glPushMatrix();
-
-                    glTranslatef(rule->agents.at(i).x, rule->agents.at(i).y, rule->agents.at(i).z);
-
-                    GLfloat mat_ambientA[] = { rule->colour().redF(), rule->colour().greenF(), rule->colour().blueF(), rule->colour().alphaF() };//alphaA };
-
-                    if(light) glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_ambientA );
-                    else glColor4fv(mat_ambientA);
-
-                    size = rule->agents.at(i).shapeDimension;
-                    sizeY = rule->agents.at(i).shapeDimensionY;
-                    sizeZ = rule->agents.at(i).shapeDimensionZ;
-
-                    if(QString::compare("sphere",rule->shape().getShape()) == 0)
+                    /* If the object is opaque and first pass, or
+                       if the object is transparent and is the second or third pass */
+                    if(((rule->colour().alphaF() >= 0.95 && pass == 1)||(rule->colour().alphaF() < 0.95 && pass >= 2)) )
                     {
-                        // if the sphere is large then draw with a higher grade
-                        /*grade = 16;
-                        if(size > 0.1) grade = 32;*/
-                        int grade = rule->shape().getQuality();
+                        glPushMatrix();
 
-                        glEnable(GL_CULL_FACE);
-                        if(pass==2)
-                        {
-                            if(mode == GL_SELECT) { glLoadName(0); }
-                            // Draw back face
-                            glCullFace(GL_FRONT);
-                            gluSphere(qobj, size, grade, grade);
-                        }
-                        else
-                        {
-                            if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
-                            // Draw front face
-                            glCullFace(GL_BACK);
-                            gluSphere(qobj, size, grade, grade);
-                        }
-                        glDisable(GL_CULL_FACE);
-                    }
-                    else if(QString::compare("point",rule->shape().getShape()) == 0)
-                    {
-                        if(pass != 2)
-                        {
-                            if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
+                        glTranslatef(rule->agents.at(i).x, rule->agents.at(i).y, rule->agents.at(i).z);
 
-                            glDisable(GL_LIGHTING);
-                            glColor4fv(mat_ambientA);
-                            glPointSize((int)rule->shape().getDimension());
-                            glBegin(GL_POINTS);
-                            glVertex3f(0.0, 0.0, 0.0);
-                            glEnd();
-                            glEnable(GL_LIGHTING);
-                        }
-                    }
-                    else if(QString::compare("cube",rule->shape().getShape()) == 0)
-                    {
-                        glEnable(GL_CULL_FACE);
-                        if(pass==2)
-                        {
-                            if(mode == GL_SELECT) { glLoadName(0); }
-                            // Draw back face
-                            glCullFace(GL_FRONT);
-                            drawCube(size, sizeY, sizeZ);
-                        }
-                        else
-                        {
-                            if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
-                            // Draw front face
-                            glCullFace(GL_BACK);
-                            drawCube(size, sizeY, sizeZ);
-                        }
-                        glDisable(GL_CULL_FACE);
-                    }
+                        GLfloat mat_ambientA[] = { rule->colour().redF(), rule->colour().greenF(), rule->colour().blueF(), rule->colour().alphaF() };//alphaA };
 
-                    //if(mode == GL_SELECT) glPopName();
-                    glPopMatrix();
+                        if(light) glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_ambientA );
+                        else glColor4fv(mat_ambientA);
+
+                        size = rule->agents.at(i).shapeDimension;
+                        sizeY = rule->agents.at(i).shapeDimensionY;
+                        sizeZ = rule->agents.at(i).shapeDimensionZ;
+
+                        if(QString::compare("sphere",rule->shape().getShape()) == 0)
+                        {
+                            // if the sphere is large then draw with a higher grade
+                            /*grade = 16;
+                            if(size > 0.1) grade = 32;*/
+                            int grade = rule->shape().getQuality();
+
+                            glEnable(GL_CULL_FACE);
+                            if(pass==2)
+                            {
+                                if(mode == GL_SELECT) { glLoadName(0); }
+                                // Draw back face
+                                glCullFace(GL_FRONT);
+                                gluSphere(qobj, size, grade, grade);
+                            }
+                            else
+                            {
+                                if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
+                                // Draw front face
+                                glCullFace(GL_BACK);
+                                gluSphere(qobj, size, grade, grade);
+                            }
+                            glDisable(GL_CULL_FACE);
+                        }
+                        else if(QString::compare("point",rule->shape().getShape()) == 0)
+                        {
+                            if(pass != 2)
+                            {
+                                if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
+
+                                glDisable(GL_LIGHTING);
+                                glColor4fv(mat_ambientA);
+                                glPointSize((int)rule->shape().getDimension());
+                                glBegin(GL_POINTS);
+                                glVertex3f(0.0, 0.0, 0.0);
+                                glEnd();
+                                glEnable(GL_LIGHTING);
+                            }
+                        }
+                        else if(QString::compare("cube",rule->shape().getShape()) == 0)
+                        {
+                            glEnable(GL_CULL_FACE);
+                            if(pass==2)
+                            {
+                                if(mode == GL_SELECT) { glLoadName(0); }
+                                // Draw back face
+                                glCullFace(GL_FRONT);
+                                drawCube(size, sizeY, sizeZ);
+                            }
+                            else
+                            {
+                                if(mode == GL_SELECT) { glLoadName(++name); nameAgents.insert(name, &rule->agents[i]); }
+                                // Draw front face
+                                glCullFace(GL_BACK);
+                                drawCube(size, sizeY, sizeZ);
+                            }
+                            glDisable(GL_CULL_FACE);
+                        }
+
+                        //if(mode == GL_SELECT) glPopName();
+                        glPopMatrix();
+                    }
                 }
             }
         }
@@ -417,6 +406,7 @@ void GLWidget::paintEvent(QPaintEvent */*event*/)
     if(*displayTime || drawNameAgent)
     {
         painter.setRenderHint(QPainter::Antialiasing);
+        painter.setFont(QFont("Courier", 20));
 
         if(*displayTime)
         {
@@ -429,7 +419,7 @@ void GLWidget::paintEvent(QPaintEvent */*event*/)
         {
             for(int i = 0; i < nameAgent.tags.size(); i++)
             {
-                painter.drawText(10, 15*(i+1), QString("%1\t%2").arg(nameAgent.tags[i], nameAgent.values[i]));
+                painter.drawText(10, 20*(i+1), QString("%1\t%2").arg(nameAgent.tags[i], nameAgent.values[i]));
             }
         }
     }
@@ -437,6 +427,24 @@ void GLWidget::paintEvent(QPaintEvent */*event*/)
     painter.end();
 
     glFlush();
+
+    if(spinup)    *yrotate -= 1.0;
+    if(spindown)  *yrotate += 1.0;
+    if(spinleft)  *xrotate -= 1.0;
+    if(spinright) *xrotate += 1.0;
+
+    // Framerate control
+    int delay = time.msecsTo(QTime::currentTime());
+    if (delay == 0)
+        delay = 1;
+    time = QTime::currentTime();
+    timer->start(qMax(0, 20 - delay));
+
+    if(animation && !locked && !imageLock)
+    {
+        if(animationImages) takeSnapshot();
+        emit( increase_iteration() );
+    }
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
@@ -453,13 +461,13 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
     {
         if(moveOn)
         {
-            xmove -= (float)((x_last_position - event->x())/90.0);
-            ymove += (float)((y_last_position - event->y())/90.0);
+            *xmove -= (float)((x_last_position - event->x())/90.0);
+            *ymove += (float)((y_last_position - event->y())/90.0);
         }
         else
         {
-            xrotate -= (float)((x_last_position - event->x())/2.0);
-            yrotate -= (float)((y_last_position - event->y())/2.0);
+            *xrotate -= (float)((x_last_position - event->x())/2.0);
+            *yrotate -= (float)((y_last_position - event->y())/2.0);
         }
     }
     else if (event->buttons() & Qt::RightButton)
@@ -471,7 +479,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
             resizeGL(windowWidth, windowHeight);
         }
         else
-            zmove += (float)((y_last_position - event->y())/100.0);
+            *zmove += (float)((y_last_position - event->y())/100.0);
     }
 
     x_last_position = event->x();
@@ -481,7 +489,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
 
 void GLWidget::wheelEvent(QWheelEvent * event)
 {
-    zmove += (float)(event->delta()/500.0);
+    *zmove += (float)(event->delta()/500.0);
     update();
 }
 
@@ -585,9 +593,9 @@ void GLWidget::processSelection(int mx, int my)
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glPushMatrix();
 
-    glTranslatef(xmove, ymove, zmove);
-    glRotatef(yrotate, 1.0f, 0.0f, 0.0f);
-    glRotatef(xrotate, 0.0f, 0.0f, 1.0f);
+    glTranslatef(*xmove, *ymove, *zmove);
+    glRotatef(*yrotate, 1.0f, 0.0f, 0.0f);
+    glRotatef(*xrotate, 0.0f, 0.0f, 1.0f);
 
     drawAgents(GL_SELECT);
 
@@ -628,22 +636,22 @@ void GLWidget::processSelection(int mx, int my)
     }
     if(hits > 0)
     {
-        //qDebug() << "Hit item = " << pickItem;
         Agent * a = nameAgents.value(pickItem);
         nameAgent.tags = QStringList(a->tags);
         nameAgent.values = QStringList(a->values);
-        drawNameAgent = true;
-        /*for(int i = 0; i < a->tags.size(); i++)
-        {
-            qDebug() << a->tags[i] << a->values[i];
-        }*/
+        drawNameAgent = false;//true;
 
         /* Release of button p is not caught because the focus is given to the agent dialog */
         pickOn = false;
         /* Create dialog */
-        //AgentDialog * agentDialog = new AgentDialog(a, this);
-        //agentDialog->show();
+        AgentDialog * agentDialog = new AgentDialog(a, this);
+        agentDialog->show();
     }
 
     resizeGL(windowWidth, windowHeight);
+}
+
+void GLWidget::restrictAxes(bool b)
+{
+    restrictAxesOn = b;
 }
