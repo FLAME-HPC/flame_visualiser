@@ -1169,7 +1169,9 @@ void MainWindow::on_actionAbout_triggered()
    aboutText.append("<h2>Version 2</h2>");
    aboutText.append("<h3>Changelog</h3>");
    /* Add new release notes here */
-   aboutText.append("<h4>Version 2 (released tba)</h4><ul><li>Ability to change the quality of spheres being drawn</li>");
+   aboutText.append("<h4>Version 2 (released 2011-10-28)</h4><ul>");
+        aboutText.append("<li>Beta second release</li>");
+        aboutText.append("<li>Ability to change the quality of spheres being drawn</li>");
         aboutText.append("<li>Ability to add a time scale that can be displayed</li>");
         aboutText.append("<li>Ability to change the near clip plane</li>");
         aboutText.append("<li>Ability to pick an agent and its memory be displayed</li>");
@@ -1180,7 +1182,7 @@ void MainWindow::on_actionAbout_triggered()
         aboutText.append("<li>Program saves the visual scene rotation and translation to the config file</li>");
         aboutText.append("<li>Program closes when the main window is closed</li>");
         aboutText.append("<li>Addition of a simple help dialog</li>");
-        aboutText.append("<li>Bugfix: cubes and points were being drawn more than once</li></ul>");
+        aboutText.append("<li>Bug fix: cubes and points were being drawn more than once</li></ul>");
    aboutText.append("<h4>Version 1 (released 2011-10-07)</h4><ul><li>Beta first release</li></ul>");
 
    about->setGeometry(50,50,600,400);
