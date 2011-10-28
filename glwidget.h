@@ -7,6 +7,7 @@
 #include "agent.h"
 #include "visualsettingsmodel.h"
 #include "dimension.h"
+#include "timescale.h"
 
 class QTimer;
 
@@ -24,7 +25,7 @@ public:
     void setName(QString n) { name = n; }
     void setIteration(int * i) { iteration = i; }
     void setConfigPath(QString * cp) { configpath = cp; }
-    void setTimeDisplayed(bool * b) { displayTime = b; }
+    void setTimeScale(TimeScale * ts) { timeScale = ts; }
     void setTimeString(QString * t) { timeString = t; }
 
 public slots:
@@ -87,7 +88,7 @@ private:
     QString * configpath;
     bool pickOn;
     float window_ratio;
-    bool * displayTime;
+    TimeScale * timeScale;
     QString * timeString;
     float zNear; ///< The near clipping plane
     bool clippingOn;

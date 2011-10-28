@@ -12,6 +12,13 @@ RestrictAxesDialog::RestrictAxesDialog(Dimension * rd, Dimension * ad, Dimension
     agentDimension = ad;
     restrictAgentDimension = rad;
     ratio = r;
+    xminBlock = false;
+    xmaxBlock = false;
+    yminBlock = false;
+    ymaxBlock = false;
+    zminBlock = false;
+    zmaxBlock = false;
+    firstDim = true;
 
     updatedAgentDimensions();
 
@@ -40,14 +47,35 @@ RestrictAxesDialog::~RestrictAxesDialog()
 
 void RestrictAxesDialog::updatedAgentDimensions()
 {
-    xStart = agentDimension->xmin*1.1;
-    xEnd   = agentDimension->xmax*1.1;
+    xStartK = agentDimension->xmin*1.1;
+    xEndK   = agentDimension->xmax*1.1;
+    yStartK = agentDimension->ymin*1.1;
+    yEndK   = agentDimension->ymax*1.1;
+    zStartK = agentDimension->zmin*1.1;
+    zEndK   = agentDimension->zmax*1.1;
+
+    if(firstDim)
+    {
+        xStart = xStartK;
+        xEnd = xEndK;
+        yStart = yStartK;
+        yEnd = yEndK;
+        zStart = zStartK;
+        zEnd = zEndK;
+        firstDim = false;
+    }
+    else
+    {
+        if(xStartK < xStart) xStart = xStartK;
+        if(xEndK   > xEnd  ) xEnd   = xEndK;
+        if(yStartK < yStart) yStart = yStartK;
+        if(yEndK   > yEnd  ) yEnd   = yEndK;
+        if(zStartK < zStart) zStart = zStartK;
+        if(zEndK   > zEnd  ) zEnd   = zEndK;
+    }
+
     xStep = ((xEnd)-(xStart))/100.0;
-    yStart = agentDimension->ymin*1.1;
-    yEnd   = agentDimension->ymax*1.1;
     yStep = ((yEnd)-(yStart))/100.0;
-    zStart = agentDimension->zmin*1.1;
-    zEnd   = agentDimension->zmax*1.1;
     zStep = ((zEnd)-(zStart))/100.0;
 
     ui->doubleSpinBox_xMin->setRange(xStart,xEnd);
@@ -63,37 +91,67 @@ void RestrictAxesDialog::updatedAgentDimensions()
     ui->doubleSpinBox_zMax->setRange(zStart,zEnd);
     ui->doubleSpinBox_zMax->setSingleStep(zStep);
 
-    if(!(restrictAgentDimension->xminon)) { ui->horizontalSlider_xMin->setValue(0);   enableXMin(false); }
+    if(!(restrictAgentDimension->xminon))
+    {
+        ui->doubleSpinBox_xMin->setValue(xStart);
+        ui->horizontalSlider_xMin->setValue(0);
+        enableXMin(false);
+    }
     else
     {
         emit( ui->doubleSpinBox_xMin->setValue(restrictAgentDimension->xmin) );
         emit( updateXMin(restrictAgentDimension->xmin) );
     }
-    if(!(restrictAgentDimension->xmaxon)) { ui->horizontalSlider_xMax->setValue(99);  enableXMax(false); }
+    if(!(restrictAgentDimension->xmaxon))
+    {
+        ui->doubleSpinBox_xMax->setValue(xEnd);
+        ui->horizontalSlider_xMax->setValue(99);
+        enableXMax(false);
+    }
     else
     {
         emit( ui->doubleSpinBox_xMax->setValue(restrictAgentDimension->xmax) );
         emit( updateXMax(restrictAgentDimension->xmax) );
     }
-    if(!(restrictAgentDimension->yminon)) { ui->horizontalSlider_yMin->setValue(0);   enableYMin(false); }
+    if(!(restrictAgentDimension->yminon))
+    {
+        ui->doubleSpinBox_yMin->setValue(yStart);
+        ui->horizontalSlider_yMin->setValue(0);
+        enableYMin(false);
+    }
     else
     {
         emit( ui->doubleSpinBox_yMin->setValue(restrictAgentDimension->ymin) );
         emit( updateYMin(restrictAgentDimension->ymin) );
     }
-    if(!(restrictAgentDimension->ymaxon)) { ui->horizontalSlider_yMax->setValue(99);  enableYMax(false); }
+    if(!(restrictAgentDimension->ymaxon))
+    {
+        ui->doubleSpinBox_yMax->setValue(yEnd);
+        ui->horizontalSlider_yMax->setValue(99);
+        enableYMax(false);
+    }
     else
     {
         emit( ui->doubleSpinBox_yMax->setValue(restrictAgentDimension->ymax) );
         emit( updateYMax(restrictAgentDimension->ymax) );
     }
-    if(!(restrictAgentDimension->zminon)) { ui->horizontalSlider_zMin->setValue(0);   enableZMin(false); }
+    if(!(restrictAgentDimension->zminon))
+    {
+        ui->doubleSpinBox_zMin->setValue(zStart);
+        ui->horizontalSlider_zMin->setValue(0);
+        enableZMin(false);
+    }
     else
     {
         emit( ui->doubleSpinBox_zMin->setValue(restrictAgentDimension->zmin) );
         emit( updateZMin(restrictAgentDimension->zmin) );
     }
-    if(!(restrictAgentDimension->zmaxon)) { ui->horizontalSlider_zMax->setValue(99);  enableZMax(false); }
+    if(!(restrictAgentDimension->zmaxon))
+    {
+        ui->doubleSpinBox_zMax->setValue(zEnd);
+        ui->horizontalSlider_zMax->setValue(99);
+        enableZMax(false);
+    }
     else
     {
         emit( ui->doubleSpinBox_zMax->setValue(restrictAgentDimension->zmax) );
@@ -145,31 +203,37 @@ void RestrictAxesDialog::updateZMax(double d)
 
 void RestrictAxesDialog::updateXMinS(int i)
 {
+    if(xminBlock) { xminBlock = false; return; } else xminBlock = true;
     if(i==0) enableXMin(false); else enableXMin(true);
     emit( ui->doubleSpinBox_xMin->setValue(i*xStep+xStart) );
 }
 void RestrictAxesDialog::updateXMaxS(int i)
 {
+    if(xmaxBlock) { xmaxBlock = false; return; } else xmaxBlock = true;
     if(i==99) enableXMax(false); else enableXMax(true);
     emit( ui->doubleSpinBox_xMax->setValue(i*xStep+xStart) );
 }
 void RestrictAxesDialog::updateYMinS(int i)
 {
+    if(yminBlock) { yminBlock = false; return; } else yminBlock = true;
     if(i==0) enableYMin(false); else enableYMin(true);
     emit( ui->doubleSpinBox_yMin->setValue(i*yStep+yStart) );
 }
 void RestrictAxesDialog::updateYMaxS(int i)
 {
+    if(ymaxBlock) { ymaxBlock = false; return; } else ymaxBlock = true;
     if(i==99) enableYMax(false); else enableYMax(true);
     emit( ui->doubleSpinBox_yMax->setValue(i*yStep+yStart) );
 }
 void RestrictAxesDialog::updateZMinS(int i)
 {
+    if(zminBlock) { zminBlock = false; return; } else zminBlock = true;
     if(i==0) enableZMin(false); else enableZMin(true);
     emit( ui->doubleSpinBox_zMin->setValue(i*zStep+zStart) );
 }
 void RestrictAxesDialog::updateZMaxS(int i)
 {
+    if(zmaxBlock) { zmaxBlock = false; return; } else zmaxBlock = true;
     if(i==99) enableZMax(false); else enableZMax(true);
     emit( ui->doubleSpinBox_zMax->setValue(i*zStep+zStart) );
 }

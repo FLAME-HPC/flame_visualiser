@@ -11,11 +11,6 @@
 #include <QtPlugin>
 #include "agentdialog.h"
 
-/* If Windows then include importing plugins for static compilation */
-#ifdef Q_WS_WIN
-    Q_IMPORT_PLUGIN(qjpeg)
-#endif
-
 GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm, Dimension * rd, QWidget *parent) : QGLWidget(parent)
 {
     agents = 0;
@@ -219,6 +214,7 @@ void GLWidget::drawAgents(GLenum mode)
     double sizeZ = 0.0;
     //int grade;
     int name = 0;
+    GLfloat mat_ambientA[4];
     nameAgents.clear();
 
     int style = 0;
@@ -279,7 +275,20 @@ void GLWidget::drawAgents(GLenum mode)
 
                         glTranslatef(rule->agents.at(i).x, rule->agents.at(i).y, rule->agents.at(i).z);
 
-                        GLfloat mat_ambientA[] = { rule->colour().redF(), rule->colour().greenF(), rule->colour().blueF(), rule->colour().alphaF() };//alphaA };
+                        if(rule->agents.at(i).isPicked)
+                        {
+                            mat_ambientA[0] = 1.0-rule->colour().redF();
+                            mat_ambientA[1] = 1.0-rule->colour().greenF();
+                            mat_ambientA[2] = 1.0-rule->colour().blueF();
+                            mat_ambientA[3] = rule->colour().alphaF();
+                        }
+                        else
+                        {
+                            mat_ambientA[0] = rule->colour().redF();
+                            mat_ambientA[1] = rule->colour().greenF();
+                            mat_ambientA[2] = rule->colour().blueF();
+                            mat_ambientA[3] = rule->colour().alphaF();
+                        }
 
                         if(light) glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_ambientA );
                         else glColor4fv(mat_ambientA);
@@ -402,25 +411,22 @@ void GLWidget::paintEvent(QPaintEvent */*event*/)
     paintGL();
 
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setFont(QFont("Courier", 20));
 
-    if(*displayTime || drawNameAgent)
+    if(timeScale->enabled && timeScale->displayInVisual)
     {
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setFont(QFont("Courier", 20));
+        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0), Qt::AlignLeft, *timeString));
+        QSize windowSize = size();
 
-        if(*displayTime)
-        {
-            const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0), Qt::AlignLeft, *timeString));
-            QSize windowSize = size();
+        painter.drawText(windowSize.width()-bbox.width()-15,windowSize.height()-bbox.height(),*timeString);
+    }
 
-            painter.drawText(windowSize.width()-bbox.width()-15,windowSize.height()-bbox.height(),*timeString);
-        }
-        if(drawNameAgent)
+    if(drawNameAgent)
+    {
+        for(int i = 0; i < nameAgent.tags.size(); i++)
         {
-            for(int i = 0; i < nameAgent.tags.size(); i++)
-            {
-                painter.drawText(10, 20*(i+1), QString("%1\t%2").arg(nameAgent.tags[i], nameAgent.values[i]));
-            }
+            painter.drawText(10, 20*(i+1), QString("%1\t%2").arg(nameAgent.tags[i], nameAgent.values[i]));
         }
     }
 
@@ -606,8 +612,8 @@ void GLWidget::processSelection(int mx, int my)
     drawNameAgent = false;
 
     int i, j;
-    int nitems, zmin, zmax, item;
-    int minimumDepth;
+    int nitems, zmin, zmax, item = 0;
+    int minimumDepth = 0;
     int pickItem;
 
     //qDebug() << "hits = " << hits;
@@ -640,6 +646,8 @@ void GLWidget::processSelection(int mx, int my)
         nameAgent.tags = QStringList(a->tags);
         nameAgent.values = QStringList(a->values);
         drawNameAgent = false;//true;
+
+        a->isPicked = true;
 
         /* Release of button p is not caught because the focus is given to the agent dialog */
         pickOn = false;

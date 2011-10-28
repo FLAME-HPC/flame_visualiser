@@ -17,6 +17,7 @@ public:
         shapeDimensionZ = 0.0;
         conditionVariable = 0.0;
         isEnvironment = false;
+        isPicked = false;
     }
 
     QString agentType;
@@ -30,6 +31,7 @@ public:
     double shapeDimensionZ;
     double conditionVariable;
     bool isEnvironment;
+    bool isPicked;
 };
 
 #endif // AGENT_H

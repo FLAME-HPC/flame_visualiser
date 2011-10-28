@@ -55,6 +55,13 @@ private:
     double xStep, xStart, xEnd;
     double yStep, yStart, yEnd;
     double zStep, zStart, zEnd;
+    bool xminBlock, xmaxBlock;
+    bool yminBlock, ymaxBlock;
+    bool zminBlock, zmaxBlock;
+    double xStartK, xEndK;
+    double yStartK, yEndK;
+    double zStartK, zEndK;
+    bool firstDim;
 };
 
 #endif // RESTRICTAXESDIALOG_H

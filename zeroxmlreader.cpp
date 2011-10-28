@@ -2,12 +2,20 @@
 #include "zeroxmlreader.h"
 #include "visualsettingsitem.h"
 
-ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at, VisualSettingsModel *vsm, double * r)
+ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at, VisualSettingsModel *vsm, double * r, Dimension * ad)
 {
     agents = a;
     agentTypes = at;
     vsmodel = vsm;
     ratio = r;
+    agentDimension = ad;
+
+    agentDimension->xmin =  999999.9;
+    agentDimension->xmax = -999999.9;
+    agentDimension->ymin =  999999.9;
+    agentDimension->ymax = -999999.9;
+    agentDimension->zmin =  999999.9;
+    agentDimension->zmax = -999999.9;
 }
 
 bool ZeroXMLReader::read(QIODevice * device, int flag)
@@ -295,6 +303,14 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent)
                         if(QString::compare(vsi->shape().getDimensionVariableZ(), agent->tags.at(k)) == 0)
                             agent->shapeDimensionZ += agent->values.at(k).toDouble();
                 }
+
+                /* Calc agent scene dimension */
+                if(agentDimension->xmin > agent->x) agentDimension->xmin = agent->x;
+                if(agentDimension->xmax < agent->x) agentDimension->xmax = agent->x;
+                if(agentDimension->ymin > agent->y) agentDimension->ymin = agent->y;
+                if(agentDimension->ymax < agent->y) agentDimension->ymax = agent->y;
+                if(agentDimension->zmin > agent->z) agentDimension->zmin = agent->z;
+                if(agentDimension->zmax < agent->z) agentDimension->zmax = agent->z;
 
                 agent->x *= *ratio;
                 agent->y *= *ratio;

@@ -19,8 +19,8 @@ AgentDialog::AgentDialog(Agent * a, QWidget *parent) :
     ui->tableWidget_Variables->verticalHeader()->hide();
     QHeaderView *headerView = ui->tableWidget_Variables->horizontalHeader();
     headerView->setResizeMode(QHeaderView::Stretch);
-    headerView->setResizeMode(1, QHeaderView::Interactive);
-    ui->tableWidget_Variables->setSelectionBehavior(QAbstractItemView::SelectRows);
+    //headerView->setResizeMode(1, QHeaderView::Interactive);
+    //ui->tableWidget_Variables->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     for(int i = 0; i < a->tags.size(); i++)
     {

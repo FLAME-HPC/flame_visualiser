@@ -109,7 +109,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_ForwardIteration, SIGNAL(clicked()), this, SLOT(increment_iteration()));
     connect(ui->pushButton_BackIteration, SIGNAL(clicked()), this, SLOT(decrement_iteration()));
     /* Connect signals of the menu items */
-    connect(ui->actionNew, SIGNAL(triggered()), this, SLOT(save_as_config_file()));
+    connect(ui->actionNew, SIGNAL(triggered()), this, SLOT(new_config_file()));
     connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(open_config_file()));
     connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(save_config_file()));
     connect(ui->actionSave_As, SIGNAL(triggered()), this, SLOT(save_as_config_file()));
@@ -229,8 +229,9 @@ void MainWindow::time_dialog_closed()
 
 void MainWindow::restrict_axes_closed()
 {
-    qDebug() << "restrict_axes_closed()";
     restrict_dimension_open = false;
+    disconnect(restrictAxesDialog, SIGNAL(closed()), this, SLOT(restrict_axes_closed()));
+    disconnect(this, SIGNAL(updatedAgentDimension()), restrictAxesDialog, SLOT(updatedAgentDimensions()));
     emit( restrictAxes(false) );
 }
 
@@ -477,7 +478,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         // Read in agents with model dimensions
         readZeroXML(1);
         // Calculate model to opengl dimension ratio
-        calcPositionRatio(0);
+        calcPositionRatio();
         // Reread agents with opengl dimension using new ratio
         readZeroXML(1);
 
@@ -488,7 +489,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked()
         visual_window->set_rules(visual_settings_model);
         visual_window->setIteration(&iteration);
         visual_window->setConfigPath(&configPath);
-        visual_window->setTimeDisplayed(&(timeScale->displayInVisual));
+        visual_window->setTimeScale(timeScale);
         visual_window->setTimeString(&timeString);
 
         /* Connect signals between MainWindow and visual_window */
@@ -556,7 +557,7 @@ bool MainWindow::readZeroXML(int flag)
         }
     }
 
-    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio);
+    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio, agentDimension);
     if (!reader.read(&file, flag))
     {
          ui->label_5->setText("Not found");
@@ -611,7 +612,7 @@ void MainWindow::increment_iteration()
         graphs.at(i)->updateData(iteration);
     }
 
-    if(restrict_dimension_open) calcPositionRatio(1);
+    if(restrict_dimension_open) emit(updatedAgentDimension());
 }
 
 /** \fn MainWindow::decrement_iteration()
@@ -634,7 +635,7 @@ void MainWindow::decrement_iteration()
     ui->spinBox->setValue(iteration);
     if(ui->checkBox_timeScale->isChecked()) calcTimeScale();
 
-    if(restrict_dimension_open) calcPositionRatio(1);
+    if(restrict_dimension_open) emit(updatedAgentDimension());
 }
 
 /** \fn MainWindow::open_config_file()
@@ -763,6 +764,7 @@ void MainWindow::readConfigFile(QString fileName, int it)
  */
 void MainWindow::enableTimeScale(bool b)
 {
+    timeScale->enabled = b;
     ui->checkBox_timeScale->setChecked(b);
     ui->lineEdit_timeScale->setEnabled(b);
     ui->pushButton_timeScale->setEnabled(b);
@@ -781,7 +783,7 @@ void MainWindow::enableTimeScale(bool b)
  */
 void MainWindow::new_config_file()
 {
-    enableTimeScale(false);
+    close_config_file();
     save_as_config_file();
 }
 
@@ -865,6 +867,7 @@ void MainWindow::close_config_file()
     iteration = 0;
     configPath = "";
     configName = "";
+    iteration = 0;
 }
 
 /** \fn MainWindow::writeConfigXML(QFile * file)
@@ -1058,7 +1061,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 /** \fn MainWindow::calcPositionRatio()
  *  \brief Automatically work out a good ratio to use to view agents visually.
  */
-void MainWindow::calcPositionRatio(int flag)
+void MainWindow::calcPositionRatio()
 {
     double smallest = 0.0;
     double largest = 0.0;
@@ -1067,30 +1070,17 @@ void MainWindow::calcPositionRatio(int flag)
     {
         for(int i= 0; i < visual_settings_model->getRule(j)->agents.count(); i++)
         {
-            if(agentDimension->xmin > visual_settings_model->getRule(j)->agents.at(i).x) agentDimension->xmin = visual_settings_model->getRule(j)->agents.at(i).x;
-            if(agentDimension->xmax < visual_settings_model->getRule(j)->agents.at(i).x) agentDimension->xmax = visual_settings_model->getRule(j)->agents.at(i).x;
-            if(agentDimension->ymin > visual_settings_model->getRule(j)->agents.at(i).y) agentDimension->ymin = visual_settings_model->getRule(j)->agents.at(i).y;
-            if(agentDimension->ymax < visual_settings_model->getRule(j)->agents.at(i).y) agentDimension->ymax = visual_settings_model->getRule(j)->agents.at(i).y;
-            if(agentDimension->zmin > visual_settings_model->getRule(j)->agents.at(i).z) agentDimension->zmin = visual_settings_model->getRule(j)->agents.at(i).z;
-            if(agentDimension->zmax < visual_settings_model->getRule(j)->agents.at(i).z) agentDimension->zmax = visual_settings_model->getRule(j)->agents.at(i).z;
 
-            if(flag == 0)
-            {
-                if(smallest > visual_settings_model->getRule(j)->agents.at(i).x) smallest = visual_settings_model->getRule(j)->agents.at(i).x;
-                if(smallest > visual_settings_model->getRule(j)->agents.at(i).y) smallest = visual_settings_model->getRule(j)->agents.at(i).y;
-                if(largest  < visual_settings_model->getRule(j)->agents.at(i).x) largest  = visual_settings_model->getRule(j)->agents.at(i).x;
-                if(largest  < visual_settings_model->getRule(j)->agents.at(i).y) largest  = visual_settings_model->getRule(j)->agents.at(i).y;
-            }
+            if(smallest > visual_settings_model->getRule(j)->agents.at(i).x) smallest = visual_settings_model->getRule(j)->agents.at(i).x;
+            if(smallest > visual_settings_model->getRule(j)->agents.at(i).y) smallest = visual_settings_model->getRule(j)->agents.at(i).y;
+            if(largest  < visual_settings_model->getRule(j)->agents.at(i).x) largest  = visual_settings_model->getRule(j)->agents.at(i).x;
+            if(largest  < visual_settings_model->getRule(j)->agents.at(i).y) largest  = visual_settings_model->getRule(j)->agents.at(i).y;
         }
     }
 
-    emit(updatedAgentDimension());
+    if(smallest < 0.0 && largest < -smallest) ratio = 1.0 / -smallest;
+    else ratio = 1.0 / largest;
 
-    if(flag == 0)
-    {
-        if(smallest < 0.0 && largest < -smallest) ratio = 1.0 / -smallest;
-        else ratio = 1.0 / largest;
-    }
 }
 
 /** \fn MainWindow::on_pushButton_Animate_clicked()
@@ -1162,6 +1152,7 @@ void MainWindow::on_actionQuit_triggered()
 {
     if(opengl_window_open) visual_window->close();
     if(images_dialog_open) images_dialog->close();
+    if(restrict_dimension_open) restrictAxesDialog->close();
     close();
 }
 
@@ -1213,6 +1204,7 @@ void MainWindow::on_pushButton_timeScale_clicked()
     }
     else
     {
+
         time_dialog->close();
     }
 }
@@ -1270,9 +1262,9 @@ void MainWindow::on_actionHelp_triggered()
     helpText.append("<li>16 - medium quality</li>");
     helpText.append("<li>32 - high quality</li></ul>");
     helpText.append("<h4>Change the Near Clip Plane</h4>The near clip plane can be changed by holding down the <b>C key</b> and the <b>right mouse button</b> and moving the mouse up and down.");
-    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its memory displayed by holding down the <b>P key</b> and <b>left mouse clicking</b> on an agent.");
+    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its memory displayed by holding down the <b>P key</b> and <b>left mouse clicking</b> on an agent. The agent picked is highlighted.");
     helpText.append("<h4>Move the Centre of the Visual Scene</h4>The scene can be shifted up,down,left and right by holding down the <b>Spacebar</b> and the <b>left mouse button</b> and moving the mouse.");
-    helpText.append("<h4>Restricting Drawing Axes</h4>By selecting 'restrict axes' from 'tools' on the menubar the drawing of agents can be restricted on the x,y and z axes.");
+    helpText.append("<h4>Restricting Drawing Axes</h4>By selecting 'Restrict Axes' from 'Tools' on the menubar the drawing of agents can be restricted on the x,y and z axes. When the minimum value sliders are fully to the left and the maximum value sliders are fully to the right those restrictions are turned off.");
 
     help->setGeometry(50,50,600,400);
     help->insertHtml(helpText);
@@ -1285,7 +1277,7 @@ void MainWindow::on_actionRestrict_Axes_triggered()
     if(!restrict_dimension_open)
     {
         restrict_dimension_open = true;
-        restrictAxesDialog = new RestrictAxesDialog(restrictDimension, agentDimension, restrictAgentDimension, &ratio, this);
+        restrictAxesDialog = new RestrictAxesDialog(restrictDimension, agentDimension, restrictAgentDimension, &ratio);
         connect(restrictAxesDialog, SIGNAL(closed()), this, SLOT(restrict_axes_closed()));
         connect(this, SIGNAL(updatedAgentDimension()), restrictAxesDialog, SLOT(updatedAgentDimensions()));
         emit( restrictAxes(true) );

@@ -2,7 +2,7 @@
 
 Shape::Shape()
 {
-    shape = "";
+    shape = "sphere";
     shapes << "sphere" << "cube" << "point";
     dimension = 0.0;
     dimensionY = 0.0;

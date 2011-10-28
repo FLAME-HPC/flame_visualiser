@@ -101,7 +101,7 @@ private:
     void createGraphWindow(GraphWidget * graph_window);
     void readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
-    void calcPositionRatio(int flag);
+    void calcPositionRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
     Ui::MainWindow *ui; ///< The User Interface

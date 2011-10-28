@@ -1,0 +1,13 @@
+FLAME Visualiser
+
+To compile you will need Qt4.
+The package for Ubuntu is called: libqt4-dev
+
+To compile type:
+
+	qmake flame_visualiser.pro
+	make
+
+To run:
+
+	./flame_visualiser
