@@ -1,21 +1,26 @@
-#include "conditiondialog.h"
+/*!
+ * \file conditiondialog.cpp
+ *  \author Simon Coakley
+ *  \date 2012
+ *  \copyright Copyright (c) 2012 University of Sheffield
+ *  \brief Implementation of condition dialog
+ */
 #include <QtGui>
+#include "./conditiondialog.h"
 
-ConditionDialog::ConditionDialog(QList<AgentType> *ats, QString agentType, int r, QWidget *parent)
-    : QDialog(parent)
-{
+ConditionDialog::ConditionDialog(QList<AgentType> *ats, QString agentType,
+        int r, QWidget *parent)
+    : QDialog(parent) {
     setupUi(this);
 
     agentTypes = ats;
     row = r;
 
-    for(int i = 0; i < agentTypes->count(); i++)
-    {
-        if(QString::compare(agentTypes->at(i).name, agentType) == 0)
-        {
-            for(int j = 0; j < agentTypes->at(i).variables.count(); j++)
-            {
-               variableComboBox->insertItem(j, agentTypes->at(i).variables.at(j));
+    for (int i = 0; i < agentTypes->count(); i++) {
+        if (QString::compare(agentTypes->at(i).name, agentType) == 0) {
+            for (int j = 0; j < agentTypes->at(i).variables.count(); j++) {
+               variableComboBox->insertItem(j,
+                       agentTypes->at(i).variables.at(j));
             }
         }
     }
@@ -24,48 +29,45 @@ ConditionDialog::ConditionDialog(QList<AgentType> *ats, QString agentType, int r
     operators << "==" << "!=" << ">" << "<" << ">=" << "<=";
     opComboBox->addItems(operators);
 
-    connect(this, SIGNAL(setVariableComboBox(int)), variableComboBox, SLOT(setCurrentIndex(int)));
-    connect(this, SIGNAL(setOpComboBox(int)), opComboBox, SLOT(setCurrentIndex(int)));
+    connect(this, SIGNAL(setVariableComboBox(int)),
+            variableComboBox, SLOT(setCurrentIndex(int)));
+    connect(this, SIGNAL(setOpComboBox(int)),
+            opComboBox, SLOT(setCurrentIndex(int)));
     connect(checkBox, SIGNAL(clicked(bool)), this, SLOT(updateEnable(bool)));
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 }
 
-void ConditionDialog::updateEnable(bool c)
-{
+void ConditionDialog::updateEnable(bool c) {
     variableComboBox->setEnabled(c);
     opComboBox->setEnabled(c);
     valueSpinBox->setEnabled(c);
 }
 
-void ConditionDialog::setCondition(Condition c)
-{
+void ConditionDialog::setCondition(Condition c) {
     condition = c;
 
-    emit( checkBox->setChecked(condition.enable) );
+    emit(checkBox->setChecked(condition.enable));
     updateEnable(condition.enable);
 
     int index = 0;
-    for(int i = 0; i < variableComboBox->count(); i++)
-    {
-        if(variableComboBox->itemText(i) == condition.variable)
+    for (int i = 0; i < variableComboBox->count(); i++) {
+        if (variableComboBox->itemText(i) == condition.variable)
             index = i;
     }
-    emit ( setVariableComboBox(index) );
+    emit(setVariableComboBox(index));
 
     index = 0;
-    for(int i = 0; i < opComboBox->count(); i++)
-    {
-        if(opComboBox->itemText(i) == condition.op)
+    for (int i = 0; i < opComboBox->count(); i++) {
+        if (opComboBox->itemText(i) == condition.op)
             index = i;
     }
-    emit ( setOpComboBox(index) );
+    emit(setOpComboBox(index));
 
     valueSpinBox->setValue(condition.value);
 }
 
-Condition ConditionDialog::getCondition()
-{
+Condition ConditionDialog::getCondition() {
     condition.enable = checkBox->isChecked();
     condition.variable = variableComboBox->currentText();
     condition.op = opComboBox->currentText();

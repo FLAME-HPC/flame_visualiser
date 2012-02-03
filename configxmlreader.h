@@ -1,26 +1,34 @@
-#ifndef CONFIGXMLREADER_H
-#define CONFIGXMLREADER_H
+/*!
+ * \file configxmlreader.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for config XML reader
+ */
+#ifndef CONFIGXMLREADER_H_
+#define CONFIGXMLREADER_H_
 
 #include <QXmlStreamReader>
-#include "visualsettingsmodel.h"
-#include "graphsettingsmodel.h"
-#include "shape.h"
 #include <QColor>
-#include "timescale.h"
+#include "./visualsettingsmodel.h"
+#include "./graphsettingsmodel.h"
+#include "./shape.h"
+#include "./timescale.h"
 
-class ConfigXMLReader : public QXmlStreamReader
-{
-public:
-    ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm, QString * rD, TimeScale * ts, double * r,
-                    float * xr, float *yr, float *xm, float * ym, float * zm);
+class ConfigXMLReader : public QXmlStreamReader {
+  public:
+    ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm,
+            QString * rD, TimeScale * ts, double * r,
+                    float * xr, float *yr, float *xm, float * ym, float * zm, int * delay);
 
     bool read(QIODevice * device);
 
-private:
+  private:
     void readUnknownElement();
     void readConfig();
     void readResultsData();
     void readTimeScale();
+    void readAnimation();
     void readVisual();
     void readRules();
     void readRule();
@@ -45,6 +53,7 @@ private:
     float * xmove;
     float * ymove;
     float * zmove;
+    int * delayTime;
 };
 
-#endif // CONFIGXMLREADER_H
+#endif  // CONFIGXMLREADER_H_

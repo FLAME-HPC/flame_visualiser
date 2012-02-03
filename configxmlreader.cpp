@@ -1,12 +1,20 @@
-#include "configxmlreader.h"
-#include "shape.h"
-#include "position.h"
+/*!
+ * \file configxmlreader.cpp
+ *  \author Simon Coakley
+ *  \date 2012
+ *  \copyright Copyright (c) 2012 University of Sheffield
+ *  \brief Implementation of config XML reader
+ */
 #include <QColor>
 #include <QDebug>
+#include "./configxmlreader.h"
+#include "./shape.h"
+#include "./position.h"
 
-ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm, GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r,
-                                 float * xr, float *yr, float *xm, float * ym, float * zm)
-{
+ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
+        GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r,
+             float * xr, float *yr, float *xm, float * ym, float * zm,
+             int * delay) {
     vsmodel = vsm;
     gsmodel = gsm;
     resultsData = rD;
@@ -17,33 +25,32 @@ ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm, GraphSettingsModel *g
     xmove = xm;
     ymove = ym;
     zmove = zm;
+    delayTime = delay;
 }
 
-bool ConfigXMLReader::read(QIODevice * device)
-{
+bool ConfigXMLReader::read(QIODevice * device) {
     setDevice(device);
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isStartElement()) {
-             if (name() == "flame_visualiser_config" && attributes().value("version") == "0.1")
+             if (name() == "flame_visualiser_config" &&
+                     attributes().value("version") == "0.1")
                  readConfig();
              else
-                 raiseError(QObject::tr("The file is not an flame_visualiser_config version 0.1 file."));
+                 raiseError(QObject::tr(
+             "The file is not an flame_visualiser_config version 0.1 file."));
          }
      }
 
      return !error();
 }
 
-void ConfigXMLReader::readUnknownElement()
-{
+void ConfigXMLReader::readUnknownElement() {
     Q_ASSERT(isStartElement());
 
-     while (!atEnd())
-    {
+     while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -52,15 +59,12 @@ void ConfigXMLReader::readUnknownElement()
          if (isStartElement())
              readUnknownElement();
      }
-
 }
 
-void ConfigXMLReader::readConfig()
-{
+void ConfigXMLReader::readConfig() {
     Q_ASSERT(isStartElement() && name() == "flame_visualiser_config");
 
-     while (!atEnd())
-    {
+     while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -71,6 +75,8 @@ void ConfigXMLReader::readConfig()
                  readResultsData();
              else if (name() == "timeScale")
                  readTimeScale();
+             else if (name() == "animation")
+                 readAnimation();
              else if (name() == "visual")
                  readVisual();
              else if (name() == "graph")
@@ -81,10 +87,8 @@ void ConfigXMLReader::readConfig()
      }
 }
 
-void ConfigXMLReader::readResultsData()
-{
-    while (!atEnd())
-    {
+void ConfigXMLReader::readResultsData() {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -99,50 +103,64 @@ void ConfigXMLReader::readResultsData()
      }
 }
 
-void ConfigXMLReader::readTimeScale()
-{
+void ConfigXMLReader::readTimeScale() {
     QString enable;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
              break;
 
          if (isStartElement()) {
-             if (name() == "enable")
-             {
+             if (name() == "enable") {
                  enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) timeScale->enabled = true;
-                 else timeScale->enabled = false;
-             }
-             else if (name() == "displayTimeInVisual")
-             {
+                 if (QString::compare(enable, "true") == 0)
+                     timeScale->enabled = true;
+                 else
+                     timeScale->enabled = false;
+             } else if (name() == "displayTimeInVisual") {
                  enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) timeScale->displayInVisual = true;
-                 else timeScale->displayInVisual = false;
-             }
-             else if (name() == "milliseconds")
+                 if (QString::compare(enable, "true") == 0)
+                     timeScale->displayInVisual = true;
+                 else
+                     timeScale->displayInVisual = false;
+             } else if (name() == "milliseconds") {
                  timeScale->millisecond = readElementText().toInt();
-             else if (name() == "seconds")
+             } else if (name() == "seconds") {
                  timeScale->second = readElementText().toInt();
-             else if (name() == "minutes")
+             } else if (name() == "minutes") {
                  timeScale->minute = readElementText().toInt();
-             else if (name() == "hours")
+             } else if (name() == "hours") {
                  timeScale->hour = readElementText().toInt();
-             else if (name() == "days")
+             } else if (name() == "days") {
                  timeScale->day = readElementText().toInt();
-             else
+             } else {
                  readUnknownElement();
+             }
          }
      }
 }
 
-void ConfigXMLReader::readVisual()
-{
-    while (!atEnd())
-    {
+void ConfigXMLReader::readAnimation() {
+    while (!atEnd()) {
+         readNext();
+
+         if (isEndElement())
+             break;
+
+         if (isStartElement()) {
+             if (name() == "delay") {
+                 *delayTime = readElementText().toInt();
+             } else {
+                 readUnknownElement();
+             }
+         }
+     }
+}
+
+void ConfigXMLReader::readVisual() {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -169,10 +187,8 @@ void ConfigXMLReader::readVisual()
      }
 }
 
-void ConfigXMLReader::readRules()
-{
-    while (!atEnd())
-    {
+void ConfigXMLReader::readRules() {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -187,8 +203,7 @@ void ConfigXMLReader::readRules()
      }
 }
 
-void ConfigXMLReader::readRule()
-{
+void ConfigXMLReader::readRule() {
     QString agentType;
     Condition condition;
     Position x;
@@ -197,15 +212,13 @@ void ConfigXMLReader::readRule()
     Shape shape;
     QColor colour;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
              break;
 
-         if (isStartElement())
-         {
+         if (isStartElement()) {
              if (name() == "agentType")
                  agentType = readElementText();
              else if (name() == "condition")
@@ -228,131 +241,126 @@ void ConfigXMLReader::readRule()
     vsmodel->addRule(agentType, condition, x, y, z, shape, colour);
 }
 
-Shape ConfigXMLReader::readShape()
-{
+Shape ConfigXMLReader::readShape() {
     Shape shape;
     QString enable;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
              break;
 
          if (isStartElement()) {
-             if (name() == "object")
+             if (name() == "object") {
                  shape.setShape(readElementText());
-             else if (name() == "dimension")
+             } else if (name() == "dimension") {
                  shape.setDimension((readElementText().toDouble()));
-             else if (name() == "quality")
+             } else if (name() == "quality") {
                  shape.setQuality((readElementText().toInt()));
-             else if (name() == "useVariable")
-             {
+             } else if (name() == "useVariable") {
                  enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) shape.setUseVariable(true);
-                 else shape.setUseVariable(false);
-             }
-             else if (name() == "dimensionVariable")
+                 if (QString::compare(enable, "true") == 0)
+                     shape.setUseVariable(true);
+                 else
+                     shape.setUseVariable(false);
+             } else if (name() == "dimensionVariable") {
                  shape.setDimensionVariable(readElementText());
-             else if (name() == "dimensionY")
+             } else if (name() == "dimensionY") {
                  shape.setDimensionY((readElementText().toDouble()));
-             else if (name() == "useVariableY")
-             {
+             } else if (name() == "useVariableY") {
                  enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) shape.setUseVariableY(true);
-                 else shape.setUseVariableY(false);
-             }
-             else if (name() == "dimensionVariableY")
+                 if (QString::compare(enable, "true") == 0)
+                     shape.setUseVariableY(true);
+                 else
+                     shape.setUseVariableY(false);
+             } else if (name() == "dimensionVariableY") {
                  shape.setDimensionVariableY(readElementText());
-            else if (name() == "dimensionZ")
+             } else if (name() == "dimensionZ") {
                  shape.setDimensionZ((readElementText().toDouble()));
-             else if (name() == "useVariableZ")
-             {
+             } else if (name() == "useVariableZ") {
                  enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) shape.setUseVariableZ(true);
-                 else shape.setUseVariableZ(false);
-             }
-             else if (name() == "dimensionVariableZ")
+                 if (QString::compare(enable, "true") == 0)
+                     shape.setUseVariableZ(true);
+                 else
+                     shape.setUseVariableZ(false);
+             } else if (name() == "dimensionVariableZ") {
                  shape.setDimensionVariableZ(readElementText());
-             else
+             } else {
                  readUnknownElement();
+             }
          }
      }
 
     return shape;
 }
 
-Position ConfigXMLReader::readPosition()
-{
+Position ConfigXMLReader::readPosition() {
     Position position;
     QString enable;
 
-    while (!atEnd())
-    {
-         readNext();
+    while (!atEnd()) {
+        readNext();
 
-         if (isEndElement())
-             break;
+        if (isEndElement())
+        break;
 
-         if (isStartElement()) {
-             if (name() == "useVariable")
-              {
-                  enable = readElementText();
-                  if(QString::compare(enable,"true") == 0) position.useVariable = true;
-                  else position.useVariable = false;
-              }
-             else if (name() == "variable")
-                 position.positionVariable = readElementText();
-             else if (name() == "offSet")
-                 position.opValue = readElementText().toDouble();
-             else
-                 readUnknownElement();
-         }
-     }
+        if (isStartElement()) {
+            if (name() == "useVariable") {
+                enable = readElementText();
+                if (QString::compare(enable, "true") == 0)
+                    position.useVariable = true;
+                else
+                    position.useVariable = false;
+            } else if (name() == "variable") {
+                position.positionVariable = readElementText();
+            } else if (name() == "offSet") {
+                position.opValue = readElementText().toDouble();
+            } else {
+                readUnknownElement();
+            }
+        }
+    }
 
     return position;
 }
 
-Condition ConfigXMLReader::readCondition()
-{
+Condition ConfigXMLReader::readCondition() {
     Condition condition;
     QString enable;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
              break;
 
          if (isStartElement()) {
-             if (name() == "enable")
-             {
+             if (name() == "enable") {
                  enable = readElementText();
-                 if(QString::compare(enable,"true") == 0) condition.enable = true;
-                 else condition.enable = false;
-             }
-             else if (name() == "lhs")
+                 if (QString::compare(enable, "true") == 0)
+                     condition.enable = true;
+                 else
+                     condition.enable = false;
+             } else if (name() == "lhs") {
                  condition.variable = readLhs();
-             else if (name() == "operator")
+             } else if (name() == "operator") {
                  condition.op = readElementText();
-             else if (name() == "rhs")
+             } else if (name() == "rhs") {
                  condition.value = readRhs();
-             else
+             } else {
                  readUnknownElement();
+             }
          }
      }
 
     return condition;
 }
 
-QColor ConfigXMLReader::readColour()
-{
+QColor ConfigXMLReader::readColour() {
     QColor colour;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -375,12 +383,10 @@ QColor ConfigXMLReader::readColour()
     return colour;
 }
 
-QString ConfigXMLReader::readLhs()
-{
+QString ConfigXMLReader::readLhs() {
     QString agentType;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -397,12 +403,10 @@ QString ConfigXMLReader::readLhs()
     return agentType;
 }
 
-double ConfigXMLReader::readRhs()
-{
+double ConfigXMLReader::readRhs() {
     double value = 0.0;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -419,10 +423,8 @@ double ConfigXMLReader::readRhs()
     return value;
 }
 
-void ConfigXMLReader::readGraph()
-{
-    while (!atEnd())
-    {
+void ConfigXMLReader::readGraph() {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -437,23 +439,20 @@ void ConfigXMLReader::readGraph()
      }
 }
 
-void ConfigXMLReader::readPlot()
-{
+void ConfigXMLReader::readPlot() {
     QString graphNumber;
     QString xAxis;
     QString yAxis;
     Condition condition;
     QColor colour;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
              break;
 
-         if (isStartElement())
-         {
+         if (isStartElement()) {
              if (name() == "graphNumber")
                  graphNumber = readElementText();
              else if (name() == "xAxis")
@@ -472,12 +471,10 @@ void ConfigXMLReader::readPlot()
     gsmodel->addPlot(graphNumber, xAxis, yAxis, condition, colour, false);
 }
 
-QString ConfigXMLReader::readXaxis()
-{
+QString ConfigXMLReader::readXaxis() {
     QString type;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())
@@ -494,12 +491,10 @@ QString ConfigXMLReader::readXaxis()
     return type;
 }
 
-QString ConfigXMLReader::readYaxis()
-{
+QString ConfigXMLReader::readYaxis() {
     QString agentType;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
          readNext();
 
          if (isEndElement())

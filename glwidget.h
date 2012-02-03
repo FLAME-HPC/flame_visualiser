@@ -1,22 +1,29 @@
-#ifndef GLWIDGET_H
-#define GLWIDGET_H
+/*!
+ * \file glwidget.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for OpenGL widget
+ */
+#ifndef GLWIDGET_H_
+#define GLWIDGET_H_
 
 #include <QMainWindow>
 #include <QGLWidget>
 #include <QTime>
-#include "agent.h"
-#include "visualsettingsmodel.h"
-#include "dimension.h"
-#include "timescale.h"
+#include "./agent.h"
+#include "./visualsettingsmodel.h"
+#include "./dimension.h"
+#include "./timescale.h"
 
 class QTimer;
 
-class GLWidget : public QGLWidget
-{
+class GLWidget : public QGLWidget {
     Q_OBJECT
 
-public:
-    GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm, Dimension * rd, QWidget *parent = 0);
+  public:
+    GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
+            Dimension * rd, QWidget *parent = 0);
     ~GLWidget();
     void update_agents(QList<Agent> * a);
     void set_rules(VisualSettingsModel * m);
@@ -28,23 +35,26 @@ public:
     void setTimeScale(TimeScale * ts) { timeScale = ts; }
     void setTimeString(QString * t) { timeString = t; }
 
-public slots:
-    void animate();
+  public slots:
     void iterationLoaded();
     void nextIteration();
     void takeSnapshot();
     void takeAnimation(bool);
     void updateImagesLocation(QString);
     void stopAnimation();
+    void startAnimation();
     void restrictAxes(bool);
+    void updateDelayTime(int);
 
-signals:
+  signals:
     void increase_iteration();
     void decrease_iteration();
     void visual_window_closed();
     void imageStatus(QString);
+    void signal_stopAnimation();
+    void signal_startAnimation();
 
-protected:
+  protected:
     void paintEvent(QPaintEvent *event);
     void initializeGL();
     void resizeGL(int w, int h);
@@ -57,7 +67,10 @@ protected:
     void timeOut();
     void closeEvent(QCloseEvent *event);
 
-private:
+  private slots:
+    void unlockDelayTime();
+
+  private:
     void processSelection(int mx, int my);
     void drawAgents(GLenum mode);
     void drawCube(float sizeX, float sizeY, float sizeZ);
@@ -79,6 +92,7 @@ private:
     bool itforward, itback;
     QTimer *timer;
     QTime time;
+    QTimer *delayTimer;
     VisualSettingsModel * model;
     bool animation;
     bool locked;
@@ -90,15 +104,17 @@ private:
     float window_ratio;
     TimeScale * timeScale;
     QString * timeString;
-    float zNear; ///< The near clipping plane
+    float zNear;  /*!< \brief The near clipping plane */
     bool clippingOn;
     int windowWidth, windowHeight;
     QHash<int, Agent*> nameAgents;
-    Agent nameAgent; ///< A copy of the picked agent
+    Agent nameAgent;  /*!< \brief A copy of the picked agent */
     bool drawNameAgent;
     bool moveOn;
     Dimension * restrictDimension;
     bool restrictAxesOn;
+    bool delayLock;
+    int delayTime;
 };
 
-#endif // GLWIDGET_H
+#endif  // GLWIDGET_H_

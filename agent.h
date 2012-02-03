@@ -1,13 +1,18 @@
-#ifndef AGENT_H
-#define AGENT_H
+/*!
+ * \file agent.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for agent
+ */
+#ifndef AGENT_H_
+#define AGENT_H_
 
 #include <QStringList>
 
-class Agent
-{
-public:
-    Agent()
-    {
+class Agent {
+  public:
+    Agent() {
         agentType = "";
         x = 0.0;
         y = 0.0;
@@ -34,4 +39,4 @@ public:
     bool isPicked;
 };
 
-#endif // AGENT_H
+#endif  // AGENT_H_

@@ -1,18 +1,25 @@
-#ifndef VISUALSETTINGSITEM_H
-#define VISUALSETTINGSITEM_H
+/*!
+ * \file visualsettingsitem.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for visual settings item
+ */
+#ifndef VISUALSETTINGSITEM_H_
+#define VISUALSETTINGSITEM_H_
 
 #include <QString>
 #include <QColor>
-#include "shape.h"
-#include "position.h"
-#include "condition.h"
-#include "agent.h"
+#include "./shape.h"
+#include "./position.h"
+#include "./condition.h"
+#include "./agent.h"
 
-class VisualSettingsItem
-{
-public:
+class VisualSettingsItem {
+  public:
     VisualSettingsItem();
-    VisualSettingsItem(QString agentType, Condition condition, Position x, Position y, Position z, Shape shape, QColor colour);
+    VisualSettingsItem(QString agentType, Condition condition,
+            Position x, Position y, Position z, Shape shape, QColor colour);
     ~VisualSettingsItem() {}
 
     void setAgentType(QString n) { agentTypeString = n; }
@@ -30,22 +37,22 @@ public:
     void setColour(QColor c) { colourColor = c; }
     QColor colour() const { return colourColor; }
 
-    QList<Agent> agents; ///< The list of agents
+    QList<Agent> agents;  /*!< The list of agents */
 
-private:
+  private:
     QString agentTypeString;
-    //QString conditionString;
+    // QString conditionString;
     Condition conditionCondition;
-    //QString xString;
-    //QString yString;
-    //QString zString;
+    // QString xString;
+    // QString yString;
+    // QString zString;
     Position xPosition;
     Position yPosition;
     Position zPosition;
-    //QString shapeString;
-    //QString colourString;
+    // QString shapeString;
+    // QString colourString;
     Shape shapeShape;
     QColor colourColor;
 };
 
-#endif // VISUALSETTINGSITEM_H
+#endif  // VISUALSETTINGSITEM_H_

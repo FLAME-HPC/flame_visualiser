@@ -1,11 +1,16 @@
-#ifndef DIMENSION_H
-#define DIMENSION_H
+/*!
+ * \file dimension.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for dimension
+ */
+#ifndef DIMENSION_H_
+#define DIMENSION_H_
 
-class Dimension
-{
-public:
-    Dimension()
-    {
+class Dimension {
+  public:
+    Dimension() {
         xmin = 0.0;
         xmax = 0.0;
         ymin = 0.0;
@@ -34,4 +39,4 @@ public:
     bool zmaxon;
 };
 
-#endif // DIMENSION_H
+#endif  // DIMENSION_H_

@@ -1,44 +1,48 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+/*!
+ * \file mainwindow.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for main window
+ */
+#ifndef MAINWINDOW_H_
+#define MAINWINDOW_H_
 
 #include <QMainWindow>
 #include <QFile>
-#include "glwidget.h"
-#include "graphwidget.h"
-#include "agent.h"
-#include "agenttype.h"
-#include "visualsettingsmodel.h"
-#include "graphsettingsmodel.h"
-#include "imagesdialog.h"
-#include "timedialog.h"
-#include "timescale.h"
-#include "restrictaxesdialog.h"
-#include "dimension.h"
+#include "./glwidget.h"
+#include "./graphwidget.h"
+#include "./agent.h"
+#include "./agenttype.h"
+#include "./visualsettingsmodel.h"
+#include "./graphsettingsmodel.h"
+#include "./imagesdialog.h"
+#include "./timedialog.h"
+#include "./timescale.h"
+#include "./restrictaxesdialog.h"
+#include "./dimension.h"
 
-/** \namespace Ui
-  * \brief
+/*! \brief
   */
 namespace Ui {
     class MainWindow;
 }
 
-/** \class MainWindow
-  * \brief Main window class.
+/*! \brief Main window class.
   */
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public:
+  public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-protected:
+  protected:
     void keyPressEvent(QKeyEvent *event);
     void enableInterface(bool enable);
     void closeEvent(QCloseEvent *event);
 
-public slots:
+  public slots:
     void increment_iteration();
     void decrement_iteration();
     void visual_window_closed();
@@ -52,21 +56,24 @@ public slots:
     void colourChanged(QColor);
     void calcTimeScale();
     void restrict_axes_closed();
+    void slot_stopAnimation();
+    void slot_startAnimation();
 
-signals:
+  signals:
     void updateVisual();
     void unblock();
-    void animate();
+    void stopAnimation();
+    void startAnimation();
     void iterationLoaded();
     void takeSnapshotSignal();
     void imageStatusSignal(QString);
     void takeAnimationSignal(bool);
     void updateImagesLocationSignal(QString);
-    void stopAnimation();
     void restrictAxes(bool);
     void updatedAgentDimension();
+    void updateDelayTime(int);
 
-private slots:
+  private slots:
     void on_pushButton_LocationFind_clicked();
     void on_pushButton_OpenCloseVisual_clicked();
     void on_spinBox_valueChanged(int arg1);
@@ -82,9 +89,10 @@ private slots:
     void getColourVisual(QModelIndex index);
     void getColourGraph(QModelIndex index);
     void enabledGraph(QModelIndex index);
-    //void on_doubleSpinBox_ratio_valueChanged(double arg1);
-    //void on_pushButton_AutoDetect_clicked();
-    void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph);
+    // void on_doubleSpinBox_ratio_valueChanged(double arg1);
+    // void on_pushButton_AutoDetect_clicked();
+    void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph,
+            QString newGraph);
     void on_pushButton_Animate_clicked();
     void on_pushButton_ImageSettings_clicked();
     void ruleUpdated(int);
@@ -94,9 +102,10 @@ private slots:
     void enableTimeScale(bool);
     void on_actionHelp_triggered();
     void on_actionRestrict_Axes_triggered();
+    void on_horizontalSlider_delay_valueChanged(int value);
 
-private:
-    bool readZeroXML(int flag);
+  private:
+    int readZeroXML(int flag);
     bool writeConfigXML(QFile * file);
     void createGraphWindow(GraphWidget * graph_window);
     void readConfigFile(QString fileName, int it);
@@ -104,24 +113,29 @@ private:
     void calcPositionRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
-    Ui::MainWindow *ui; ///< The User Interface
-    bool opengl_window_open; ///< Indicates if the visual window is open
-    bool images_dialog_open; ///< Indicates if the image settings window is open
-    bool time_dialog_open; ///< Indicates if the time scale settings window is open
-    GLWidget *visual_window; ///< The visual window
-    int iteration; ///< The current iteration number
-    bool fileOpen; ///< Indicates if a file is open
-    QList<Agent> agents; ///< The list of agents
-    QList<AgentType> agentTypes; ///< The list of agent types
-    QList<GraphWidget*> graphs; ///< The list of graph windows
-    VisualSettingsModel * visual_settings_model; ///< The visual setting data model
-    GraphSettingsModel * graph_settings_model; ///< The graph settings data model
-    ImagesDialog * images_dialog; ///< The image settings dialog
-    TimeDialog * time_dialog; ///< The image settings dialog
-    QString configPath; ///< The path to the config xml file
-    QString configName; ///< The name of the config xml file
-    QString resultsData; ///< The path to 0.xml data
-    double ratio; ///< The visual location ratio
+    void tryAndReadInAgentTypes();
+    Ui::MainWindow *ui;  /*!< The User Interface */
+    bool opengl_window_open;  /*!< Indicates if the visual window is open */
+    /*! Indicates if the image settings window is open */
+    bool images_dialog_open;
+    /*! Indicates if the time scale settings window is open */
+    bool time_dialog_open;
+    GLWidget *visual_window;  /*!< The visual window */
+    int iteration;  /*!< The current iteration number */
+    bool fileOpen;  /*!< Indicates if a file is open */
+    QList<Agent> agents;  /*!< The list of agents */
+    QList<AgentType> agentTypes;  /*!< The list of agent types */
+    QList<GraphWidget*> graphs;  /*!< The list of graph windows */
+    /*! The visual setting data model */
+    VisualSettingsModel * visual_settings_model;
+    /*! The graph settings data model */
+    GraphSettingsModel * graph_settings_model;
+    ImagesDialog * images_dialog;  /*!< The image settings dialog */
+    TimeDialog * time_dialog;  /*!< The image settings dialog */
+    QString configPath;  /*!< The path to the config xml file */
+    QString configName;  /*!< The name of the config xml file */
+    QString resultsData;  /*!< The path to 0.xml data */
+    double ratio;  /*!< The visual location ratio */
     bool itLocked;
     QColor colour;
     QModelIndex colourIndex;
@@ -137,6 +151,8 @@ private:
     Dimension * agentDimension;
     bool restrict_dimension_open;
     RestrictAxesDialog * restrictAxesDialog;
+    bool animation;
+    int delayTime; /*!< The animation delay time in millisecs */
 };
 
-#endif // MAINWINDOW_H
+#endif  // MAINWINDOW_H_

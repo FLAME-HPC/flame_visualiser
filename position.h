@@ -1,12 +1,18 @@
-#ifndef POSITION_H
-#define POSITION_H
+/*!
+ * \file position.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for position
+ */
+#ifndef POSITION_H_
+#define POSITION_H_
 
 #include <QMetaType>
 #include <QPainter>
 
-class Position
-{
-public:
+class Position {
+  public:
     enum EditMode { Editable, ReadOnly };
 
     Position();
@@ -24,4 +30,4 @@ public:
 
 Q_DECLARE_METATYPE(Position)
 
-#endif // POSITION_H
+#endif  // POSITION_H_

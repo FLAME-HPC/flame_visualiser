@@ -1,15 +1,21 @@
-#ifndef GRAPHDELEGATE_H
-#define GRAPHDELEGATE_H
+/*!
+ * \file graphdelegate.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for graph delegate
+ */
+#ifndef GRAPHDELEGATE_H_
+#define GRAPHDELEGATE_H_
 
 #include <QItemDelegate>
 #include <QModelIndex>
-#include "graphsettingsmodel.h"
+#include "./graphsettingsmodel.h"
 
-class GraphDelegate : public QItemDelegate
-{
+class GraphDelegate : public QItemDelegate {
     Q_OBJECT
 
-public:
+  public:
     GraphDelegate(GraphSettingsModel * gsm = 0, QObject *parent = 0);
 
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
@@ -22,8 +28,8 @@ public:
     void updateEditorGeometry(QWidget *editor,
         const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
-private:
+  private:
     GraphSettingsModel * gsmodel;
 };
 
-#endif // GRAPHDELEGATE_H
+#endif  // GRAPHDELEGATE_H_

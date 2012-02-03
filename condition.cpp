@@ -1,15 +1,20 @@
-#include "condition.h"
+/*!
+ * \file condition.cpp
+ *  \author Simon Coakley
+ *  \date 2012
+ *  \copyright Copyright (c) 2012 University of Sheffield
+ *  \brief Implementation of condition
+ */
+#include "./condition.h"
 
-Condition::Condition()
-{
+Condition::Condition() {
     variable = "";
     op = "==";
     value = 0.0;
     enable = false;
 }
 
-QString Condition::getString() const
-{
+QString Condition::getString() const {
     QString text;
 
     text = variable;
@@ -22,13 +27,12 @@ QString Condition::getString() const
 }
 
 void Condition::paint(QPainter *painter, const QRect &rect,
-                       const QPalette &/*palette*/, EditMode /*mode*/) const
-{
-   painter->save();
+                       const QPalette &/*palette*/, EditMode /*mode*/) const {
+    painter->save();
 
-   painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setRenderHint(QPainter::Antialiasing, true);
 
-   if(enable) painter->drawText(rect,Qt::AlignCenter,getString());
+    if (enable) painter->drawText(rect, Qt::AlignCenter, getString());
 
-   painter->restore();
+    painter->restore();
 }

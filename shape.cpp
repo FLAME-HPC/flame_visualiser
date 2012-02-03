@@ -1,7 +1,13 @@
-#include "shape.h"
+/*!
+ * \file shape.cpp
+ *  \author Simon Coakley
+ *  \date 2012
+ *  \copyright Copyright (c) 2012 University of Sheffield
+ *  \brief Implementation of shape
+ */
+#include "./shape.h"
 
-Shape::Shape()
-{
+Shape::Shape() {
     shape = "sphere";
     shapes << "sphere" << "cube" << "point";
     dimension = 0.0;
@@ -17,17 +23,16 @@ Shape::Shape()
 }
 
 void Shape::paint(QPainter *painter, const QRect &rect,
-                       const QPalette &/*palette*/, EditMode /*mode*/) const
-{
-   painter->save();
+                       const QPalette &/*palette*/, EditMode /*mode*/) const {
+    painter->save();
 
-   painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setRenderHint(QPainter::Antialiasing, true);
 
-   QString text;
-   if(QString::compare(shape, "") == 0) text = "";
-   else
-   {
-       text.append(shape);
+    QString text;
+    if (QString::compare(shape, "") == 0) {
+        text = "";
+    } else {
+        text.append(shape);
        /*text.append("(");
        if(useValue) text.append(QString("%1").arg(dimension));
        if(useVariable) text.append(dimensionVariable);
@@ -41,9 +46,9 @@ void Shape::paint(QPainter *painter, const QRect &rect,
            if(useVariableZ) text.append(dimensionVariableZ);
        }
        text.append(")");*/
-   }
+    }
 
-   painter->drawText(rect,Qt::AlignCenter,text);
+    painter->drawText(rect, Qt::AlignCenter, text);
 
-   painter->restore();
+    painter->restore();
 }

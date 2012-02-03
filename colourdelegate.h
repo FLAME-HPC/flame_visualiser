@@ -1,16 +1,22 @@
-#ifndef COLOURDELEGATE_H
-#define COLOURDELEGATE_H
+/*!
+ * \file colourdelegate.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for colour delegate
+ */
+#ifndef COLOURDELEGATE_H_
+#define COLOURDELEGATE_H_
 
 #include <QItemDelegate>
 #include <QModelIndex>
 #include <QObject>
 
-class ColourDelegate : public QItemDelegate
-{
+class ColourDelegate : public QItemDelegate {
     Q_OBJECT
 
-public:
-    ColourDelegate(QObject *parent = 0);
+  public:
+    explicit ColourDelegate(QObject *parent = 0);
 
     void paint(QPainter *painter, const QStyleOptionViewItem &option,
                 const QModelIndex &index) const;
@@ -22,4 +28,4 @@ public:
                       const QModelIndex &index) const;*/
 };
 
-#endif // COLOURDELEGATE_H
+#endif  // COLOURDELEGATE_H_

@@ -1,16 +1,21 @@
-#ifndef GRAPHWIDGET_H
-#define GRAPHWIDGET_H
+/*!
+ * \file graphwidget.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for graph widget
+ */
+#ifndef GRAPHWIDGET_H_
+#define GRAPHWIDGET_H_
 
 #include <QWidget>
-#include "agent.h"
-//#include "graphsettingsmodel.h"
-#include "graphsettingsitem.h"
+#include "./agent.h"
+#include "./graphsettingsitem.h"
 
-class GraphWidget: public QWidget
-{
+class GraphWidget: public QWidget {
   Q_OBJECT
 
-public:
+  public:
     GraphWidget(QList<Agent> *a = 0, QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);
     void updateData(int it);
@@ -19,18 +24,18 @@ public:
     void setGraph(QString g) { graphName = g; }
     QString getGraph() { return graphName; }
 
-signals:
+  signals:
     void increase_iteration();
     void decrease_iteration();
     void graph_window_closed(QString graphName);
 
-protected:
+  protected:
     void keyPressEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *);
 
-private:
+  private:
     QList<Agent> *agents;
-    //GraphSettingsModel * gsmodel;
+    // GraphSettingsModel * gsmodel;
     QList<GraphSettingsItem*> plots;
     QList<QList<int> > data;
     int topValue;
@@ -38,4 +43,4 @@ private:
     QString graphName;
 };
 
-#endif // GRAPHWIDGET_H
+#endif  // GRAPHWIDGET_H_

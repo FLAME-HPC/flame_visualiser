@@ -1,28 +1,34 @@
-#ifndef TIMEDIALOG_H
-#define TIMEDIALOG_H
+/*!
+ * \file timedialog.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for time dialog
+ */
+#ifndef TIMEDIALOG_H_
+#define TIMEDIALOG_H_
 
 #include <QDialog>
-#include "timescale.h"
+#include "./timescale.h"
 
 namespace Ui {
     class TimeDialog;
 }
 
-class TimeDialog : public QDialog
-{
+class TimeDialog : public QDialog {
     Q_OBJECT
 
-public:
+  public:
     explicit TimeDialog(TimeScale * ts, QWidget *parent = 0);
     ~TimeDialog();
 
-signals:
+  signals:
     void time_dialog_closed();
 
-protected:
+  protected:
     void closeEvent(QCloseEvent *event);
 
-private slots:
+  private slots:
     void millisecondsChanged(int);
     void secondsChanged(int);
     void minutesChanged(int);
@@ -30,9 +36,9 @@ private slots:
     void daysChanged(int);
     void timeInVisualChanged(bool);
 
-private:
+  private:
     Ui::TimeDialog *ui;
     TimeScale * timeScale;
 };
 
-#endif // TIMEDIALOG_H
+#endif  // TIMEDIALOG_H_

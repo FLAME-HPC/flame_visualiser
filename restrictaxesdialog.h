@@ -1,29 +1,36 @@
-#ifndef RESTRICTAXESDIALOG_H
-#define RESTRICTAXESDIALOG_H
+/*!
+ * \file restrictaxesdialog.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for restrict axes dialog
+ */
+#ifndef RESTRICTAXESDIALOG_H_
+#define RESTRICTAXESDIALOG_H_
 
 #include <QDialog>
-#include "dimension.h"
+#include "./dimension.h"
 
 namespace Ui {
     class RestrictAxesDialog;
 }
 
-class RestrictAxesDialog : public QDialog
-{
+class RestrictAxesDialog : public QDialog {
     Q_OBJECT
 
-public:
-    explicit RestrictAxesDialog(Dimension * rd, Dimension * ad, Dimension * rad, double * r, QWidget *parent = 0);
+  public:
+    explicit RestrictAxesDialog(Dimension * rd, Dimension * ad,
+            Dimension * rad, double * r, QWidget *parent = 0);
     ~RestrictAxesDialog();
 
-signals:
+  signals:
     void updateRestrictDimensions(Dimension);
     void closed();
 
-public slots:
+  public slots:
     void updatedAgentDimensions();
 
-private slots:
+  private slots:
     void updateXMin(double);
     void updateXMax(double);
     void updateYMin(double);
@@ -37,10 +44,10 @@ private slots:
     void updateZMinS(int);
     void updateZMaxS(int);
 
-protected:
+  protected:
     void closeEvent(QCloseEvent *event);
 
-private:
+  private:
     void enableXMin(bool);
     void enableXMax(bool);
     void enableYMin(bool);
@@ -64,4 +71,4 @@ private:
     bool firstDim;
 };
 
-#endif // RESTRICTAXESDIALOG_H
+#endif  // RESTRICTAXESDIALOG_H_

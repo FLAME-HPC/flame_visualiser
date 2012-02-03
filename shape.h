@@ -1,12 +1,18 @@
-#ifndef SHAPE_H
-#define SHAPE_H
+/*!
+ * \file shape.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for shape
+ */
+#ifndef SHAPE_H_
+#define SHAPE_H_
 
 #include <QMetaType>
 #include <QPainter>
 
-class Shape
-{
-public:
+class Shape {
+  public:
     enum EditMode { Editable, ReadOnly };
 
     Shape();
@@ -37,7 +43,7 @@ public:
     void paint(QPainter *painter, const QRect &rect,
                 const QPalette &palette, EditMode mode) const;
 
-private:
+  private:
     QString shape;
     double dimension;
     double dimensionY;
@@ -54,4 +60,4 @@ private:
 
 Q_DECLARE_METATYPE(Shape)
 
-#endif // SHAPE_H
+#endif  // SHAPE_H_

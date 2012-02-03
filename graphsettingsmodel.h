@@ -1,17 +1,23 @@
-#ifndef GRAPHSETTINGSMODEL_H
-#define GRAPHSETTINGSMODEL_H
+/*!
+ * \file graphsettingsmodel.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for graph settings model
+ */
+#ifndef GRAPHSETTINGSMODEL_H_
+#define GRAPHSETTINGSMODEL_H_
 
 #include <QAbstractTableModel>
-#include "graphsettingsitem.h"
 #include <QColor>
-#include "agent.h"
-#include "condition.h"
+#include "./graphsettingsitem.h"
+#include "./agent.h"
+#include "./condition.h"
 
-class GraphSettingsModel : public QAbstractTableModel
-{
+class GraphSettingsModel : public QAbstractTableModel {
     Q_OBJECT
 
-public:
+  public:
     GraphSettingsModel(QList<Agent> *a = 0, QObject *parent = 0)
         : QAbstractTableModel(parent) { agents = a; }
 
@@ -25,8 +31,10 @@ public:
      bool setData(const QModelIndex &index, const QVariant &value,
                   int role = Qt::EditRole);
      /* Adding and removing rows */
-     bool insertRows(int position, int rows, const QModelIndex &index = QModelIndex());
-     bool removeRows(int position, int rows, const QModelIndex &index = QModelIndex());
+     bool insertRows(int position, int rows,
+             const QModelIndex &index = QModelIndex());
+     bool removeRows(int position, int rows,
+             const QModelIndex &index = QModelIndex());
 
      QList<GraphSettingsItem *> getPlots() const { return plots; }
      GraphSettingsItem * getPlot(int row) const { return plots[row]; }
@@ -34,20 +42,22 @@ public:
      void switchEnabled(QModelIndex index);
      void setDisabled(QString graphName);
 
-signals:
-     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph, QString newGraph);
+  signals:
+     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph,
+             QString newGraph);
 
-public slots:
+  public slots:
      void addPlot();
-     void addPlot(QString g, QString x, QString y, Condition cond, QColor c, bool e);
+     void addPlot(QString g, QString x, QString y, Condition cond,
+             QColor c, bool e);
      void deletePlot(QModelIndex index);
      void deletePlots();
-     //void graph_window_closed();
+     // void graph_window_closed();
 
-private:
+  private:
     QList<Agent> *agents;
     QList<GraphSettingsItem *> plots;
-    //QList<GraphWidget *> graphs;
+    // QList<GraphWidget *> graphs;
 };
 
-#endif // GRAPHSETTINGSMODEL_H
+#endif  // GRAPHSETTINGSMODEL_H_

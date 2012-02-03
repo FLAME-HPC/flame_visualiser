@@ -1,7 +1,13 @@
-#include "position.h"
+/*!
+ * \file position.cpp
+ *  \author Simon Coakley
+ *  \date 2012
+ *  \copyright Copyright (c) 2012 University of Sheffield
+ *  \brief Implementation of position
+ */
+#include "./position.h"
 
-Position::Position()
-{
+Position::Position() {
     positionVariable = "";
     op = "";
     opVariable = "";
@@ -11,28 +17,23 @@ Position::Position()
 }
 
 void Position::paint(QPainter *painter, const QRect &rect,
-                       const QPalette &/*palette*/, EditMode /*mode*/) const
-{
-   painter->save();
+                       const QPalette &/*palette*/, EditMode /*mode*/) const {
+    painter->save();
 
-   painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setRenderHint(QPainter::Antialiasing, true);
 
-   QString text;
-   if(useVariable)
-   {
+    QString text;
+    if (useVariable) {
        text = positionVariable;
-       if(opValue != 0.0)
-       {
-           if(opValue > 0.0) text.append("+");
+       if (opValue != 0.0) {
+           if (opValue > 0.0) text.append("+");
            text.append(QString("%1").arg(opValue));
        }
-   }
-   else
-   {
+    } else {
        text.append(QString("%1").arg(opValue));
-   }
+    }
 
-   painter->drawText(rect,Qt::AlignCenter,text);
+    painter->drawText(rect, Qt::AlignCenter, text);
 
-   painter->restore();
+    painter->restore();
 }

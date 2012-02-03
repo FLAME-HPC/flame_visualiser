@@ -1,15 +1,22 @@
-#ifndef GRAPHSETTINGSITEM_H
-#define GRAPHSETTINGSITEM_H
+/*!
+ * \file graphsettingsitem.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for graph settings item
+ */
+#ifndef GRAPHSETTINGSITEM_H_
+#define GRAPHSETTINGSITEM_H_
 
 #include <QString>
 #include <QColor>
-#include "condition.h"
+#include "./condition.h"
 
-class GraphSettingsItem
-{
-public:
+class GraphSettingsItem {
+  public:
     GraphSettingsItem();
-    GraphSettingsItem(QString g, QString x, QString y, Condition cond, QColor c, bool e);
+    GraphSettingsItem(QString g, QString x, QString y, Condition cond,
+            QColor c, bool e);
 
     void setGraph(QString g) { graphString = g; }
     QString getGraph() { return graphString; }
@@ -24,7 +31,7 @@ public:
     void setEnable(bool e) { enable = e; }
     bool getEnable() { return enable; }
 
-private:
+  private:
     QString graphString;
     QString xaxisString;
     QString yaxisString;
@@ -33,4 +40,4 @@ private:
     bool enable;
 };
 
-#endif // GRAPHSETTINGSITEM_H
+#endif  // GRAPHSETTINGSITEM_H_

@@ -1,19 +1,26 @@
-#ifndef ZEROXMLREADER_H
-#define ZEROXMLREADER_H
+/*!
+ * \file zeroxmlreader.h
+ * \author Simon Coakley
+ * \date 2012
+ * \copyright Copyright (c) 2012 University of Sheffield
+ * \brief Header file for zero XML reader
+ */
+#ifndef ZEROXMLREADER_H_
+#define ZEROXMLREADER_H_
 
 #include <QXmlStreamReader>
-#include "agent.h"
-#include "agenttype.h"
-#include "visualsettingsmodel.h"
-#include "dimension.h"
+#include "./agent.h"
+#include "./agenttype.h"
+#include "./visualsettingsmodel.h"
+#include "./dimension.h"
 
-class ZeroXMLReader : public QXmlStreamReader
-{
-public:
-    ZeroXMLReader(QList<Agent> * a, QList<AgentType> * at, VisualSettingsModel * vsm, double * r, Dimension * ad);
+class ZeroXMLReader : public QXmlStreamReader {
+  public:
+    ZeroXMLReader(QList<Agent> * a, QList<AgentType> * at,
+            VisualSettingsModel * vsm, double * r, Dimension * ad);
     bool read(QIODevice * device, int flag);
 
-private:
+  private:
     void readUnknownElement();
     void readEnvironmentXML(int flag);
     void readAgentXML(int flag);
@@ -27,4 +34,4 @@ private:
     Dimension * agentDimension;
 };
 
-#endif // ZEROXMLREADER_H
+#endif  // ZEROXMLREADER_H_

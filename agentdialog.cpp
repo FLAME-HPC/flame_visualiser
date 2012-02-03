@@ -1,10 +1,15 @@
-#include "agentdialog.h"
-#include "ui_agentdialog.h"
+/*!
+ * \file agentdialog.cpp
+ *  \author Simon Coakley
+ *  \date 2012
+ *  \copyright Copyright (c) 2012 University of Sheffield
+ *  \brief Implementation of agent dialog
+ */
+#include "./agentdialog.h"
+#include "./ui_agentdialog.h"
 
-AgentDialog::AgentDialog(Agent * a, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::AgentDialog)
-{
+AgentDialog::AgentDialog(Agent * a, QWidget *parent)
+  : QDialog(parent), ui(new Ui::AgentDialog) {
     ui->setupUi(this);
     agent = a;
 
@@ -19,11 +24,11 @@ AgentDialog::AgentDialog(Agent * a, QWidget *parent) :
     ui->tableWidget_Variables->verticalHeader()->hide();
     QHeaderView *headerView = ui->tableWidget_Variables->horizontalHeader();
     headerView->setResizeMode(QHeaderView::Stretch);
-    //headerView->setResizeMode(1, QHeaderView::Interactive);
-    //ui->tableWidget_Variables->setSelectionBehavior(QAbstractItemView::SelectRows);
+    // headerView->setResizeMode(1, QHeaderView::Interactive);
+    // ui->tableWidget_Variables->setSelectionBehavior(
+    // QAbstractItemView::SelectRows);
 
-    for(int i = 0; i < a->tags.size(); i++)
-    {
+    for (int i = 0; i < a->tags.size(); i++) {
         int row = i;
         int column = 0;
         QTableWidgetItem *newItem = new QTableWidgetItem(a->tags[i]);
@@ -35,12 +40,11 @@ AgentDialog::AgentDialog(Agent * a, QWidget *parent) :
         ui->tableWidget_Variables->setItem(row, column, newItem);
     }
 
-    //resize(ui->tableWidget_Variables->size());
+    // resize(ui->tableWidget_Variables->size());
 
     connect(ui->pushButton_Okay, SIGNAL(clicked()), this, SLOT(close()));
 }
 
-AgentDialog::~AgentDialog()
-{
+AgentDialog::~AgentDialog() {
     delete ui;
 }
