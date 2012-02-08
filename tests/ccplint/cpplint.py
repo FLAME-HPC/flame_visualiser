@@ -2844,8 +2844,9 @@ def CheckCStyleCast(filename, linenum, line, raw_line, cast_type, pattern,
         function_match.group(3) == ';' or
         ('MockCallback<' not in raw_line and
          '/*' not in raw_line)):
-      error(filename, linenum, 'readability/function', 3,
-            'All parameters should be named in a function')
+      #error(filename, linenum, 'readability/function', 3,
+      #      'All parameters should be named in a function')
+      return True
     return True
 
   # At this point, all that should be left is actual casts.
