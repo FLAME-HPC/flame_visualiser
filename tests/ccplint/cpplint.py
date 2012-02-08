@@ -1035,7 +1035,7 @@ def GetHeaderGuardCPPVariable(filename):
 
   fileinfo = FileInfo(filename)
   #return re.sub(r'[-./\s]', '_', fileinfo.RepositoryName()).upper() + '_'
-  return re.sub(r'[-./\s]', '_', fileinfo.BaseName() + fileinfo.Extension()).upper() + '_'
+  return re.sub(r'[-./\s]', '_', fileinfo.BaseName().upper() + fileinfo.Extension()).upper() + '_'
 
 
 def CheckForHeaderGuard(filename, lines, error):
