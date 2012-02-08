@@ -10,12 +10,14 @@
 #include "./visualsettingsitem.h"
 
 ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at,
-        VisualSettingsModel *vsm, double * r, Dimension * ad) {
+        VisualSettingsModel *vsm, double * r, Dimension * ad,
+                             QStringList *sat) {
     agents = a;
     agentTypes = at;
     vsmodel = vsm;
     ratio = r;
     agentDimension = ad;
+    stringAgentTypes = sat;
 
     agentDimension->xmin =  999999.9;
     agentDimension->xmax = -999999.9;
@@ -25,7 +27,7 @@ ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at,
     agentDimension->zmax = -999999.9;
 }
 
-bool ZeroXMLReader::read(QIODevice * device, int flag) {
+bool ZeroXMLReader::read(QIODevice * device) {
     setDevice(device);
 
     while (!atEnd()) {
@@ -33,7 +35,7 @@ bool ZeroXMLReader::read(QIODevice * device, int flag) {
 
          if (isStartElement()) {
              if (name() == "states")
-                 readZeroXML(flag);
+                 readZeroXML();
              else
                  raiseError(QObject::tr(
                          "The file does not contain the root tag 'states'"));
@@ -59,7 +61,7 @@ void ZeroXMLReader::readUnknownElement() {
 
 /* Read 0.xml ignore tags until an xagent if found and handle it.
 */
-void ZeroXMLReader::readZeroXML(int flag) {
+void ZeroXMLReader::readZeroXML() {
     Q_ASSERT(isStartElement() && name() == "states");
 
     // qDebug("readZeroXML()\n");
@@ -72,73 +74,28 @@ void ZeroXMLReader::readZeroXML(int flag) {
 
          if (isStartElement()) {
              if (name() == "environment")
-                 readEnvironmentXML(flag);
+                 readEnvironmentXML();
              else if (name() == "agents")
-                 readAgentsXML(flag);
+                 readAgentsXML();
              else if (name() == "xagent")
-                 readAgentXML(flag);
+                 readAgentXML();
              else
                  readUnknownElement();
          }
      }
 }
 
-void ZeroXMLReader::readEnvironmentXML(int flag) {
+void ZeroXMLReader::readEnvironmentXML() {
     Agent agent = Agent();
-    QString agentname = "environment";
-    QString elementName = "";
-    int index = 0;
+    int index = -1;
     agent.isEnvironment = true;
 
-    if (flag == 0) {
-        /* Look for agent type in list */
-        index = -1;
-        for (int i = 0; i < agentTypes->count(); i++) {
-            if (QString::compare(agentTypes->at(i).name, agentname) == 0)
-                index = i;
-        }
-        if (index == -1) {
-            agentTypes->append(AgentType(agentname));
-            index = agentTypes->count() - 1;
-        } else {
-            index = -1;
-        }
-    } else if (flag == 1) {
-        agent.agentType = "environment";
+    if (stringAgentTypes->contains("environment") == false) {
+     // qDebug() << "new agent type found: environment";
+     stringAgentTypes->append("environment");
+     agentTypes->append(AgentType("environment"));
+     index = agentTypes->count() - 1;
     }
-
-    while (!atEnd()) {
-         readNext();
-
-         if (isEndElement())
-             break;
-
-         if (flag == 0)  {
-             if (isStartElement()) {
-                 if (index != -1) {
-                    elementName = name().toString();
-                    (*agentTypes)[index].variables.append(elementName);
-                 }
-
-                 readUnknownElement();
-             }
-         } else if (flag == 1) {
-             if (isStartElement()) {
-                 if (name() != "name") {
-                     agent.tags.append(name().toString());
-                     agent.values.append(readElementText());
-                 }
-             }
-         }
-     }
-
-    if (flag == 1) {
-        applyRulesToAgent(&agent);
-    }
-}
-
-void ZeroXMLReader::readAgentsXML(int flag) {
-    // qDebug("readAgentsXML()\n");
 
     while (!atEnd()) {
          readNext();
@@ -147,22 +104,39 @@ void ZeroXMLReader::readAgentsXML(int flag) {
              break;
 
          if (isStartElement()) {
+             agent.tags.append(name().toString());
+             agent.values.append(readElementText());
+             if (index != -1) {
+                // qDebug() << "\t" << name().toString();
+                (*agentTypes)[index].variables.append(name().toString());
+             }
+         }
+     }
+
+    applyRulesToAgent(&agent);
+}
+
+void ZeroXMLReader::readAgentsXML() {
+    while (!atEnd()) {
+         readNext();
+
+         if (isEndElement())
+             break;
+
+         if (isStartElement()) {
              if (name() == "xagent")
-                 readAgentXML(flag);
+                 readAgentXML();
              else
                  readUnknownElement();
          }
      }
 }
 
-void ZeroXMLReader::readAgentXML(int flag) {
+void ZeroXMLReader::readAgentXML() {
     Agent agent = Agent();
     QString agentname = "";
     QString elementName = "";
-    QString elementText = "";
-    int index = 0;
-
-    // qDebug("readAgentXML()\n");
+    int index = -1;
 
     while (!atEnd()) {
          readNext();
@@ -170,51 +144,37 @@ void ZeroXMLReader::readAgentXML(int flag) {
          if (isEndElement())
              break;
 
-         if (flag == 0) {
-             if (isStartElement()) {
-                 if (name() == "name") {
-                     agentname = readElementText();
-
-                     /* Look for agent type in list */
+         if (isStartElement()) {
+             if (name() == "name") {
+                 agentname = readElementText();
+                 agent.agentType = agentname;
+                 /* If agent type is unknown then add to agent list */
+                 if (stringAgentTypes->contains(agentname) == false) {
+                     // qDebug() << "new agent type found: " << agentname;
+                     stringAgentTypes->append(agentname);
+                     agentTypes->append(AgentType(agentname));
+                     index = agentTypes->count() - 1;
+                 } else {
                      index = -1;
-                     for (int i = 0; i < agentTypes->count(); i++) {
-                         if (QString::compare(agentTypes->at(i).name,
-                                 agentname) == 0) index = i;
-                     }
-                     if (index == -1) {
-                         agentTypes->append(AgentType(agentname));
-                         index = agentTypes->count() - 1;
-                     } else {
-                         index = -1;
-                     }
-                 } else {
-                     if (index != -1) {
-                        elementName = name().toString();
-                        (*agentTypes)[index].variables.append(elementName);
-                     }
-
-                     readUnknownElement();
                  }
-             }
-         } else if (flag == 1) {
-             if (isStartElement()) {
-                 if (name() == "name") {
-                     agent.agentType = readElementText();
-                 } else {
-                     agent.tags.append(name().toString());
-                     agent.values.append(readElementText());
+             } else {
+                 elementName = name().toString();
+                 agent.tags.append(elementName);
+                 agent.values.append(readElementText());
+                 /* If agent is unknown then add variables to agent type */
+                 if (index != -1) {
+                    // qDebug() << "\t" << elementName;
+                    (*agentTypes)[index].variables.append(elementName);
                  }
              }
          }
      }
 
-    if (flag == 1) {
-        // Old (keep for graphs)
-        agents->append(agent);
+    // Old (keep for graphs)
+    agents->append(agent);
 
-        // New
-        applyRulesToAgent(&agent);
-    }
+    // New
+    applyRulesToAgent(&agent);
 }
 
 void ZeroXMLReader::applyRulesToAgent(Agent *agent) {

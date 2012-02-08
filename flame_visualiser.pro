@@ -37,7 +37,8 @@ SOURCES += main.cpp\
     imagesdialog.cpp \
     timedialog.cpp \
     agentdialog.cpp \
-    restrictaxesdialog.cpp
+    restrictaxesdialog.cpp \
+    iterationinfodialog.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -68,7 +69,8 @@ HEADERS  += mainwindow.h \
     timescale.h \
     agentdialog.h \
     restrictaxesdialog.h \
-    dimension.h
+    dimension.h \
+    iterationinfodialog.h
 
 FORMS    += mainwindow.ui \
     positiondialog.ui \
@@ -77,6 +79,7 @@ FORMS    += mainwindow.ui \
     shapedialog.ui \
     timedialog.ui \
     agentdialog.ui \
-    restrictaxesdialog.ui
+    restrictaxesdialog.ui \
+    iterationinfodialog.ui
 
 OTHER_FILES +=

@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
     images_dialog_open = false;
     time_dialog_open = false;
     restrict_dimension_open = false;
+    iterationInfo_dialog_open = false;
     timeString = "";
     iteration = 0;
     delayTime = 0;
@@ -489,39 +490,8 @@ void MainWindow::on_pushButton_LocationFind_clicked() {
     s = dir2.relativeFilePath(filepath);
     ui->lineEdit_ResultsLocation->setText(s);
 
-    tryAndReadInAgentTypes();
-    readZeroXML(1); /* Read in new agent data */
-}
-
-/*! \brief Searches for a readable iteration file to load agent type data.
- */
-void MainWindow::tryAndReadInAgentTypes() {
-    int rc;
-    int saveIt = iteration;
-    iteration = 0;
-
-    rc = readZeroXML(0); /* Create a list of the different agent types */
-    if (rc != 1) {
-        while (checkDirectoryForNextIteration(iteration, 0)) {
-            // qDebug() << iteration << rc;
-            agentTypes.clear();
-            rc = readZeroXML(0);
-            if (rc == -2) iteration++;
-            if (rc == 1) break;
-        }
-    }
-
-    if (rc != 1) {
-        QString msgText;
-        msgText.append("There was a problem reading a valid iteration file ");
-        msgText.append("to load agent type data.");
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Warning);
-        msgBox.setText(msgText);
-        msgBox.exec();
-    }
-
-    iteration = saveIt;
+    // tryAndReadInAgentTypes();
+    readZeroXML(); /* Read in new agent data */
 }
 
 /*! \brief Switch between the visual window being shown or hidden.
@@ -531,15 +501,15 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         // Set ratio to be 1
         ratio = 1.0;
         // Read in agents with model dimensions
-        readZeroXML(1);
+        readZeroXML();
         // Calculate model to opengl dimension ratio
         calcPositionRatio();
         // Reread agents with opengl dimension using new ratio
-        readZeroXML(1);
+        readZeroXML();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
                 restrictDimension);
-        // Make the window destory on close rather than hide
+        // Make the window destroy on close rather than hide
         visual_window->setAttribute(Qt::WA_DeleteOnClose);
         visual_window->resize(800, 600);
         visual_window->update_agents(&agents);
@@ -596,10 +566,9 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
 }
 
 /*! \brief Read the 0 xml defined by the current iteration.
- *  \param flag 1 means clear the agent data and read in new agent data, 0 means just read the different agent types into a list.
  *  \return False if the file could not be found.
  */
-int MainWindow::readZeroXML(int flag) {
+int MainWindow::readZeroXML() {
     if (itLocked) return 0;
 
     itLocked = true;
@@ -616,76 +585,37 @@ int MainWindow::readZeroXML(int flag) {
 
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        /*QString msgText;
-        msgText.append("There was a problem opening the file: ");
-        msgText.append(fileName);
-        msgText.append("\n");
-        msgText.append(file.errorString());
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Warning);
-        msgBox.setText(msgText);
-        msgBox.exec();*/
-
-        /*QString statusText;
-        statusText.append("Could not find file ");
-        statusText.append(QString().number(iteration));
-        statusText.append(".xml: ");
-        statusText.append(file.errorString());
-        ui->label_5->setText(statusText);*/
-
-        if (flag == 1) {
-            ui->spinBox->setValue(iteration);
-            ui->label_5->setText(QString("! Error opening %1.xml").
+        // ui->spinBox->setValue(iteration);
+        ui->label_5->setText(QString("! Error opening %1.xml").
                     arg(QString().number(iteration)));
-        }
         itLocked = false;
         return -1;
     }
 
-    if (flag == 1) {
-        // used by graphs
-        agents.clear();
+    // used by graphs
+    agents.clear();
 
-        // used by visual
-        for (int i = 0; i < visual_settings_model->rowCount(); i++) {
-            visual_settings_model->getRule(i)->agents.clear();
-        }
+    // used by visual
+    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+        visual_settings_model->getRule(i)->agents.clear();
     }
 
     ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio,
-            agentDimension);
-    if (!reader.read(&file, flag)) {
-        /*QString msgText;
-        msgText.append("Error reading file ");
-        msgText.append(fileName);
-        msgText.append("\n");
-        msgText.append(reader.errorString());
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Warning);
-        msgBox.setText(msgText);
-        msgBox.exec();*/
-
-        /*QString statusText;
-        statusText.append("Error reading file ");
-        statusText.append(QString().number(iteration));
-        statusText.append(".xml: ");
-        statusText.append(reader.errorString());
-        statusText.append(" At line number ");
-        statusText.append(QString().number(reader.lineNumber()));
-        statusText.append(".");
-        ui->label_5->setText(statusText);*/
-         // emit( animate() );
-        if (flag == 1) {
-            ui->spinBox->setValue(iteration);
-            ui->label_5->setText(
+            agentDimension, &stringAgentTypes);
+    if (!reader.read(&file)) {
+        // ui->spinBox->setValue(iteration);
+        ui->label_5->setText(
                     QString("! Error reading %1.xml").
                     arg(QString().number(iteration)));
-        }
-         itLocked = false;
+
+
+        /* Make the path to the file look pretty */
+         QDir dir(fileName);
+         QString filePath = dir.canonicalPath();
 
          QMessageBox::warning(this, "FLAME Visualiser",
           tr("Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
-                      fileName).arg(reader.lineNumber()).arg(
+                      filePath).arg(reader.lineNumber()).arg(
                       reader.columnNumber()).arg(reader.errorString()));
 
          return -2;
@@ -706,7 +636,7 @@ void MainWindow::on_spinBox_valueChanged(int arg1) {
     // qDebug() << "on_spinBox_valueChanged" << arg1;
     if (iteration != arg1) {
         iteration = arg1;
-        int rc = readZeroXML(1); /* Read in new agent data */
+        int rc = readZeroXML(); /* Read in new agent data */
         if (rc == 1) if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
     }
 }
@@ -719,7 +649,7 @@ void MainWindow::increment_iteration() {
     iteration++;
     /* try and read the iteration file
      * the parameter 1 means try and read in the agent data */
-    rc = readZeroXML(1);
+    rc = readZeroXML();
     /* return codes
        0 - itLocked is true
       -1 - error opening file
@@ -730,16 +660,12 @@ void MainWindow::increment_iteration() {
         /* search forward '0' for next file */
         if (checkDirectoryForNextIteration(iteration, 0)) {
             // successful
-            rc = readZeroXML(1);
-        } else {
-            // unsuccessful
-            iteration--;
+            rc = readZeroXML();
         }
     }
 
-    ui->spinBox->setValue(iteration);
-
-    if (rc != 1) {
+    if (rc != 1) {  // unsuccessful open and read
+        iteration--;
         if (animation) {
             slot_stopAnimation();
             emit(stopAnimation());
@@ -753,6 +679,8 @@ void MainWindow::increment_iteration() {
 
         if (restrict_dimension_open) emit(updatedAgentDimension());
     }
+
+    ui->spinBox->setValue(iteration);
 }
 
 /*! \brief Decrement the iteration number, set the spin box value, read in new agent data.
@@ -761,11 +689,11 @@ void MainWindow::decrement_iteration() {
     int rc;
 
     if (iteration > 0) iteration--;
-    rc = readZeroXML(1);
+    rc = readZeroXML();
 
     if (rc == -1) {  // Can't open file
         if (checkDirectoryForNextIteration(iteration, 1)) {
-            rc = readZeroXML(1);
+            rc = readZeroXML();
         }
     }
 
@@ -892,8 +820,8 @@ void MainWindow::readConfigFile(QString fileName, int it) {
         if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
 
         ui->lineEdit_ResultsLocation->setText(resultsData);
-        tryAndReadInAgentTypes();
-        readZeroXML(1);
+//        tryAndReadInAgentTypes();
+        readZeroXML();
 
         /* For each new plot create a graph window */
         for (int i = 0; i < graph_settings_model->rowCount(); i++) {
@@ -1333,7 +1261,7 @@ void MainWindow::updateImagesLocationSlot(QString s) {
 
 void MainWindow::ruleUpdated(int /*row*/) {
     // Reread agents using updated rules
-    if (opengl_window_open) readZeroXML(1);
+    if (opengl_window_open) readZeroXML();
 }
 
 void MainWindow::on_actionQuit_triggered() {
@@ -1511,4 +1439,15 @@ void MainWindow::on_horizontalSlider_delay_valueChanged(int value) {
     delayTime = (99-value)/99.0 * 1000.0; /* 1000 = 1s */
     // qDebug() << "delayTime: " << delayTime;
     emit(updateDelayTime(delayTime));
+}
+
+void MainWindow::on_actionIteration_Info_triggered() {
+    /* If no iteration data window then create one */
+    /*if(iterationInfo_dialog_open == false) {
+        iterationInfo_dialog = new IterationInfoDialog();
+        iterationInfo_dialog->show();
+        iterationInfo_dialog_open = true;
+    } else {
+        iterationInfo_dialog->activateWindow();
+    }*/
 }
