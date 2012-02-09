@@ -282,10 +282,9 @@ void MainWindow::time_dialog_closed() {
 /*! \brief When the iteration info dialog is closed, disconnect all signal/slots
  *  and set variables.
  */
-void MainWindow::iterationInfoDialog_closed()
-{
-    disconnect(this, SIGNAL(updateIterationInfoDialog(QHash<QString,int>*)),
-            iterationInfo_dialog, SLOT(update_info(QHash<QString,int>*)));
+void MainWindow::iterationInfoDialog_closed() {
+    disconnect(this, SIGNAL(updateIterationInfoDialog()),
+            iterationInfo_dialog, SLOT(update_info()));
     disconnect(iterationInfo_dialog, SIGNAL(iterationInfoDialog_closed()),
             this, SLOT(iterationInfoDialog_closed()));
     iterationInfo_dialog_open = false;
@@ -644,8 +643,8 @@ int MainWindow::readZeroXML() {
                  QString("Read %1.xml").arg(QString().number(iteration)));
     }
 
-    if(iterationInfo_dialog_open) {
-        emit(updateIterationInfoDialog(&agentTypeCounts));
+    if (iterationInfo_dialog_open) {
+        emit(updateIterationInfoDialog());
     }
 
     return 1;
@@ -738,6 +737,7 @@ void MainWindow::open_config_file() {
      if (fileName.isEmpty())
          return;
 
+     close_config_file();
      readConfigFile(fileName, 0);
 }
 
@@ -787,24 +787,6 @@ void MainWindow::readConfigFile(QString fileName, int it) {
                              .arg(file.errorString()));
         return;
     }
-
-    emit visual_settings_model->deleteRules();
-    emit graph_settings_model->deletePlots();
-    agents.clear();
-    agentTypes.clear();
-    graphs.clear();
-    enableTimeScale(false);
-    timeScale->reset();
-    xrotate = 0.0;
-    yrotate = 0.0;
-    xmove = 0.0;
-    ymove = 0.0;
-    zmove = -3.0;
-    delayTime = 0;
-    // iteration = 0;
-    ui->pushButton_Animate->setText("Start Animation - A");
-    ui->pushButton_Animate->setEnabled(false);
-    animation = false;
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model,
             &resultsData, timeScale, &ratio, &xrotate, &yrotate,
@@ -948,6 +930,7 @@ void MainWindow::close_config_file() {
     ui->lineEdit_ResultsLocation->setText("");
     agents.clear();
     agentTypes.clear();
+    graphs.clear();
     enableInterface(false);
     fileOpen = false;
     timeScale->reset();
@@ -958,6 +941,15 @@ void MainWindow::close_config_file() {
     configPath = "";
     configName = "";
     iteration = 0;
+    xrotate = 0.0;
+    yrotate = 0.0;
+    xmove = 0.0;
+    ymove = 0.0;
+    zmove = -3.0;
+    delayTime = 0;
+    ui->pushButton_Animate->setText("Start Animation - A");
+    ui->pushButton_Animate->setEnabled(false);
+    animation = false;
 }
 
 /*! \brief Write a config to an xml file.
@@ -1465,15 +1457,16 @@ void MainWindow::on_horizontalSlider_delay_valueChanged(int value) {
 
 void MainWindow::on_actionIteration_Info_triggered() {
     /* If no iteration data window then create one */
-    if(iterationInfo_dialog_open == false) {
-        iterationInfo_dialog = new IterationInfoDialog();
+    if (iterationInfo_dialog_open == false) {
+        iterationInfo_dialog = new IterationInfoDialog(&agentTypeCounts,
+                                                       agentDimension);
         iterationInfo_dialog->show();
         iterationInfo_dialog_open = true;
-        connect(this, SIGNAL(updateIterationInfoDialog(QHash<QString,int>*)),
-                iterationInfo_dialog, SLOT(update_info(QHash<QString,int>*)));
+        connect(this, SIGNAL(updateIterationInfoDialog()),
+                iterationInfo_dialog, SLOT(update_info()));
         connect(iterationInfo_dialog, SIGNAL(iterationInfoDialog_closed()),
                 this, SLOT(iterationInfoDialog_closed()));
-        emit(updateIterationInfoDialog(&agentTypeCounts));
+        emit(updateIterationInfoDialog());
     } else {
         iterationInfo_dialog->activateWindow();
     }

@@ -74,7 +74,7 @@ class MainWindow : public QMainWindow {
     void restrictAxes(bool);
     void updatedAgentDimension();
     void updateDelayTime(int);
-    void updateIterationInfoDialog(QHash<QString, int> *);
+    void updateIterationInfoDialog();
 
   private slots:
     void on_pushButton_LocationFind_clicked();

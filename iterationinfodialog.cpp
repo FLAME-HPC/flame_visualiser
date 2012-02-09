@@ -9,15 +9,19 @@
 #include "./iterationinfodialog.h"
 #include "./ui_iterationinfodialog.h"
 
-IterationInfoDialog::IterationInfoDialog(QWidget *parent)
+IterationInfoDialog::IterationInfoDialog(QHash<QString, int> * atc,
+                                         Dimension * ad, QWidget *parent)
     : QDialog(parent),
     ui(new Ui::IterationInfoDialog) {
     ui->setupUi(this);
 
+    agentTypeCounts = atc;
+    agentDimension = ad;
+
     ui->tableWidget->setColumnCount(2);
     QStringList headers;
-    headers.append("Agent type");
-    headers.append("Total");
+    headers.append("type");
+    headers.append("value");
     ui->tableWidget->setHorizontalHeaderLabels(headers);
     ui->tableWidget->verticalHeader()->hide();
     QHeaderView *headerView = ui->tableWidget->horizontalHeader();
@@ -33,33 +37,36 @@ void IterationInfoDialog::closeEvent(QCloseEvent *event) {
     QDialog::closeEvent(event);
 }
 
-void IterationInfoDialog::update_info(QHash<QString, int> * agentTypeCounts)
-{
-    /* Remove all rows */
-    while(ui->tableWidget->rowCount() > 0)
-        ui->tableWidget->removeRow(0);
-    /* Update info */
-    int row = 0;
-    int column;
-    QHash<QString, int>::iterator i;
-    for (i = agentTypeCounts->begin(); i != agentTypeCounts->end(); ++i) {
-        // qDebug() << i.key() << i.value();
-        ui->tableWidget->insertRow(row);
-        column = 0;
-        QTableWidgetItem *newItem = new QTableWidgetItem(i.key());
-        newItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-        ui->tableWidget->setItem(row, column, newItem);
-        column = 1;
-        newItem = new QTableWidgetItem(QString::number(i.value()));
-        newItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-        ui->tableWidget->setItem(row, column, newItem);
-        row++;
-    }
-
-
+void IterationInfoDialog::addRow(QString type, QString value) {
+    int row = ui->tableWidget->rowCount();
+    ui->tableWidget->insertRow(row);
+    QTableWidgetItem *newItem = new QTableWidgetItem(type);
+    newItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    ui->tableWidget->setItem(row, 0, newItem);
+    newItem = new QTableWidgetItem(value);
+    newItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+    ui->tableWidget->setItem(row, 1, newItem);
 }
 
-void IterationInfoDialog::on_buttonBox_accepted()
-{
+void IterationInfoDialog::update_info() {
+    /* Remove all rows */
+    while (ui->tableWidget->rowCount() > 0)
+        ui->tableWidget->removeRow(0);
+    /* Update info */
+    QHash<QString, int>::iterator i;
+    for (i = agentTypeCounts->begin(); i != agentTypeCounts->end(); ++i) {
+        addRow(QString("Agent total: %1").arg(i.key()),
+               QString::number(i.value()));
+    }
+    /* Add agent dimensions */
+    addRow("X-axis Miniumum", QString::number(agentDimension->xmin));
+    addRow("X-axis Maxiumum", QString::number(agentDimension->xmax));
+    addRow("Y-axis Miniumum", QString::number(agentDimension->ymin));
+    addRow("Y-axis Maxiumum", QString::number(agentDimension->ymax));
+    addRow("Z-axis Miniumum", QString::number(agentDimension->zmin));
+    addRow("Z-axis Maxiumum", QString::number(agentDimension->zmax));
+}
+
+void IterationInfoDialog::on_buttonBox_accepted() {
     close();
 }

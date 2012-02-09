@@ -154,7 +154,8 @@ void ZeroXMLReader::readAgentXML() {
                  agentname = readElementText();
                  agent.agentType = agentname;
                  /* Increment agent counts for iteration info */
-                 agentTypeCounts->insert(agentname, agentTypeCounts->value(agentname) + 1);
+                 agentTypeCounts->insert(agentname,
+                                        agentTypeCounts->value(agentname) + 1);
                  /* If agent type is unknown then add to agent list */
                  if (stringAgentTypes->contains(agentname) == false) {
                      // qDebug() << "new agent type found: " << agentname;
