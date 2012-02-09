@@ -128,6 +128,8 @@ class MainWindow : public QMainWindow {
     QList<AgentType> agentTypes;  /*!< The list of agent types */
     /*! A string list of agent type names  */
     QStringList stringAgentTypes;
+    /*! A hash table of agent types and their count in an iteration */
+    QHash<QString, int> agentTypeCounts;
     QList<GraphWidget*> graphs;  /*!< The list of graph windows */
     /*! The visual setting data model */
     VisualSettingsModel * visual_settings_model;

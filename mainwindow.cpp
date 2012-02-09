@@ -594,6 +594,12 @@ int MainWindow::readZeroXML() {
 
     // used by graphs
     agents.clear();
+    // used by iteration info dialog
+    QHash<QString, int>::iterator i;
+    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i) {
+        i.value() = 0;
+     // qDebug() << i.key() << ": " << i.value();
+    }
 
     // used by visual
     for (int i = 0; i < visual_settings_model->rowCount(); i++) {
@@ -601,7 +607,7 @@ int MainWindow::readZeroXML() {
     }
 
     ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio,
-            agentDimension, &stringAgentTypes);
+            agentDimension, &stringAgentTypes, &agentTypeCounts);
     if (!reader.read(&file)) {
         // ui->spinBox->setValue(iteration);
         ui->label_5->setText(
@@ -624,6 +630,10 @@ int MainWindow::readZeroXML() {
          if (opengl_window_open) emit(iterationLoaded());
          ui->label_5->setText(
                  QString("Read %1.xml").arg(QString().number(iteration)));
+    }
+
+    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i) {
+     // qDebug() << i.key() << ": " << i.value();
     }
 
     return 1;
@@ -1443,11 +1453,11 @@ void MainWindow::on_horizontalSlider_delay_valueChanged(int value) {
 
 void MainWindow::on_actionIteration_Info_triggered() {
     /* If no iteration data window then create one */
-    /*if(iterationInfo_dialog_open == false) {
+    if(iterationInfo_dialog_open == false) {
         iterationInfo_dialog = new IterationInfoDialog();
         iterationInfo_dialog->show();
         iterationInfo_dialog_open = true;
     } else {
         iterationInfo_dialog->activateWindow();
-    }*/
+    }
 }

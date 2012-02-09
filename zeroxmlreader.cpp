@@ -11,13 +11,14 @@
 
 ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at,
         VisualSettingsModel *vsm, double * r, Dimension * ad,
-                             QStringList *sat) {
+                             QStringList *sat, QHash<QString, int> *atc) {
     agents = a;
     agentTypes = at;
     vsmodel = vsm;
     ratio = r;
     agentDimension = ad;
     stringAgentTypes = sat;
+    agentTypeCounts = atc;
 
     agentDimension->xmin =  999999.9;
     agentDimension->xmax = -999999.9;
@@ -97,6 +98,9 @@ void ZeroXMLReader::readEnvironmentXML() {
      index = agentTypes->count() - 1;
     }
 
+    /* Make environment count one for iteration info */
+    agentTypeCounts->insert("environment", 1);
+
     while (!atEnd()) {
          readNext();
 
@@ -148,6 +152,8 @@ void ZeroXMLReader::readAgentXML() {
              if (name() == "name") {
                  agentname = readElementText();
                  agent.agentType = agentname;
+                 /* Increment agent counts for iteration info */
+                 agentTypeCounts->insert(agentname, agentTypeCounts->value(agentname) + 1);
                  /* If agent type is unknown then add to agent list */
                  if (stringAgentTypes->contains(agentname) == false) {
                      // qDebug() << "new agent type found: " << agentname;

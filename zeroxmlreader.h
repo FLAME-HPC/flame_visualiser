@@ -9,6 +9,7 @@
 #define ZEROXMLREADER_H_
 
 #include <QXmlStreamReader>
+#include <QHash>
 #include "./agent.h"
 #include "./agenttype.h"
 #include "./visualsettingsmodel.h"
@@ -18,7 +19,7 @@ class ZeroXMLReader : public QXmlStreamReader {
   public:
     ZeroXMLReader(QList<Agent> * a, QList<AgentType> * at,
             VisualSettingsModel * vsm, double * r, Dimension * ad,
-            QStringList * sat);
+            QStringList * sat, QHash<QString, int> * atc);
     bool read(QIODevice * device);
 
   private:
@@ -34,6 +35,7 @@ class ZeroXMLReader : public QXmlStreamReader {
     double * ratio;
     Dimension * agentDimension;
     QStringList * stringAgentTypes;
+    QHash<QString, int> * agentTypeCounts;
 };
 
 #endif  // ZEROXMLREADER_H_

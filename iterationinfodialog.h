@@ -21,6 +21,9 @@ class IterationInfoDialog : public QDialog {
     explicit IterationInfoDialog(QWidget *parent = 0);
     ~IterationInfoDialog();
 
+  public slots:
+    void update_info();
+
   private:
     Ui::IterationInfoDialog *ui;
 };
