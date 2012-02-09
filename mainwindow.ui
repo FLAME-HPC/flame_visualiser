@@ -444,6 +444,11 @@
     <string>Iteration Info...</string>
    </property>
   </action>
+  <action name="actionReload_agent_data">
+   <property name="text">
+    <string>Reload agent data...</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>

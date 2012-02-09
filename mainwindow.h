@@ -21,6 +21,7 @@
 #include "./timescale.h"
 #include "./restrictaxesdialog.h"
 #include "./dimension.h"
+#include "./iterationinfodialog.h"
 
 /*! \brief
   */
@@ -58,6 +59,7 @@ class MainWindow : public QMainWindow {
     void restrict_axes_closed();
     void slot_stopAnimation();
     void slot_startAnimation();
+    void iterationInfoDialog_closed();
 
   signals:
     void updateVisual();
@@ -72,6 +74,7 @@ class MainWindow : public QMainWindow {
     void restrictAxes(bool);
     void updatedAgentDimension();
     void updateDelayTime(int);
+    void updateIterationInfoDialog();
 
   private slots:
     void on_pushButton_LocationFind_clicked();
@@ -103,9 +106,10 @@ class MainWindow : public QMainWindow {
     void on_actionHelp_triggered();
     void on_actionRestrict_Axes_triggered();
     void on_horizontalSlider_delay_valueChanged(int value);
+    void on_actionIteration_Info_triggered();
 
   private:
-    int readZeroXML(int flag);
+    int readZeroXML();
     bool writeConfigXML(QFile * file);
     void createGraphWindow(GraphWidget * graph_window);
     void readConfigFile(QString fileName, int it);
@@ -113,7 +117,6 @@ class MainWindow : public QMainWindow {
     void calcPositionRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
-    void tryAndReadInAgentTypes();
     Ui::MainWindow *ui;  /*!< The User Interface */
     bool opengl_window_open;  /*!< Indicates if the visual window is open */
     /*! Indicates if the image settings window is open */
@@ -125,6 +128,10 @@ class MainWindow : public QMainWindow {
     bool fileOpen;  /*!< Indicates if a file is open */
     QList<Agent> agents;  /*!< The list of agents */
     QList<AgentType> agentTypes;  /*!< The list of agent types */
+    /*! A string list of agent type names  */
+    QStringList stringAgentTypes;
+    /*! A hash table of agent types and their count in an iteration */
+    QHash<QString, int> agentTypeCounts;
     QList<GraphWidget*> graphs;  /*!< The list of graph windows */
     /*! The visual setting data model */
     VisualSettingsModel * visual_settings_model;
@@ -132,6 +139,8 @@ class MainWindow : public QMainWindow {
     GraphSettingsModel * graph_settings_model;
     ImagesDialog * images_dialog;  /*!< The image settings dialog */
     TimeDialog * time_dialog;  /*!< The image settings dialog */
+    IterationInfoDialog * iterationInfo_dialog;
+    bool iterationInfo_dialog_open;
     QString configPath;  /*!< The path to the config xml file */
     QString configName;  /*!< The name of the config xml file */
     QString resultsData;  /*!< The path to 0.xml data */

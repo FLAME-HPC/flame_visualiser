@@ -18,8 +18,8 @@
 class ConfigXMLReader : public QXmlStreamReader {
   public:
     ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm,
-            QString * rD, TimeScale * ts, double * r,
-                    float * xr, float *yr, float *xm, float * ym, float * zm, int * delay);
+        QString * rD, TimeScale * ts, double * r,
+        float * xr, float *yr, float *xm, float * ym, float * zm, int * delay);
 
     bool read(QIODevice * device);
 
