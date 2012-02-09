@@ -189,100 +189,103 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
     for (int i = 0; i < vsmodel->rowCount(); i++) {
         VisualSettingsItem * vsi = vsmodel->getRule(i);
 
-        if (agent->agentType == vsi->agentType()) {
-            bool pass = true;
+        /* If the rule is enabled */
+        if (vsi->enabled()) {
+            if (agent->agentType == vsi->agentType()) {
+                bool pass = true;
 
-            // Check condition variable
-            if (vsi->condition().enable) {
-                pass = false;
+                // Check condition variable
+                if (vsi->condition().enable) {
+                    pass = false;
 
-                for (int k = 0; k < agent->tags.count(); k++) {
-                    if (QString::compare(vsi->condition().variable,
-                            agent->tags.at(k)) == 0) {
-                        if (vsi->condition().op == "==" &&
-                                agent->values.at(k).toDouble() ==
-                                vsi->condition().value) pass = true;
-                        else if (vsi->condition().op == "!=" &&
-                                agent->values.at(k).toDouble() !=
-                                vsi->condition().value) pass = true;
-                        else if (vsi->condition().op == ">" &&
-                                agent->values.at(k).toDouble() >
-                                vsi->condition().value) pass = true;
-                        else if (vsi->condition().op == "<" &&
-                                agent->values.at(k).toDouble() <
-                                vsi->condition().value) pass = true;
-                        else if (vsi->condition().op == ">=" &&
-                                agent->values.at(k).toDouble() >=
-                                vsi->condition().value) pass = true;
-                        else if (vsi->condition().op == "<=" &&
-                                agent->values.at(k).toDouble() <=
-                                vsi->condition().value) pass = true;
+                    for (int k = 0; k < agent->tags.count(); k++) {
+                        if (QString::compare(vsi->condition().variable,
+                                agent->tags.at(k)) == 0) {
+                            if (vsi->condition().op == "==" &&
+                                    agent->values.at(k).toDouble() ==
+                                    vsi->condition().value) pass = true;
+                            else if (vsi->condition().op == "!=" &&
+                                    agent->values.at(k).toDouble() !=
+                                    vsi->condition().value) pass = true;
+                            else if (vsi->condition().op == ">" &&
+                                    agent->values.at(k).toDouble() >
+                                    vsi->condition().value) pass = true;
+                            else if (vsi->condition().op == "<" &&
+                                    agent->values.at(k).toDouble() <
+                                    vsi->condition().value) pass = true;
+                            else if (vsi->condition().op == ">=" &&
+                                    agent->values.at(k).toDouble() >=
+                                    vsi->condition().value) pass = true;
+                            else if (vsi->condition().op == "<=" &&
+                                    agent->values.at(k).toDouble() <=
+                                    vsi->condition().value) pass = true;
+                        }
                     }
                 }
-            }
 
-            if (pass) {
-                agent->x = vsi->x().opValue;
-                agent->y = vsi->y().opValue;
-                agent->z = vsi->z().opValue;
-                agent->shapeDimension = vsi->shape().getDimension();
-                agent->shapeDimensionY = vsi->shape().getDimensionY();
-                agent->shapeDimensionZ = vsi->shape().getDimensionZ();
+                if (pass) {
+                    agent->x = vsi->x().opValue;
+                    agent->y = vsi->y().opValue;
+                    agent->z = vsi->z().opValue;
+                    agent->shapeDimension = vsi->shape().getDimension();
+                    agent->shapeDimensionY = vsi->shape().getDimensionY();
+                    agent->shapeDimensionZ = vsi->shape().getDimensionZ();
 
-                for (int k = 0; k < agent->tags.count(); k++) {
-                    if (vsi->x().useVariable)
-                        if (QString::compare(vsi->x().positionVariable,
-                                agent->tags.at(k)) == 0)
-                            agent->x += agent->values.at(k).toDouble();
-                    if (vsi->y().useVariable)
-                        if (QString::compare(vsi->y().positionVariable,
-                                agent->tags.at(k)) == 0)
-                            agent->y += agent->values.at(k).toDouble();
-                    if (vsi->z().useVariable)
-                        if (QString::compare(vsi->z().positionVariable,
-                                agent->tags.at(k)) == 0)
-                            agent->z += agent->values.at(k).toDouble();
-                    if (vsi->shape().getUseVariable())
-                        if (QString::compare(
-                                vsi->shape().getDimensionVariable(),
-                                agent->tags.at(k)) == 0)
-                            agent->shapeDimension +=
-                                    agent->values.at(k).toDouble();
-                    if (vsi->shape().getUseVariableY())
-                        if (QString::compare(
-                                vsi->shape().getDimensionVariableY(),
-                                agent->tags.at(k)) == 0)
-                            agent->shapeDimensionY +=
-                                    agent->values.at(k).toDouble();
-                    if (vsi->shape().getUseVariableZ())
-                        if (QString::compare(
-                                vsi->shape().getDimensionVariableZ(),
-                                agent->tags.at(k)) == 0)
-                            agent->shapeDimensionZ +=
-                                    agent->values.at(k).toDouble();
+                    for (int k = 0; k < agent->tags.count(); k++) {
+                        if (vsi->x().useVariable)
+                            if (QString::compare(vsi->x().positionVariable,
+                                    agent->tags.at(k)) == 0)
+                                agent->x += agent->values.at(k).toDouble();
+                        if (vsi->y().useVariable)
+                            if (QString::compare(vsi->y().positionVariable,
+                                    agent->tags.at(k)) == 0)
+                                agent->y += agent->values.at(k).toDouble();
+                        if (vsi->z().useVariable)
+                            if (QString::compare(vsi->z().positionVariable,
+                                    agent->tags.at(k)) == 0)
+                                agent->z += agent->values.at(k).toDouble();
+                        if (vsi->shape().getUseVariable())
+                            if (QString::compare(
+                                    vsi->shape().getDimensionVariable(),
+                                    agent->tags.at(k)) == 0)
+                                agent->shapeDimension +=
+                                        agent->values.at(k).toDouble();
+                        if (vsi->shape().getUseVariableY())
+                            if (QString::compare(
+                                    vsi->shape().getDimensionVariableY(),
+                                    agent->tags.at(k)) == 0)
+                                agent->shapeDimensionY +=
+                                        agent->values.at(k).toDouble();
+                        if (vsi->shape().getUseVariableZ())
+                            if (QString::compare(
+                                    vsi->shape().getDimensionVariableZ(),
+                                    agent->tags.at(k)) == 0)
+                                agent->shapeDimensionZ +=
+                                        agent->values.at(k).toDouble();
+                    }
+
+                    /* Calc agent scene dimension */
+                    if (agentDimension->xmin > agent->x)
+                        agentDimension->xmin = agent->x;
+                    if (agentDimension->xmax < agent->x)
+                        agentDimension->xmax = agent->x;
+                    if (agentDimension->ymin > agent->y)
+                        agentDimension->ymin = agent->y;
+                    if (agentDimension->ymax < agent->y)
+                        agentDimension->ymax = agent->y;
+                    if (agentDimension->zmin > agent->z)
+                        agentDimension->zmin = agent->z;
+                    if (agentDimension->zmax < agent->z)
+                        agentDimension->zmax = agent->z;
+
+                    agent->x *= *ratio;
+                    agent->y *= *ratio;
+                    agent->z *= *ratio;
+                    agent->shapeDimension *= *ratio;
+                    agent->shapeDimensionY *= *ratio;
+                    agent->shapeDimensionZ *= *ratio;
+                    vsi->agents.append(*agent);
                 }
-
-                /* Calc agent scene dimension */
-                if (agentDimension->xmin > agent->x)
-                    agentDimension->xmin = agent->x;
-                if (agentDimension->xmax < agent->x)
-                    agentDimension->xmax = agent->x;
-                if (agentDimension->ymin > agent->y)
-                    agentDimension->ymin = agent->y;
-                if (agentDimension->ymax < agent->y)
-                    agentDimension->ymax = agent->y;
-                if (agentDimension->zmin > agent->z)
-                    agentDimension->zmin = agent->z;
-                if (agentDimension->zmax < agent->z)
-                    agentDimension->zmax = agent->z;
-
-                agent->x *= *ratio;
-                agent->y *= *ratio;
-                agent->z *= *ratio;
-                agent->shapeDimension *= *ratio;
-                agent->shapeDimensionY *= *ratio;
-                agent->shapeDimensionZ *= *ratio;
-                vsi->agents.append(*agent);
             }
         }
     }

@@ -92,6 +92,7 @@ class MainWindow : public QMainWindow {
     void getColourVisual(QModelIndex index);
     void getColourGraph(QModelIndex index);
     void enabledGraph(QModelIndex index);
+    void enabledRule(QModelIndex index);
     // void on_doubleSpinBox_ratio_valueChanged(double arg1);
     // void on_pushButton_AutoDetect_clicked();
     void plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph,

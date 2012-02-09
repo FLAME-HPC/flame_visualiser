@@ -13,7 +13,7 @@ int VisualSettingsModel::rowCount(const QModelIndex &/*parent*/) const {
 }
 
 int VisualSettingsModel::columnCount(const QModelIndex &/*parent*/) const {
-     return 7;
+     return 8;
 }
 
 QVariant VisualSettingsModel::data(const QModelIndex &index, int role) const {
@@ -40,6 +40,13 @@ QVariant VisualSettingsModel::data(const QModelIndex &index, int role) const {
             return qVariantFromValue(rules.at(index.row())->colour());
         return
                 QVariant();
+     } else if (role == Qt::CheckStateRole) {
+         if (index.column() == 7) {
+             if (rules.at(index.row())->enabled())
+                 return Qt::Checked;
+             else
+                 return Qt::Unchecked;
+         }
      }
      return QVariant();
 }
@@ -57,6 +64,7 @@ QVariant VisualSettingsModel::headerData(int section,
          else if (section == 4) return QString("Z");
          else if (section == 5) return QString("Shape");
          else if (section == 6) return QString("Colour");
+         else if (section == 7) return QString("Enabled");
          else
              return QString("");
      } else {
@@ -69,6 +77,8 @@ Qt::ItemFlags VisualSettingsModel::flags(const QModelIndex &index) const {
          return Qt::ItemIsEnabled;
 
      if (index.column() == 6) return QAbstractItemModel::flags(index);
+     else if (index.column() == 7) return (QAbstractItemModel::flags(index) |
+                  Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
      else
          return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
 }
@@ -91,6 +101,8 @@ bool VisualSettingsModel::setData(const QModelIndex &index,
             rules.at(index.row())->setShape(qVariantValue<Shape>(value));
         if (index.column() == 6)
             rules.at(index.row())->setColour(qVariantValue<QColor>(value));
+        if (index.column() == 7)
+            rules.at(index.row())->setEnabled(qVariantValue<bool>(value));
          emit dataChanged(index, index);
          emit ruleUpdated(index.row());
          return true;
@@ -140,14 +152,21 @@ void VisualSettingsModel::addRule() {
 }
 
 void VisualSettingsModel::addRule(QString agentType, Condition condition,
-        Position x, Position y, Position z, Shape shape, QColor colour) {
+        Position x, Position y, Position z, Shape shape, QColor colour,
+                                  bool enabled) {
     beginInsertRows(QModelIndex(), rules.count(), rules.count());
 
     VisualSettingsItem * vsi = new VisualSettingsItem(agentType, condition,
-            x, y, z, shape, colour);
+            x, y, z, shape, colour, enabled);
     rules.insert(rules.count(), vsi);
 
     endInsertRows();
+}
+
+void VisualSettingsModel::switchEnabled(QModelIndex index) {
+    rules.at(index.row())->setEnabled(!(rules.at(index.row())->enabled()));
+    emit dataChanged(createIndex(index.row(), index.column(), 0),
+            createIndex(index.row(), index.column(), 0));
 }
 
 void VisualSettingsModel::transitionUpdated(QModelIndex /*topLeft*/,

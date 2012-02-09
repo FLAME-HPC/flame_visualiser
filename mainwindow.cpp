@@ -101,6 +101,9 @@ MainWindow::MainWindow(QWidget *parent)
     /* Connect signals that affect tableViewVisual */
     connect(ui->tableViewVisual, SIGNAL(doubleClicked(QModelIndex)),
             this, SLOT(getColourVisual(QModelIndex)));
+    /* Handles the enabling of visual rules */
+    connect(ui->tableViewVisual, SIGNAL(clicked(QModelIndex)),
+            this, SLOT(enabledRule(QModelIndex)));
     connect(ui->pushButton_AddAgentType, SIGNAL(clicked()),
             this, SLOT(addRule()));
     connect(ui->pushButton_DeleteAgentType, SIGNAL(clicked()),
@@ -355,6 +358,20 @@ void MainWindow::closeGraphWindows(QString graphName) {
             graphs.removeAt(i);
             i--;
         }
+    }
+}
+
+/*! \brief Enable or disable a visual rule when the enabled cell
+ *  of the visual rule table is clicked.
+ *  \param index The index of the cell clicked.
+ */
+void MainWindow::enabledRule(QModelIndex index) {
+    /* If the enabled column */
+    if (index.column() == 7) {
+        /* Switch the enabled value */
+        visual_settings_model->switchEnabled(index);
+        /* Reread the iteration to apply the changes */
+        readZeroXML();
     }
 }
 
@@ -1087,6 +1104,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
         stream.writeTextElement("a", QString("%1").
                 arg(vsitem->colour().alpha()));
         stream.writeEndElement();  // colour
+        if (vsitem->enabled()) stream.writeTextElement(
+                "enable", "true");
+        else
+            stream.writeTextElement("enable", "false");
         stream.writeEndElement();  // rule
     }
     stream.writeEndElement();  // rules
