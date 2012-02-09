@@ -90,6 +90,7 @@ void ZeroXMLReader::readEnvironmentXML() {
     Agent agent = Agent();
     int index = -1;
     agent.isEnvironment = true;
+    agent.agentType = "environment";
 
     if (stringAgentTypes->contains("environment") == false) {
      // qDebug() << "new agent type found: environment";
