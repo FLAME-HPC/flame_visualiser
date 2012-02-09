@@ -59,6 +59,7 @@ class MainWindow : public QMainWindow {
     void restrict_axes_closed();
     void slot_stopAnimation();
     void slot_startAnimation();
+    void iterationInfoDialog_closed();
 
   signals:
     void updateVisual();
@@ -73,6 +74,7 @@ class MainWindow : public QMainWindow {
     void restrictAxes(bool);
     void updatedAgentDimension();
     void updateDelayTime(int);
+    void updateIterationInfoDialog(QHash<QString, int> *);
 
   private slots:
     void on_pushButton_LocationFind_clicked();

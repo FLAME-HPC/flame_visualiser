@@ -279,6 +279,18 @@ void MainWindow::time_dialog_closed() {
     calcTimeScale();
 }
 
+/*! \brief When the iteration info dialog is closed, disconnect all signal/slots
+ *  and set variables.
+ */
+void MainWindow::iterationInfoDialog_closed()
+{
+    disconnect(this, SIGNAL(updateIterationInfoDialog(QHash<QString,int>*)),
+            iterationInfo_dialog, SLOT(update_info(QHash<QString,int>*)));
+    disconnect(iterationInfo_dialog, SIGNAL(iterationInfoDialog_closed()),
+            this, SLOT(iterationInfoDialog_closed()));
+    iterationInfo_dialog_open = false;
+}
+
 void MainWindow::restrict_axes_closed() {
     restrict_dimension_open = false;
     disconnect(restrictAxesDialog, SIGNAL(closed()),
@@ -632,8 +644,8 @@ int MainWindow::readZeroXML() {
                  QString("Read %1.xml").arg(QString().number(iteration)));
     }
 
-    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i) {
-     // qDebug() << i.key() << ": " << i.value();
+    if(iterationInfo_dialog_open) {
+        emit(updateIterationInfoDialog(&agentTypeCounts));
     }
 
     return 1;
@@ -1457,6 +1469,11 @@ void MainWindow::on_actionIteration_Info_triggered() {
         iterationInfo_dialog = new IterationInfoDialog();
         iterationInfo_dialog->show();
         iterationInfo_dialog_open = true;
+        connect(this, SIGNAL(updateIterationInfoDialog(QHash<QString,int>*)),
+                iterationInfo_dialog, SLOT(update_info(QHash<QString,int>*)));
+        connect(iterationInfo_dialog, SIGNAL(iterationInfoDialog_closed()),
+                this, SLOT(iterationInfoDialog_closed()));
+        emit(updateIterationInfoDialog(&agentTypeCounts));
     } else {
         iterationInfo_dialog->activateWindow();
     }

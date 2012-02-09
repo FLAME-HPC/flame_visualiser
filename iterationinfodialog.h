@@ -21,8 +21,17 @@ class IterationInfoDialog : public QDialog {
     explicit IterationInfoDialog(QWidget *parent = 0);
     ~IterationInfoDialog();
 
+  signals:
+    void iterationInfoDialog_closed();
+
   public slots:
-    void update_info();
+    void update_info(QHash<QString, int> *);
+
+  protected:
+    void closeEvent(QCloseEvent *event);
+
+  private slots:
+    void on_buttonBox_accepted();
 
   private:
     Ui::IterationInfoDialog *ui;
