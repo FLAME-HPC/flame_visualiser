@@ -206,7 +206,7 @@ void GLWidget::resizeGL(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    // gluOrtho2D(0, 0, w, h); // set origin to centre
+    // glOrtho(0, 0, w, h, 0, 1); // set origin to centre
     gluPerspective(45.0f, window_ratio, zNear, 20.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -509,6 +509,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
 
 void GLWidget::wheelEvent(QWheelEvent * event) {
     *zmove += static_cast<float>(event->delta()/500.0);
+    // qDebug() << *zmove;
     update();
 }
 
