@@ -8,11 +8,13 @@
 #include "./visualsettingsitem.h"
 
 VisualSettingsItem::VisualSettingsItem() {
-    colourColor = QColor(255, 255, 255, 255);
+    colourColor = QColor(128, 128, 128, 255);
+    boolEnabled = true;
 }
 
 VisualSettingsItem::VisualSettingsItem(QString agentType, Condition condition,
-        Position x, Position y, Position z, Shape shape, QColor colour) {
+        Position x, Position y, Position z, Shape shape,
+                                       QColor colour, bool enabled) {
     setAgentType(agentType);
     setCondition(condition);
     setX(x);
@@ -20,4 +22,5 @@ VisualSettingsItem::VisualSettingsItem(QString agentType, Condition condition,
     setZ(z);
     setShape(shape);
     setColour(colour);
+    setEnabled(enabled);
 }

@@ -19,7 +19,8 @@ class VisualSettingsItem {
   public:
     VisualSettingsItem();
     VisualSettingsItem(QString agentType, Condition condition,
-            Position x, Position y, Position z, Shape shape, QColor colour);
+            Position x, Position y, Position z, Shape shape,
+                       QColor colour, bool enabled);
     ~VisualSettingsItem() {}
 
     void setAgentType(QString n) { agentTypeString = n; }
@@ -36,6 +37,8 @@ class VisualSettingsItem {
     Shape shape() const { return shapeShape; }
     void setColour(QColor c) { colourColor = c; }
     QColor colour() const { return colourColor; }
+    void setEnabled(bool b) { boolEnabled = b; }
+    bool enabled() const { return boolEnabled; }
 
     QList<Agent> agents;  /*!< The list of agents */
 
@@ -53,6 +56,7 @@ class VisualSettingsItem {
     // QString colourString;
     Shape shapeShape;
     QColor colourColor;
+    bool boolEnabled;
 };
 
 #endif  // VISUALSETTINGSITEM_H_

@@ -211,6 +211,7 @@ void ConfigXMLReader::readRule() {
     Position z;
     Shape shape;
     QColor colour;
+    bool enabled = true;
 
     while (!atEnd()) {
          readNext();
@@ -233,12 +234,18 @@ void ConfigXMLReader::readRule() {
                  shape = readShape();
              else if (name() == "colour")
                  colour = readColour();
-             else
+             else if (name() == "enable") {
+                 if (QString::compare(readElementText(), "true") == 0)
+                     enabled = true;
+                 else
+                     enabled = false;
+             } else {
                  readUnknownElement();
+             }
          }
      }
 
-    vsmodel->addRule(agentType, condition, x, y, z, shape, colour);
+    vsmodel->addRule(agentType, condition, x, y, z, shape, colour, enabled);
 }
 
 Shape ConfigXMLReader::readShape() {

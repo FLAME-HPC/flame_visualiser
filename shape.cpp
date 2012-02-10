@@ -10,7 +10,7 @@
 Shape::Shape() {
     shape = "sphere";
     shapes << "sphere" << "cube" << "point";
-    dimension = 0.0;
+    dimension = 5.0;
     dimensionY = 0.0;
     dimensionZ = 0.0;
     dimensionVariable = "";

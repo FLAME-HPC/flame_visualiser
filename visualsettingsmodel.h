@@ -37,6 +37,7 @@ class VisualSettingsModel : public QAbstractTableModel {
 
      QList<VisualSettingsItem *> getRules() const { return rules; }
      VisualSettingsItem * getRule(int row) const { return rules[row]; }
+     void switchEnabled(QModelIndex index);
 
   signals:
      void ruleUpdated(int);
@@ -44,7 +45,7 @@ class VisualSettingsModel : public QAbstractTableModel {
   public slots:
      void addRule();
      void addRule(QString agentType, Condition condition, Position x,
-             Position y, Position z, Shape shape, QColor colour);
+             Position y, Position z, Shape shape, QColor colour, bool enabled);
      void deleteRule(QModelIndex index);
      void deleteRules();
      void transitionUpdated(QModelIndex topLeft, QModelIndex bottomRight);
