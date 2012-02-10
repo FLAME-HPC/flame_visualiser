@@ -8,7 +8,8 @@
 #include "./visualsettingsitem.h"
 
 VisualSettingsItem::VisualSettingsItem() {
-    colourColor = QColor(255, 255, 255, 255);
+    colourColor = QColor(0, 0, 0, 255);
+    boolEnabled = true;
 }
 
 VisualSettingsItem::VisualSettingsItem(QString agentType, Condition condition,
