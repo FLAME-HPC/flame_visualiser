@@ -650,7 +650,7 @@ int MainWindow::readZeroXML() {
           tr("Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
                       filePath).arg(reader.lineNumber()).arg(
                       reader.columnNumber()).arg(reader.errorString()));
-
+        itLocked = false;
          return -2;
     } else {
         itLocked = false;
