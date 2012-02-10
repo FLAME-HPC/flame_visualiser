@@ -74,6 +74,8 @@ MainWindow::MainWindow(QWidget *parent)
     /* Setup 3D OpenGL visual window */
     // ui->pushButton_OpenCloseVisual->setText("Open visual");
     opengl_window_open  = false;
+    /* Set update viewpoint button to be false */
+    ui->pushButton_updateViewpoint->setEnabled(false);
 
     /* Setup tables in UI */
     /* Set tableViewVisual to stretch columns to table size */
@@ -253,6 +255,8 @@ void MainWindow::visual_window_closed() {
     animation = false;
     ui->pushButton_Animate->setText("Start Animation - A");
     ui->pushButton_Animate->setEnabled(false);
+    /* Set update viewpoint button to be false */
+    ui->pushButton_updateViewpoint->setEnabled(false);
 }
 
 /*! \brief When the image dialog is closed, disconnect all signal/slots and set variables.
@@ -526,14 +530,8 @@ void MainWindow::on_pushButton_LocationFind_clicked() {
  */
 void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
     if (opengl_window_open == false) {
-        // Set ratio to be 1
-        ratio = 1.0;
-        // Read in agents with model dimensions
-        readZeroXML();
-        // Calculate model to opengl dimension ratio
-        calcPositionRatio();
-        // Reread agents with opengl dimension using new ratio
-        readZeroXML();
+        /* Calculate viewpoint */
+        resetVisualViewpoint();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
                 restrictDimension);
@@ -586,7 +584,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         visual_window->setFocus();
         ui->pushButton_OpenCloseVisual->setText("Close Visual Window");
         opengl_window_open = true;
-
+        /* Set update viewpoint button to be false */
+        ui->pushButton_updateViewpoint->setEnabled(true);
         ui->pushButton_Animate->setEnabled(true);
     } else {
         visual_window->close();
@@ -1217,6 +1216,8 @@ void MainWindow::calcPositionRatio() {
         }
     }
 
+    // qDebug() << smallest << largest;
+
     if (smallest == 0.0 && largest == 0.0) largest = 10.0;
 
     if (smallest < 0.0 && largest < -smallest)
@@ -1492,4 +1493,20 @@ void MainWindow::on_actionIteration_Info_triggered() {
     } else {
         iterationInfo_dialog->activateWindow();
     }
+}
+
+void MainWindow::resetVisualViewpoint() {
+    // Set ratio to be 1
+    ratio = 1.0;
+    // Read in agents with model dimensions
+    readZeroXML();
+    // Calculate model to opengl dimension ratio
+    calcPositionRatio();
+    // Reread agents with opengl dimension using new ratio
+    readZeroXML();
+}
+
+void MainWindow::on_pushButton_updateViewpoint_clicked() {
+    resetVisualViewpoint();
+    visual_window->reset_camera();
 }

@@ -149,6 +149,8 @@ void GLWidget::set_rules(VisualSettingsModel * m) {
 void GLWidget::reset_camera() {
     *xrotate = 0.0;
     *yrotate = 0.0;
+    *xmove = 0.0;
+    *ymove = 0.0;
     *zmove = -3.0;
 }
 

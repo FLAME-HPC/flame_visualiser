@@ -94,6 +94,13 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="pushButton_updateViewpoint">
+           <property name="text">
+            <string>Reset Viewpoint</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="pushButton_ImageSettings">
            <property name="text">
             <string>Open Image Settings</string>

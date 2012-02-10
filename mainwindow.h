@@ -108,6 +108,7 @@ class MainWindow : public QMainWindow {
     void on_actionRestrict_Axes_triggered();
     void on_horizontalSlider_delay_valueChanged(int value);
     void on_actionIteration_Info_triggered();
+    void on_pushButton_updateViewpoint_clicked();
 
   private:
     int readZeroXML();
@@ -118,6 +119,7 @@ class MainWindow : public QMainWindow {
     void calcPositionRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
+    void resetVisualViewpoint();
     Ui::MainWindow *ui;  /*!< The User Interface */
     bool opengl_window_open;  /*!< Indicates if the visual window is open */
     /*! Indicates if the image settings window is open */
