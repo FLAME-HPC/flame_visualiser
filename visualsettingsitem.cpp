@@ -8,7 +8,7 @@
 #include "./visualsettingsitem.h"
 
 VisualSettingsItem::VisualSettingsItem() {
-    colourColor = QColor(0, 0, 0, 255);
+    colourColor = QColor(128, 128, 128, 255);
     boolEnabled = true;
 }
 
