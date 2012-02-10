@@ -967,6 +967,7 @@ void MainWindow::close_config_file() {
     ui->pushButton_Animate->setText("Start Animation - A");
     ui->pushButton_Animate->setEnabled(false);
     animation = false;
+    agentTypeCounts.clear();
 }
 
 /*! \brief Write a config to an xml file.
