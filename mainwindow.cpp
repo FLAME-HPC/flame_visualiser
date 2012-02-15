@@ -1233,9 +1233,9 @@ void MainWindow::calcPositionOffset() {
     yoffset = -(largest_y + smallest_y)/2.0;
     zoffset = -(largest_z + smallest_z)/2.0;
 
-    qDebug() << "xoffset: " << xoffset;
+    /*qDebug() << "xoffset: " << xoffset;
     qDebug() << "yoffset: " << yoffset;
-    qDebug() << "zoffset: " << zoffset;
+    qDebug() << "zoffset: " << zoffset;*/
 }
 
 /*! \brief Automatically work out a good ratio to use to view agents visually.
@@ -1258,7 +1258,7 @@ void MainWindow::calcPositionRatio() {
         }
     }
 
-    qDebug() << smallest << largest;
+    // qDebug() << smallest << largest;
 
     if (smallest == 0.0 && largest == 0.0) largest = 10.0;
 
@@ -1267,7 +1267,7 @@ void MainWindow::calcPositionRatio() {
     else
         ratio = 1.0 / largest;
 
-    qDebug() << "ratio: " << ratio;
+    // qDebug() << "ratio: " << ratio;
 }
 
 void MainWindow::slot_stopAnimation() {
