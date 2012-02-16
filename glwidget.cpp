@@ -19,7 +19,7 @@
 #include "./agentdialog.h"
 
 GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-        Dimension * rd, QWidget *parent)
+        Dimension * rd, float * oz, QWidget *parent)
     : QGLWidget(parent) {
     agents = 0;
     setMouseTracking(true);
@@ -28,6 +28,7 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
     xmove = xm;
     ymove = ym;
     zmove = zm;
+    dimension = 3;
     x_last_position = 0;
     y_last_position = 0;
     drawpoints = 1;
@@ -53,6 +54,7 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
     restrictAxesOn = false;
     delayLock = false;
     delayTime = 0;
+    orthoZoom = oz;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -88,6 +90,12 @@ void GLWidget::unlockDelayTime() {
 
 void GLWidget::updateImagesLocation(QString s) {
     imagesLocation = s;
+}
+
+void GLWidget::setDimension(int d) {
+    dimension = d;
+    if (d == 2) resize(600, 600);
+    if (d == 3) resize(800, 600);
 }
 
 void GLWidget::takeSnapshot() {
@@ -152,6 +160,9 @@ void GLWidget::reset_camera() {
     *xmove = 0.0;
     *ymove = 0.0;
     *zmove = -3.0;
+    *orthoZoom = 1.0;
+    if (dimension == 2)
+        resizeGL(windowWidth, windowHeight);
 }
 
 void GLWidget::initializeGL() {
@@ -206,8 +217,14 @@ void GLWidget::resizeGL(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    // glOrtho(0, 0, w, h, 0, 1); // set origin to centre
-    gluPerspective(45.0f, window_ratio, zNear, 20.0f);
+    if (dimension == 2) {
+        glViewport(0, 0, qMax(w, h), qMax(w, h));
+        glOrtho(-1*(*orthoZoom), 1*(*orthoZoom),
+                -1*(*orthoZoom), 1*(*orthoZoom), zNear, 20);
+    }
+    if (dimension == 3) {
+        gluPerspective(45.0f, window_ratio, zNear, 20.0f);
+    }
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -330,7 +347,7 @@ void GLWidget::drawAgents(GLenum mode) {
                                 if (mode == GL_SELECT) glLoadName(0);
                                 // Draw back face
                                 glCullFace(GL_FRONT);
-                                gluSphere(qobj, size, grade, grade);
+                                gluSphere(qobj, size/2.0, grade, grade);
                             } else {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
@@ -338,7 +355,7 @@ void GLWidget::drawAgents(GLenum mode) {
                                 }
                                 // Draw front face
                                 glCullFace(GL_BACK);
-                                gluSphere(qobj, size, grade, grade);
+                                gluSphere(qobj, size/2.0, grade, grade);
                             }
                             glDisable(GL_CULL_FACE);
                         } else if (QString::compare("point", rule->shape().
@@ -351,8 +368,7 @@ void GLWidget::drawAgents(GLenum mode) {
 
                                 glDisable(GL_LIGHTING);
                                 glColor4fv(mat_ambientA);
-                                glPointSize(static_cast<int>(
-                                        rule->shape().getDimension()));
+                                glPointSize(static_cast<int>(size));
                                 glBegin(GL_POINTS);
                                 glVertex3f(0.0, 0.0, 0.0);
                                 glEnd();
@@ -498,6 +514,12 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
             if (zNear < 0.2) zNear = 0.2;
             resizeGL(windowWidth, windowHeight);
         } else {
+            if (dimension == 2) {
+                *orthoZoom -=
+                    static_cast<float>((y_last_position - event->y())/100.0);
+                resizeGL(windowWidth, windowHeight);
+            }
+            if (dimension == 3)
             *zmove += static_cast<float>((y_last_position - event->y())/100.0);
         }
     }
@@ -508,8 +530,13 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void GLWidget::wheelEvent(QWheelEvent * event) {
-    *zmove += static_cast<float>(event->delta()/500.0);
-    // qDebug() << *zmove;
+    if (dimension == 2) {
+        *orthoZoom -= static_cast<float>(event->delta()/500.0);
+        resizeGL(windowWidth, windowHeight);
+    }
+    if (dimension == 3) {
+        *zmove += static_cast<float>(event->delta()/500.0);
+    }
     update();
 }
 

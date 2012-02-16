@@ -78,7 +78,7 @@ void ShapeDialog::setShape(Shape s) {
         groupBox_Quality->setEnabled(true);
         spinBoxQuality->setValue(shape.getQuality());
     } else {
-        spinBoxQuality->setValue(0);
+        spinBoxQuality->setValue(16);
         groupBox_Quality->setEnabled(false);
     }
 
@@ -93,6 +93,10 @@ void ShapeDialog::setShape(Shape s) {
     checkBox_X->setChecked(shape.getUseVariable());
     checkBox_Y->setChecked(shape.getUseVariableY());
     checkBox_Z->setChecked(shape.getUseVariableZ());
+
+    checkBox_X_from_centre->setChecked(shape.getFromCentreX());
+    checkBox_Y_from_centre->setChecked(shape.getFromCentreY());
+    checkBox_Z_from_centre->setChecked(shape.getFromCentreZ());
 }
 
 Shape ShapeDialog::getShape() {
@@ -101,14 +105,17 @@ Shape ShapeDialog::getShape() {
     shape.setDimension(doubleSpinBox_X->value());
     shape.setDimensionVariable(comboBox_X->currentText());
     shape.setUseVariable(checkBox_X->isChecked());
+    shape.setFromCentreX(checkBox_X_from_centre->isChecked());
 
     shape.setDimensionY(doubleSpinBox_Y->value());
     shape.setDimensionVariableY(comboBox_Y->currentText());
     shape.setUseVariableY(checkBox_Y->isChecked());
+    shape.setFromCentreY(checkBox_Y_from_centre->isChecked());
 
     shape.setDimensionZ(doubleSpinBox_Z->value());
     shape.setDimensionVariableZ(comboBox_Z->currentText());
     shape.setUseVariableZ(checkBox_Z->isChecked());
+    shape.setFromCentreZ(checkBox_Z_from_centre->isChecked());
 
     shape.setQuality(spinBoxQuality->value());
 
@@ -120,6 +127,8 @@ void ShapeDialog::enableYZ(bool e) {
     checkBox_Z->setEnabled(e);
     doubleSpinBox_Y->setEnabled(e);
     doubleSpinBox_Z->setEnabled(e);
+    checkBox_Y_from_centre->setEnabled(e);
+    checkBox_Z_from_centre->setEnabled(e);
     if (!e || shape.getUseVariableY()) comboBox_Y->setEnabled(e);
     if (!e || shape.getUseVariableZ()) comboBox_Z->setEnabled(e);
     if (e) label_X->setText("X axis");
@@ -132,6 +141,8 @@ void ShapeDialog::enableYZ(bool e) {
         palet.setColor(label_Y->foregroundRole(), QColor(120, 120, 120));
     label_Y->setPalette(palet);
     label_Z->setPalette(palet);
+    label_2->setPalette(palet);
+    label_3->setPalette(palet);
 }
 
 void ShapeDialog::shapeUpdated(QString s) {

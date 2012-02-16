@@ -109,6 +109,8 @@ class MainWindow : public QMainWindow {
     void on_horizontalSlider_delay_valueChanged(int value);
     void on_actionIteration_Info_triggered();
     void on_pushButton_updateViewpoint_clicked();
+    void on_action2D_triggered(bool checked);
+    void on_action3D_triggered(bool checked);
 
   private:
     int readZeroXML();
@@ -162,6 +164,7 @@ class MainWindow : public QMainWindow {
     float xoffset;
     float yoffset;
     float zoffset;
+    float orthoZoom;
     Dimension * restrictAgentDimension;
     Dimension * restrictDimension;
     Dimension * agentDimension;
@@ -169,6 +172,7 @@ class MainWindow : public QMainWindow {
     RestrictAxesDialog * restrictAxesDialog;
     bool animation;
     int delayTime; /*!< The animation delay time in millisecs */
+    int visual_dimension;
 };
 
 #endif  // MAINWINDOW_H_

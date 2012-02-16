@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Shape Editor</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -94,29 +94,62 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Dimension</string>
+      <string>Size</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label_X">
-        <property name="text">
-         <string>X axis</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_11">
+        <item>
+         <widget class="QLabel" name="label_X">
+          <property name="text">
+           <string>X axis</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_X_from_centre">
+          <property name="text">
+           <string>from centre</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="0" column="1">
-       <widget class="QLabel" name="label_Y">
-        <property name="text">
-         <string>Y axis</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_12">
+        <item>
+         <widget class="QLabel" name="label_Y">
+          <property name="text">
+           <string>Y axis</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Y_from_centre">
+          <property name="text">
+           <string>from centre</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="0" column="2">
-       <widget class="QLabel" name="label_Z">
-        <property name="text">
-         <string>Z axis</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_13">
+        <item>
+         <widget class="QLabel" name="label_Z">
+          <property name="text">
+           <string>Z axis</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Z_from_centre">
+          <property name="text">
+           <string>from centre</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2">

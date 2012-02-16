@@ -10,9 +10,9 @@
 Shape::Shape() {
     shape = "sphere";
     shapes << "sphere" << "cube" << "point";
-    dimension = 5.0;
-    dimensionY = 0.0;
-    dimensionZ = 0.0;
+    dimension = 1.0;
+    dimensionY = 1.0;
+    dimensionZ = 1.0;
     dimensionVariable = "";
     dimensionVariableY = "";
     dimensionVariableZ = "";
@@ -20,6 +20,9 @@ Shape::Shape() {
     useVariableY = false;
     useVariableZ = false;
     quality = 16;
+    fromCentreX = false;
+    fromCentreY = false;
+    fromCentreZ = false;
 }
 
 void Shape::paint(QPainter *painter, const QRect &rect,

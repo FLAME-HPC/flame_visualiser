@@ -268,6 +268,13 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
                                         agent->values.at(k).toDouble();
                     }
 
+                    if (vsi->shape().getFromCentreX())
+                        agent->shapeDimension  *= 2.0;
+                    if (vsi->shape().getFromCentreY())
+                        agent->shapeDimensionY *= 2.0;
+                    if (vsi->shape().getFromCentreZ())
+                        agent->shapeDimensionZ *= 2.0;
+
                     /* Calc agent scene dimension */
                     if (agentDimension->xmin > agent->x)
                         agentDimension->xmin = agent->x;

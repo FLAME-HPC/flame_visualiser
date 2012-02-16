@@ -65,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent)
     xoffset = 0.0;
     yoffset = 0.0;
     zoffset = 0.0;
+    orthoZoom = 1.0;
+    visual_dimension = 3;
     restrictDimension = new Dimension();
     agentDimension = new Dimension();
     restrictAgentDimension = new Dimension();
@@ -537,7 +539,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         resetVisualViewpoint();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
-                restrictDimension);
+                restrictDimension, &orthoZoom);
         // Make the window destroy on close rather than hide
         visual_window->setAttribute(Qt::WA_DeleteOnClose);
         visual_window->resize(800, 600);
@@ -547,6 +549,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         visual_window->setConfigPath(&configPath);
         visual_window->setTimeScale(timeScale);
         visual_window->setTimeString(&timeString);
+        visual_window->setDimension(visual_dimension);
 
         /* Connect signals between MainWindow and visual_window */
         connect(this, SIGNAL(updateVisual()),
@@ -810,7 +813,7 @@ void MainWindow::readConfigFile(QString fileName, int it) {
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model,
             &resultsData, timeScale, &ratio, &xrotate, &yrotate,
-            &xmove, &ymove, &zmove, &delayTime);
+            &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension);
     if (!reader.read(&file)) {
         QMessageBox::warning(this, tr("flame visualiser"),
          tr("Parse error in file %1 at line %2, column %3:\n%4").
@@ -819,7 +822,8 @@ void MainWindow::readConfigFile(QString fileName, int it) {
          arg(reader.columnNumber()).
          arg(reader.errorString()));
     } else {
-        if (opengl_window_open) visual_window->reset_camera();
+        if (visual_dimension == 2) on_action2D_triggered(true);
+        if (visual_dimension == 3) on_action3D_triggered(true);
 
         /* Setup time scale */
         timeScale->calcTotalSeconds();
@@ -970,6 +974,7 @@ void MainWindow::close_config_file() {
     yoffset = 0.0;
     zoffset = 0.0;
     delayTime = 0;
+    orthoZoom = 1.0;
     ui->pushButton_Animate->setText("Start Animation - A");
     ui->pushButton_Animate->setEnabled(false);
     animation = false;
@@ -1016,12 +1021,14 @@ bool MainWindow::writeConfigXML(QFile * file) {
     stream.writeEndElement();  // animation
 
     stream.writeStartElement("visual");
+    stream.writeTextElement("view", QString("%1").arg(visual_dimension));
     stream.writeTextElement("ratio", QString("%1").arg(ratio));
     stream.writeTextElement("xrotate", QString("%1").arg(xrotate));
     stream.writeTextElement("yrotate", QString("%1").arg(yrotate));
     stream.writeTextElement("xmove", QString("%1").arg(xmove));
     stream.writeTextElement("ymove", QString("%1").arg(ymove));
     stream.writeTextElement("zmove", QString("%1").arg(zmove));
+    stream.writeTextElement("orthoZoom", QString("%1").arg(orthoZoom));
     stream.writeStartElement("rules");
     for (int i = 0; i < this->visual_settings_model->rowCount(); i++) {
         VisualSettingsItem *vsitem = visual_settings_model->getRule(i);
@@ -1084,6 +1091,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
             stream.writeTextElement("useVariable", "false");
         stream.writeTextElement("dimensionVariable", QString("%1").arg(
                 vsitem->shape().getDimensionVariable()));
+        if (vsitem->shape().getFromCentreX())
+            stream.writeTextElement("fromCentreX", "true");
+        else
+            stream.writeTextElement("fromCentreX", "false");
         stream.writeTextElement("dimensionY", QString("%1").arg(
                 vsitem->shape().getDimensionY()));
         if (vsitem->shape().getUseVariableY())
@@ -1092,6 +1103,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
             stream.writeTextElement("useVariableY", "false");
         stream.writeTextElement("dimensionVariableY", QString("%1").arg(
                 vsitem->shape().getDimensionVariableY()));
+        if (vsitem->shape().getFromCentreY())
+            stream.writeTextElement("fromCentreY", "true");
+        else
+            stream.writeTextElement("fromCentreY", "false");
         stream.writeTextElement("dimensionZ", QString("%1").arg(
                 vsitem->shape().getDimensionZ()));
         if (vsitem->shape().getUseVariableZ())
@@ -1100,6 +1115,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
             stream.writeTextElement("useVariableZ", "false");
         stream.writeTextElement("dimensionVariableZ", QString("%1").arg(
                 vsitem->shape().getDimensionVariableZ()));
+        if (vsitem->shape().getFromCentreZ())
+            stream.writeTextElement("fromCentreZ", "true");
+        else
+            stream.writeTextElement("fromCentreZ", "false");
         stream.writeEndElement();  // shape
         stream.writeStartElement("colour");  // colour
         stream.writeTextElement("r", QString("%1").
@@ -1247,25 +1266,32 @@ void MainWindow::calcPositionRatio() {
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
-            if (smallest > visual_settings_model->getRule(j)->agents.at(i).x)
-                smallest = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (smallest > visual_settings_model->getRule(j)->agents.at(i).y)
-                smallest = visual_settings_model->getRule(j)->agents.at(i).y;
-            if (largest  < visual_settings_model->getRule(j)->agents.at(i).x)
-                largest  = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (largest  < visual_settings_model->getRule(j)->agents.at(i).y)
-                largest  = visual_settings_model->getRule(j)->agents.at(i).y;
+            double x = visual_settings_model->getRule(j)->agents.at(i).x;
+            double y = visual_settings_model->getRule(j)->agents.at(i).y;
+            double size_x =
+                visual_settings_model->getRule(j)->shape().getDimension()/2.0;
+            double size_y = size_x;
+            if (QString::compare("cube",
+                visual_settings_model->getRule(j)->shape().getShape()) == 0)
+                size_y =
+                visual_settings_model->getRule(j)->shape().getDimensionY()/2.0;
+
+            if (smallest > x-size_x) smallest = x-size_x;
+            if (smallest > y-size_y) smallest = y-size_y;
+            if (largest  < x+size_x) largest  = x+size_x;
+            if (largest  < y+size_y) largest  = y+size_y;
         }
     }
 
     // qDebug() << smallest << largest;
 
-    if (smallest == 0.0 && largest == 0.0) largest = 10.0;
-
     if (smallest < 0.0 && largest < -smallest)
         ratio = 1.0 / -smallest;
     else
         ratio = 1.0 / largest;
+
+    /* Make a largest ratio */
+    // if (ratio > 0.05) ratio = 0.05;
 
     // qDebug() << "ratio: " << ratio;
 }
@@ -1559,4 +1585,18 @@ void MainWindow::resetVisualViewpoint() {
 void MainWindow::on_pushButton_updateViewpoint_clicked() {
     visual_window->reset_camera();
     resetVisualViewpoint();
+}
+
+void MainWindow::on_action2D_triggered(bool /*checked*/) {
+    ui->action2D->setChecked(true);
+    ui->action3D->setChecked(false);
+    visual_dimension = 2;
+    if (opengl_window_open) visual_window->setDimension(2);
+}
+
+void MainWindow::on_action3D_triggered(bool /*checked*/) {
+    ui->action2D->setChecked(false);
+    ui->action3D->setChecked(true);
+    visual_dimension = 3;
+    if (opengl_window_open) visual_window->setDimension(3);
 }

@@ -14,7 +14,7 @@
 ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
         GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r,
              float * xr, float *yr, float *xm, float * ym, float * zm,
-             int * delay) {
+             int * delay, float * oz, int * vd) {
     vsmodel = vsm;
     gsmodel = gsm;
     resultsData = rD;
@@ -26,6 +26,8 @@ ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
     ymove = ym;
     zmove = zm;
     delayTime = delay;
+    orthoZoom = oz;
+    visual_dimension = vd;
 }
 
 bool ConfigXMLReader::read(QIODevice * device) {
@@ -160,6 +162,10 @@ void ConfigXMLReader::readAnimation() {
 }
 
 void ConfigXMLReader::readVisual() {
+    /* Defaults if tags missing */
+    *visual_dimension = 3;
+    *orthoZoom = 1.0;
+
     while (!atEnd()) {
          readNext();
 
@@ -167,7 +173,9 @@ void ConfigXMLReader::readVisual() {
              break;
 
          if (isStartElement()) {
-             if (name() == "ratio")
+             if (name() == "view")
+                 *visual_dimension = readElementText().toInt();
+             else if (name() == "ratio")
                  *ratio = readElementText().toDouble();
              else if (name() == "xrotate")
                  *xrotate = readElementText().toFloat();
@@ -179,6 +187,8 @@ void ConfigXMLReader::readVisual() {
                  *ymove = readElementText().toFloat();
              else if (name() == "zmove")
                  *zmove = readElementText().toFloat();
+             else if (name() == "orthoZoom")
+                 *orthoZoom = readElementText().toFloat();
              else if (name() == "rules")
                  readRules();
              else
@@ -251,6 +261,7 @@ void ConfigXMLReader::readRule() {
 Shape ConfigXMLReader::readShape() {
     Shape shape;
     QString enable;
+    bool fromCentreRead = false;
 
     while (!atEnd()) {
          readNext();
@@ -273,6 +284,13 @@ Shape ConfigXMLReader::readShape() {
                      shape.setUseVariable(false);
              } else if (name() == "dimensionVariable") {
                  shape.setDimensionVariable(readElementText());
+             } else if (name() == "fromCentreX") {
+                 enable = readElementText();
+                 if (QString::compare(enable, "true") == 0)
+                     shape.setFromCentreX(true);
+                 else
+                     shape.setFromCentreX(false);
+                 fromCentreRead = true;
              } else if (name() == "dimensionY") {
                  shape.setDimensionY((readElementText().toDouble()));
              } else if (name() == "useVariableY") {
@@ -283,6 +301,12 @@ Shape ConfigXMLReader::readShape() {
                      shape.setUseVariableY(false);
              } else if (name() == "dimensionVariableY") {
                  shape.setDimensionVariableY(readElementText());
+             } else if (name() == "fromCentreY") {
+                 enable = readElementText();
+                 if (QString::compare(enable, "true") == 0)
+                     shape.setFromCentreY(true);
+                 else
+                     shape.setFromCentreY(false);
              } else if (name() == "dimensionZ") {
                  shape.setDimensionZ((readElementText().toDouble()));
              } else if (name() == "useVariableZ") {
@@ -293,11 +317,21 @@ Shape ConfigXMLReader::readShape() {
                      shape.setUseVariableZ(false);
              } else if (name() == "dimensionVariableZ") {
                  shape.setDimensionVariableZ(readElementText());
+             } else if (name() == "fromCentreZ") {
+                 enable = readElementText();
+                 if (QString::compare(enable, "true") == 0)
+                     shape.setFromCentreZ(true);
+                 else
+                     shape.setFromCentreZ(false);
              } else {
                  readUnknownElement();
              }
          }
      }
+
+    /* If shape is sphere and from centre tag not read */
+    if (shape.getShape() == "sphere" && fromCentreRead == false)
+        shape.setFromCentreX(true);
 
     return shape;
 }
