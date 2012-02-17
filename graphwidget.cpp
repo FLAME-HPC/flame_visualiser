@@ -60,8 +60,9 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     /* Draw legend */
     for (int j = 0; j < plots.count(); j ++) {
         painter.setPen(QPen(plots.at(j)->getColour()));
-        QString text = QString("%1 (%2)").arg(plots[j]->getYaxis(),
-                plots[j]->condition().getString());
+        QString text = QString("%1").arg(plots[j]->getYaxis());
+        if (plots[j]->condition().enable)
+        text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
 
         const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
                 Qt::AlignLeft, text));
