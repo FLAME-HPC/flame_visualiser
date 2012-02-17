@@ -17,7 +17,7 @@ Condition::Condition() {
 QString Condition::getString() const {
     QString text;
 
-    if(!enable) return "";
+    if (!enable) return "";
 
     text = variable;
     text.append(" ");
