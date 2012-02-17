@@ -40,6 +40,7 @@ class GraphWidget: public QWidget {
     void clickStyleDots();
 
   private:
+    void drawStylePoint(int type, int size, int x1, int y1, QPainter *painter);
     QList<Agent> *agents;
     // GraphSettingsModel * gsmodel;
     QList<GraphSettingsItem*> plots;

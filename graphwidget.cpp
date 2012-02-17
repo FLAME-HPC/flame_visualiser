@@ -106,6 +106,41 @@ int GraphWidget::removePlot(GraphSettingsItem *gsi) {
     return plots.count();
 }
 
+void GraphWidget::drawStylePoint(int type, int size, int x1, int y1,
+                                 QPainter * painter) {
+    if (type == 0) {
+        /* cross */
+        painter->drawLine(x1+size, y1+size, x1-size, y1-size);
+        painter->drawLine(x1+size, y1-size, x1-size, y1+size);
+    } else if (type == 1) {
+        /* square */
+        painter->drawLine(x1+size, y1+size, x1+size, y1-size);
+        painter->drawLine(x1+size, y1-size, x1-size, y1-size);
+        painter->drawLine(x1-size, y1-size, x1-size, y1+size);
+        painter->drawLine(x1-size, y1+size, x1+size, y1+size);
+    } else if (type == 2) {
+        /* plus */
+        painter->drawLine(x1, y1+size, x1, y1-size);
+        painter->drawLine(x1+size, y1, x1-size, y1);
+    } else if (type == 3) {
+        /* diamond */
+        painter->drawLine(x1, y1+size, x1+size, y1);
+        painter->drawLine(x1+size, y1, x1, y1-size);
+        painter->drawLine(x1, y1-size, x1-size, y1);
+        painter->drawLine(x1-size, y1, x1, y1+size);
+    } else if (type == 4) {
+        /* up triangle */
+        painter->drawLine(x1, y1-size, x1+size, y1+size);
+        painter->drawLine(x1+size, y1+size, x1-size, y1+size);
+        painter->drawLine(x1-size, y1+size, x1, y1-size);
+    } else if (type == 5) {
+        /* down triangle */
+        painter->drawLine(x1, y1+size, x1+size, y1-size);
+        painter->drawLine(x1+size, y1-size, x1-size, y1-size);
+        painter->drawLine(x1-size, y1-size, x1, y1+size);
+    }
+}
+
 void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     QPainter painter(this);
 
@@ -131,9 +166,16 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         QString text = QString("%1").arg(plots[j]->getYaxis());
         if (plots[j]->condition().enable)
         text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
+        /* Add space for points symbol */
+        text.append(" ");
 
         const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
                 Qt::AlignLeft, text));
+
+        if (style == 1 || style == 2) {
+            drawStylePoint(j%6, 2, width - 8,
+                           20+(j*bbox.height())-bbox.height()/4.0, &painter);
+        }
 
         painter.drawText(width-bbox.width()-10, 20+(j*bbox.height()), text);
 
@@ -172,9 +214,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
                 }
                 /* points style */
                 if (style == 1 || style == 2) {
-                    int size = 2;
-                    painter.drawLine(x1+size, y1+size, x1-size, y1-size);
-                    painter.drawLine(x1+size, y1-size, x1-size, y1+size);
+                    drawStylePoint(j%6, 2, x1, y1, &painter);
                 }
                 /* dots style */
                 if (style == 3) {
