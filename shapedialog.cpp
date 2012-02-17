@@ -141,8 +141,6 @@ void ShapeDialog::enableYZ(bool e) {
         palet.setColor(label_Y->foregroundRole(), QColor(120, 120, 120));
     label_Y->setPalette(palet);
     label_Z->setPalette(palet);
-    label_2->setPalette(palet);
-    label_3->setPalette(palet);
 }
 
 void ShapeDialog::shapeUpdated(QString s) {
