@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QDebug>
 #include <QtGui/QMouseEvent>
+#include <QMenuBar>
 #include "./graphwidget.h"
 #include "./condition.h"
 
@@ -16,12 +17,79 @@ GraphWidget::GraphWidget(QList<Agent> *a, QWidget *parent)
     agents = a;
     topValue = 0;
     topIteration = 0;
+    style = 0;
     setFocus();
+
+    QMenuBar *menu = new QMenuBar(this);
+    QMenu * graphMenu = new QMenu("Graph");
+    QMenu * styleMenu = new QMenu("style");
+
+    linesAction = new QAction("lines", this);
+    pointsAction = new QAction("points", this);
+    linespointsAction = new QAction("linespoints", this);
+    dotsAction = new QAction("dots", this);
+    linesAction->setCheckable(true);
+    pointsAction->setCheckable(true);
+    linespointsAction->setCheckable(true);
+    dotsAction->setCheckable(true);
+    connect(linesAction, SIGNAL(triggered()),
+            this, SLOT(clickStyleLines()));
+    connect(pointsAction, SIGNAL(triggered()),
+            this, SLOT(clickStylePoints()));
+    connect(linespointsAction, SIGNAL(triggered()),
+            this, SLOT(clickStyleLinespoints()));
+    connect(dotsAction, SIGNAL(triggered()),
+            this, SLOT(clickStyleDots()));
+    styleMenu->addAction(linesAction);
+    styleMenu->addAction(pointsAction);
+    styleMenu->addAction(linespointsAction);
+    styleMenu->addAction(dotsAction);
+
+    graphMenu->addMenu(styleMenu);
+    menu->addMenu(graphMenu);
+
+    linesAction->setChecked(true);
 }
 
 void GraphWidget::closeEvent(QCloseEvent *event) {
     emit(graph_window_closed(graphName));
     event->accept();
+}
+
+void GraphWidget::clickStyleLines() {
+    linesAction->setChecked(true);
+    pointsAction->setChecked(false);
+    linespointsAction->setChecked(false);
+    dotsAction->setChecked(false);
+    style = 0;
+    repaint();
+}
+
+void GraphWidget::clickStylePoints() {
+    linesAction->setChecked(false);
+    pointsAction->setChecked(true);
+    linespointsAction->setChecked(false);
+    dotsAction->setChecked(false);
+    style = 1;
+    repaint();
+}
+
+void GraphWidget::clickStyleLinespoints() {
+    linesAction->setChecked(false);
+    pointsAction->setChecked(false);
+    linespointsAction->setChecked(true);
+    dotsAction->setChecked(false);
+    style = 2;
+    repaint();
+}
+
+void GraphWidget::clickStyleDots() {
+    linesAction->setChecked(false);
+    pointsAction->setChecked(false);
+    linespointsAction->setChecked(false);
+    dotsAction->setChecked(true);
+    style = 3;
+    repaint();
 }
 
 void GraphWidget::addPlot(GraphSettingsItem *gsi) {
@@ -72,23 +140,46 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         if (xright > (width-bbox.width()-40)) xright = width-bbox.width()-40;
     }
 
+    int last_valid_x;
+    int last_valid_y;
+    bool found_valid_point = false;
     /* Draw data */
     for (int j = 0; j < plots.count(); j ++) {
         painter.setPen(QPen(plots.at(j)->getColour()));
         for (int i = 0; i < data.at(j).count(); i++) {
+            /* First point is current data point */
             int x1 = xleft+( (i/static_cast<double>(topIteration))*
                     (xright-xleft));
             int y1 = ybottom-( ((data.at(j).at(i)/
                     static_cast<double>(topValue)))*(ybottom-ytop) );
 
-            if (i == 0) {
-                painter.drawPoint(x1, y1);
-            } else {
-                int x2 = xleft+(((i-1)/static_cast<double>(topIteration))*
-                        (xright-xleft));
-                int y2 = ybottom-( ((data.at(j).at(i-1)/
-                        static_cast<double>(topValue)))*(ybottom-ytop) );
-                painter.drawLine(x1, y1, x2, y2);
+            if (!found_valid_point && dataExists[i]) {
+                last_valid_x = x1;
+                last_valid_y = y1;
+                found_valid_point = true;
+            }
+
+            /* Second point is last data point */
+            if (dataExists[i]) {
+                /* lines style */
+                if (style == 0 || style == 2) {
+                    if (i == 0)
+                        painter.drawPoint(x1, y1);
+                    else
+                        painter.drawLine(x1, y1, last_valid_x, last_valid_y);
+                    last_valid_x = x1;
+                    last_valid_y = y1;
+                }
+                /* points style */
+                if (style == 1 || style == 2) {
+                    int size = 2;
+                    painter.drawLine(x1+size, y1+size, x1-size, y1-size);
+                    painter.drawLine(x1+size, y1-size, x1-size, y1+size);
+                }
+                /* dots style */
+                if (style == 3) {
+                    painter.drawPoint(x1, y1);
+                }
             }
         }
         painter.drawText(xright+5, ybottom-(((data[j].back()/
@@ -156,6 +247,9 @@ void GraphWidget::updateData(int it) {
 
         if (count > topValue) topValue = count;
     }
+
+    while (dataExists.count() < it+1) dataExists.append(false);
+    dataExists[it] = true;
 
     repaint();
 }

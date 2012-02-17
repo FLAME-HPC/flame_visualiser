@@ -33,14 +33,27 @@ class GraphWidget: public QWidget {
     void keyPressEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *);
 
+  private slots:
+    void clickStyleLines();
+    void clickStylePoints();
+    void clickStyleLinespoints();
+    void clickStyleDots();
+
   private:
     QList<Agent> *agents;
     // GraphSettingsModel * gsmodel;
     QList<GraphSettingsItem*> plots;
     QList<QList<int> > data;
+    /*! Flag for each iteration to say data exists */
+    QList<bool> dataExists;
     int topValue;
     int topIteration;
     QString graphName;
+    QAction * linesAction;
+    QAction * pointsAction;
+    QAction * linespointsAction;
+    QAction * dotsAction;
+    int style;
 };
 
 #endif  // GRAPHWIDGET_H_
