@@ -441,6 +441,7 @@ void MainWindow::getColourVisual(QModelIndex index) {
     if (index.column() == 6) {
         colourIndex = index;
         colour = qVariantValue<QColor>(index.data());
+        QColor colourSave = colour;
         QColorDialog *colourDialog = new QColorDialog(this);
         colourDialog->setOption(QColorDialog::ShowAlphaChannel);
         colourDialog->setCurrentColor(colour);
@@ -449,7 +450,7 @@ void MainWindow::getColourVisual(QModelIndex index) {
 
         int rc = colourDialog->exec();
         if (rc == QDialog::Rejected) {
-            visual_settings_model->setData(index, qVariantFromValue(colour));
+        visual_settings_model->setData(index, qVariantFromValue(colourSave));
         }
         delete colourDialog;
     }

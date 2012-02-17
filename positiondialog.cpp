@@ -32,8 +32,8 @@ PositionDialog::PositionDialog(QList<AgentType> *ats,
 
     connect(checkBox_Variable, SIGNAL(clicked(bool)),
             variableComboBox, SLOT(setEnabled(bool)));
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-    connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+    connect(buttonBox, SIGNAL(accepted()), this, SIGNAL(okButton()));
+    connect(buttonBox, SIGNAL(rejected()), this, SIGNAL(cancelButton()));
 }
 
 void PositionDialog::setPosition(Position p) {

@@ -33,8 +33,8 @@ ShapeDialog::ShapeDialog(QList<AgentType> *ats,
     doubleSpinBox_Z->setMaximum(9999.99);
     comboBox_Shape->addItems(shape.Shapes());
 
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-    connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+    connect(buttonBox, SIGNAL(accepted()), this, SIGNAL(okButton()));
+    connect(buttonBox, SIGNAL(rejected()), this, SIGNAL(cancelButton()));
 
     connect(comboBox_Shape, SIGNAL(currentIndexChanged(QString)),
             this, SLOT(shapeUpdated(QString)));

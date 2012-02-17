@@ -34,8 +34,8 @@ ConditionDialog::ConditionDialog(QList<AgentType> *ats, QString agentType,
     connect(this, SIGNAL(setOpComboBox(int)),
             opComboBox, SLOT(setCurrentIndex(int)));
     connect(checkBox, SIGNAL(clicked(bool)), this, SLOT(updateEnable(bool)));
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-    connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+    connect(buttonBox, SIGNAL(accepted()), this, SIGNAL(okButton()));
+    connect(buttonBox, SIGNAL(rejected()), this, SIGNAL(cancelButton()));
 }
 
 void ConditionDialog::updateEnable(bool c) {

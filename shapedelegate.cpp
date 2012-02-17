@@ -43,13 +43,12 @@ QWidget *ShapeDelegate::createEditor(QWidget */*parent*/,
 
         ShapeDialog *editor = new ShapeDialog(agentTypes, vsmodel, index.row());
 
-        connect(editor, SIGNAL(accepted()), this, SLOT(commitAndCloseEditor()));
-        connect(editor, SIGNAL(rejected()), this, SLOT(commitAndCloseEditor()));
+        connect(editor, SIGNAL(okButton()),
+                this, SLOT(commitAndCloseEditor()));
+        connect(editor, SIGNAL(cancelButton()),
+                this, SLOT(rejectAndCloseEditor()));
 
-        // editor->setParent(windowParent);
         editor->setModal(true);
-        // editor->move(100, 100);
-        // editor->setWindowFlags(WShowModal);
 
         return editor;
 }
@@ -85,6 +84,11 @@ void ShapeDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
 void ShapeDelegate::commitAndCloseEditor() {
     ShapeDialog *editor = qobject_cast<ShapeDialog *>(sender());
     emit commitData(editor);
+    emit closeEditor(editor);
+}
+
+void ShapeDelegate::rejectAndCloseEditor() {
+    ShapeDialog *editor = qobject_cast<ShapeDialog *>(sender());
     emit closeEditor(editor);
 }
 

@@ -24,6 +24,10 @@ class PositionDialog : public QDialog, public Ui::PositionDialog {
     void setPosition(Position p);
     Position getPosition();
 
+  signals:
+    void okButton();
+    void cancelButton();
+
   private:
     QList<AgentType> * agentTypes;
     VisualSettingsModel * vsm;

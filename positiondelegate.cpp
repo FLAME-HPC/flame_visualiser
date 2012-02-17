@@ -44,8 +44,10 @@ QWidget *PositionDelegate::createEditor(QWidget */*parent*/,
         PositionDialog *editor =
                 new PositionDialog(agentTypes, vsm, index.row());
 
-        connect(editor, SIGNAL(accepted()), this, SLOT(commitAndCloseEditor()));
-        connect(editor, SIGNAL(rejected()), this, SLOT(commitAndCloseEditor()));
+        connect(editor, SIGNAL(okButton()),
+                this, SLOT(commitAndCloseEditor()));
+        connect(editor, SIGNAL(cancelButton()),
+                this, SLOT(rejectAndCloseEditor()));
 
         // editor->setParent(windowParent);
         editor->setModal(true);
@@ -86,5 +88,10 @@ void PositionDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
 void PositionDelegate::commitAndCloseEditor() {
     PositionDialog *editor = qobject_cast<PositionDialog *>(sender());
     emit commitData(editor);
+    emit closeEditor(editor);
+}
+
+void PositionDelegate::rejectAndCloseEditor() {
+    PositionDialog *editor = qobject_cast<PositionDialog *>(sender());
     emit closeEditor(editor);
 }
