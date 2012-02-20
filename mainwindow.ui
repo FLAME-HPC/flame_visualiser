@@ -446,7 +446,7 @@
   </action>
   <action name="actionHelp">
    <property name="text">
-    <string>Help</string>
+    <string>FLAME Visualiser Help...</string>
    </property>
   </action>
   <action name="actionRestrict_Axes">

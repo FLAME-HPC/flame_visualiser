@@ -12,6 +12,8 @@
 #include <QtGui/QMouseEvent>
 #include <QTextEdit>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 #include <math.h>
 #include "./mainwindow.h"
 #include "./ui_mainwindow.h"
@@ -1392,9 +1394,12 @@ void MainWindow::on_actionAbout_triggered() {
     QString aboutText;
     aboutText.append("<h1>FLAME Visualiser</h1>");
     aboutText.append("<h3>Simon Coakley</h3>");
-    aboutText.append("<h2>Version 2</h2>");
+    aboutText.append("<h2>Version 3</h2>");
     aboutText.append("<h3>Changelog</h3>");
     /* Add new release notes here */
+    aboutText.append("<h4>Version 3 (released 2012-02-22)</h4><ul>");
+    aboutText.append("<li>Beta third release</li>");
+    aboutText.append("<li>Bug fix: cancel buttons work</li></ul>");
     aboutText.append("<h4>Version 2 (released 2011-10-28)</h4><ul>");
     aboutText.append("<li>Beta second release</li>");
     aboutText.append("<li>Ability to change the quality of spheres ");
@@ -1492,43 +1497,8 @@ void MainWindow::calcTimeScale() {
 }
 
 void MainWindow::on_actionHelp_triggered() {
-    QTextEdit *help = new QTextEdit(this);
-    help->setWindowFlags(Qt::Dialog);
-    help->setReadOnly(true);
-    help->setAutoFormatting(QTextEdit::AutoNone);
-    QString helpText;
-    helpText.append("<h1>FLAME Visualiser Help</h1>");
-    helpText.append("<h4>Sphere Quality Setting</h4>");
-    helpText.append("The quality of spheres being drawn affects the speed of");
-    helpText.append(" the visualiser. To make the visualiser faster reduce ");
-    helpText.append("the quality of the spheres. Also if any large spheres ");
-    helpText.append("look blocky then increase their quality.");
-    helpText.append("<ul><li>8  - low quality</li>");
-    helpText.append("<li>16 - medium quality</li>");
-    helpText.append("<li>32 - high quality</li></ul>");
-    helpText.append("<h4>Change the Near Clip Plane</h4>The near clip plane ");
-    helpText.append("can be changed by holding down the <b>C key</b> and the");
-    helpText.append(" <b>right mouse button</b> and moving the mouse up and ");
-    helpText.append("down.");
-    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its ");
-    helpText.append("memory displayed by holding down the <b>P key</b> and ");
-    helpText.append("<b>left mouse clicking</b> on an agent. The agent");
-    helpText.append("picked is highlighted.");
-    helpText.append("<h4>Move the Centre of the Visual Scene</h4>The scene ");
-    helpText.append("can be shifted up,down,left and right by holding down ");
-    helpText.append("the <b>Spacebar</b> and the <b>left mouse button</b> ");
-    helpText.append("and moving the mouse.");
-    helpText.append("<h4>Restricting Drawing Axes</h4>By selecting ");
-    helpText.append("'Restrict Axes' from 'Tools' on the menubar the drawing");
-    helpText.append(" of agents can be restricted on the x,y and z axes. ");
-    helpText.append("When the minimum value sliders are fully to the left ");
-    helpText.append("and the maximum value sliders are fully to the right ");
-    helpText.append("those restrictions are turned off.");
-
-    help->setGeometry(50, 50, 600, 400);
-    help->insertHtml(helpText);
-    help->moveCursor(QTextCursor::Start);
-    help->show();
+    QDesktopServices::openUrl(
+        QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v3/"));
 }
 
 void MainWindow::on_actionRestrict_Axes_triggered() {

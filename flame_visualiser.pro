@@ -9,7 +9,7 @@ QT       += opengl
 
 TEMPLATE = app
 macx {
-    TARGET = "Flame Visualiser"
+    TARGET = "FLAME Visualiser"
 } else {
     TARGET = flame_visualiser
 }
