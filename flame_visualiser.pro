@@ -7,9 +7,9 @@
 QT       += core gui
 QT       += opengl
 
-TARGET = flame_visualiser
+TARGET = "Flame Visualiser"
 TEMPLATE = app
-
+ICON = flame_icon_v.icns
 
 SOURCES += main.cpp\
         mainwindow.cpp \
