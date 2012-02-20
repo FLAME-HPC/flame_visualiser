@@ -35,6 +35,12 @@
  */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
+    /* Set the application icon (for linux) as mac and win
+     * have platform-dependent techniques (see .pro file).
+     */
+    #ifdef Q_WS_X11
+    setWindowIcon(QIcon("flame-v.png"));
+    #endif
     /* Initialise variables */
     itLocked = false;
     fileOpen = false;
