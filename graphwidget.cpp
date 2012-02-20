@@ -182,8 +182,8 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         if (xright > (width-bbox.width()-40)) xright = width-bbox.width()-40;
     }
 
-    int last_valid_x;
-    int last_valid_y;
+    int last_valid_x = 0;
+    int last_valid_y = 0;
     bool found_valid_point = false;
     /* Draw data */
     for (int j = 0; j < plots.count(); j ++) {
