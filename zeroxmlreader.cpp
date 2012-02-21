@@ -292,9 +292,12 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
                     agent->x *= *ratio;
                     agent->y *= *ratio;
                     agent->z *= *ratio;
-                    agent->shapeDimension *= *ratio;
-                    agent->shapeDimensionY *= *ratio;
-                    agent->shapeDimensionZ *= *ratio;
+                    /* Point size does not need to be ratioed */
+                    if (vsi->shape().getShape() != "point") {
+                        agent->shapeDimension *= *ratio;
+                        agent->shapeDimensionY *= *ratio;
+                        agent->shapeDimensionZ *= *ratio;
+                    }
                     vsi->agents.append(*agent);
                 }
             }
