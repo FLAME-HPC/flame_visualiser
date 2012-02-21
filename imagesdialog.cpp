@@ -75,6 +75,10 @@ void ImagesDialog::on_pushButton_Find_clicked() {
     /* Provide dialog to select folder */
     QString filepath = QFileDialog::getExistingDirectory(this,
         tr("Open images location"), s, QFileDialog::ShowDirsOnly);
+
+    if (filepath.isEmpty())
+        return;
+
     /* Return relative path from currentPath to location */
     QDir dir(*configpath);
     s = dir.canonicalPath();

@@ -527,8 +527,12 @@ void MainWindow::on_pushButton_LocationFind_clicked() {
     s.append(ui->lineEdit_ResultsLocation->text());
     /* Provide dialog to select folder */
     QString filepath =
-            QFileDialog::getExistingDirectory(this, tr("Open output location"),
+            QFileDialog::getExistingDirectory(this, tr("Select results data location..."),
                     s, QFileDialog::ShowDirsOnly);
+
+    if (filepath.isEmpty())
+        return;
+
     /* Return relative path from currentPath to location */
     QDir dir(configPath);
     QString s1 = dir.canonicalPath();
@@ -764,7 +768,7 @@ void MainWindow::decrement_iteration() {
  */
 void MainWindow::open_config_file() {
     QString fileName =
-             QFileDialog::getOpenFileName(this, tr("Open model"),
+             QFileDialog::getOpenFileName(this, tr("Open config file..."),
                      "", tr("XML Files (*.xml)"));
      if (fileName.isEmpty())
          return;
@@ -830,6 +834,8 @@ void MainWindow::readConfigFile(QString fileName, int it) {
          arg(reader.lineNumber()).
          arg(reader.columnNumber()).
          arg(reader.errorString()));
+        /* Clear anything read in */
+        close_config_file();
     } else {
         if (visual_dimension == 2) on_action2D_triggered(true);
         if (visual_dimension == 3) on_action3D_triggered(true);
@@ -895,8 +901,27 @@ void MainWindow::enableTimeScale(bool b) {
 /*! \brief Open a new config file.
  */
 void MainWindow::new_config_file() {
-    close_config_file();
-    save_as_config_file();
+    QString fileName =
+             QFileDialog::getSaveFileName(this, tr("New config file..."),
+                                          "",
+                                          tr("XML Files (*.xml)"));
+     if (fileName.isEmpty())
+         return;
+
+     /* Close any current config */
+     close_config_file();
+
+     QFile file(fileName);
+     if (!file.open(QFile::WriteOnly | QFile::Text)) {
+         QMessageBox::warning(this, tr("FLAME Visualiser"),
+                              tr("Cannot write file %1:\n%2.")
+                              .arg(fileName)
+                              .arg(file.errorString()));
+         return;
+     }
+
+     enableInterface(true);
+     writeConfigXML(&file);
 }
 
 /*! \brief Provide a dialog to save a config file.
@@ -910,7 +935,7 @@ void MainWindow::save_as_config_file() {
     }
 
     QString fileName =
-             QFileDialog::getSaveFileName(this, tr("Save config File"),
+             QFileDialog::getSaveFileName(this, tr("Save config file..."),
                                           configFile,
                                           tr("XML Files (*.xml)"));
      if (fileName.isEmpty())
@@ -924,8 +949,6 @@ void MainWindow::save_as_config_file() {
                               .arg(file.errorString()));
          return;
      }
-
-     enableInterface(true);
 
      writeConfigXML(&file);
 }
