@@ -527,7 +527,8 @@ void MainWindow::on_pushButton_LocationFind_clicked() {
     s.append(ui->lineEdit_ResultsLocation->text());
     /* Provide dialog to select folder */
     QString filepath =
-            QFileDialog::getExistingDirectory(this, tr("Select results data location..."),
+            QFileDialog::getExistingDirectory(this,
+                    tr("Select results data location..."),
                     s, QFileDialog::ShowDirsOnly);
 
     if (filepath.isEmpty())
