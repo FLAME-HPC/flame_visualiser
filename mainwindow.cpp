@@ -78,7 +78,6 @@ MainWindow::MainWindow(QWidget *parent)
     yoffset = 0.0;
     zoffset = 0.0;
     orthoZoom = 1.0;
-    on_actionPerspective_triggered();
     restrictDimension = new Dimension();
     agentDimension = new Dimension();
     restrictAgentDimension = new Dimension();
@@ -89,6 +88,7 @@ MainWindow::MainWindow(QWidget *parent)
     opengl_window_open  = false;
     /* Set update viewpoint button to be false */
     ui->pushButton_updateViewpoint->setEnabled(false);
+    on_actionPerspective_triggered();
 
     /* Setup tables in UI */
     /* Set tableViewVisual to stretch columns to table size */
