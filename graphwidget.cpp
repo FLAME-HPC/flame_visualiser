@@ -8,14 +8,16 @@
 #include <QPainter>
 #include <QDebug>
 #include <QtGui/QMouseEvent>
+#include <QMenuBar>
 #include "./graphwidget.h"
 #include "./condition.h"
 
-GraphWidget::GraphWidget(QList<Agent> *a, QWidget *parent)
+GraphWidget::GraphWidget(QList<Agent> *a, int * gs, QWidget *parent)
     : QWidget(parent) {
     agents = a;
     topValue = 0;
     topIteration = 0;
+    style = gs;
     setFocus();
 }
 
@@ -36,6 +38,41 @@ int GraphWidget::removePlot(GraphSettingsItem *gsi) {
     }
 
     return plots.count();
+}
+
+void GraphWidget::drawStylePoint(int type, int size, int x1, int y1,
+                                 QPainter * painter) {
+    if (type == 0) {
+        /* cross */
+        painter->drawLine(x1+size, y1+size, x1-size, y1-size);
+        painter->drawLine(x1+size, y1-size, x1-size, y1+size);
+    } else if (type == 1) {
+        /* square */
+        painter->drawLine(x1+size, y1+size, x1+size, y1-size);
+        painter->drawLine(x1+size, y1-size, x1-size, y1-size);
+        painter->drawLine(x1-size, y1-size, x1-size, y1+size);
+        painter->drawLine(x1-size, y1+size, x1+size, y1+size);
+    } else if (type == 2) {
+        /* plus */
+        painter->drawLine(x1, y1+size, x1, y1-size);
+        painter->drawLine(x1+size, y1, x1-size, y1);
+    } else if (type == 3) {
+        /* diamond */
+        painter->drawLine(x1, y1+size, x1+size, y1);
+        painter->drawLine(x1+size, y1, x1, y1-size);
+        painter->drawLine(x1, y1-size, x1-size, y1);
+        painter->drawLine(x1-size, y1, x1, y1+size);
+    } else if (type == 4) {
+        /* up triangle */
+        painter->drawLine(x1, y1-size, x1+size, y1+size);
+        painter->drawLine(x1+size, y1+size, x1-size, y1+size);
+        painter->drawLine(x1-size, y1+size, x1, y1-size);
+    } else if (type == 5) {
+        /* down triangle */
+        painter->drawLine(x1, y1+size, x1+size, y1-size);
+        painter->drawLine(x1+size, y1-size, x1-size, y1-size);
+        painter->drawLine(x1-size, y1-size, x1, y1+size);
+    }
 }
 
 void GraphWidget::paintEvent(QPaintEvent */*event*/) {
@@ -60,34 +97,66 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     /* Draw legend */
     for (int j = 0; j < plots.count(); j ++) {
         painter.setPen(QPen(plots.at(j)->getColour()));
-        QString text = QString("%1 (%2)").arg(plots[j]->getYaxis(),
-                plots[j]->condition().getString());
+        QString text = QString("%1").arg(plots[j]->getYaxis());
+        if (plots[j]->condition().enable)
+        text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
+        /* Add space for points symbol */
+        text.append(" ");
 
         const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
                 Qt::AlignLeft, text));
+
+        if (*style == 1 || *style == 2) {
+            drawStylePoint(j%6, 2, width - 8,
+                           20+(j*bbox.height())-bbox.height()/4.0, &painter);
+        }
 
         painter.drawText(width-bbox.width()-10, 20+(j*bbox.height()), text);
 
         if (xright > (width-bbox.width()-40)) xright = width-bbox.width()-40;
     }
 
+    int last_valid_x;
+    int last_valid_y;
+    bool found_valid_point;
     /* Draw data */
     for (int j = 0; j < plots.count(); j ++) {
         painter.setPen(QPen(plots.at(j)->getColour()));
+        last_valid_x = 0;
+        last_valid_y = 0;
+        found_valid_point = false;
         for (int i = 0; i < data.at(j).count(); i++) {
+            /* First point is current data point */
             int x1 = xleft+( (i/static_cast<double>(topIteration))*
                     (xright-xleft));
             int y1 = ybottom-( ((data.at(j).at(i)/
                     static_cast<double>(topValue)))*(ybottom-ytop) );
 
-            if (i == 0) {
-                painter.drawPoint(x1, y1);
-            } else {
-                int x2 = xleft+(((i-1)/static_cast<double>(topIteration))*
-                        (xright-xleft));
-                int y2 = ybottom-( ((data.at(j).at(i-1)/
-                        static_cast<double>(topValue)))*(ybottom-ytop) );
-                painter.drawLine(x1, y1, x2, y2);
+            if (!found_valid_point && dataExists[i]) {
+                last_valid_x = x1;
+                last_valid_y = y1;
+                found_valid_point = true;
+            }
+
+            /* Second point is last data point */
+            if (dataExists[i]) {
+                /* lines style */
+                if (*style == 0 || *style == 2) {
+                    if (i == 0)
+                        painter.drawPoint(x1, y1);
+                    else
+                        painter.drawLine(x1, y1, last_valid_x, last_valid_y);
+                    last_valid_x = x1;
+                    last_valid_y = y1;
+                }
+                /* points style */
+                if (*style == 1 || *style == 2) {
+                    drawStylePoint(j%6, 2, x1, y1, &painter);
+                }
+                /* dots style */
+                if (*style == 3) {
+                    painter.drawPoint(x1, y1);
+                }
             }
         }
         painter.drawText(xright+5, ybottom-(((data[j].back()/
@@ -155,6 +224,9 @@ void GraphWidget::updateData(int it) {
 
         if (count > topValue) topValue = count;
     }
+
+    while (dataExists.count() < it+1) dataExists.append(false);
+    dataExists[it] = true;
 
     repaint();
 }

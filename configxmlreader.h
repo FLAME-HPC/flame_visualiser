@@ -19,7 +19,8 @@ class ConfigXMLReader : public QXmlStreamReader {
   public:
     ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm,
         QString * rD, TimeScale * ts, double * r,
-        float * xr, float *yr, float *xm, float * ym, float * zm, int * delay);
+        float * xr, float *yr, float *xm, float * ym, float * zm,
+        int * delay, float * oz, int * vd);
 
     bool read(QIODevice * device);
 
@@ -54,6 +55,8 @@ class ConfigXMLReader : public QXmlStreamReader {
     float * ymove;
     float * zmove;
     int * delayTime;
+    float * orthoZoom;
+    int * visual_dimension;
 };
 
 #endif  // CONFIGXMLREADER_H_

@@ -23,6 +23,10 @@ class ShapeDialog : public QDialog, public Ui::ShapeDialog {
     void setShape(Shape s);
     Shape getShape();
 
+  signals:
+    void okButton();
+    void cancelButton();
+
   private slots:
     void shapeUpdated(QString);
 

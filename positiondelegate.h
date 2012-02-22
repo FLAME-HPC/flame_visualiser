@@ -32,6 +32,7 @@ class PositionDelegate : public QItemDelegate {
 
   private slots:
     void commitAndCloseEditor();
+    void rejectAndCloseEditor();
 
   private:
     QList<AgentType> * agentTypes;

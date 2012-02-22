@@ -7,9 +7,14 @@
 QT       += core gui
 QT       += opengl
 
-TARGET = flame_visualiser
 TEMPLATE = app
-
+macx {
+    TARGET = "FLAME Visualiser"
+} else {
+    TARGET = flame_visualiser
+}
+macx:ICON = flame_icon_v.icns
+win32:RC_FILE = flame-v.rc
 
 SOURCES += main.cpp\
         mainwindow.cpp \

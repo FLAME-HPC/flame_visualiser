@@ -12,6 +12,8 @@
 #include <QtGui/QMouseEvent>
 #include <QTextEdit>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 #include <math.h>
 #include "./mainwindow.h"
 #include "./ui_mainwindow.h"
@@ -35,6 +37,16 @@
  */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
+    /* Setup User Interface */
+    ui->setupUi(this);
+    this->setWindowTitle("FLAME Visualiser - ");
+    enableInterface(false); /* Disable UI to start */
+    /* Set the application icon (for linux) as mac and win
+     * have platform-dependent techniques (see .pro file).
+     */
+    #ifdef Q_WS_X11
+    setWindowIcon(QIcon("flame-v.png"));
+    #endif
     /* Initialise variables */
     itLocked = false;
     fileOpen = false;
@@ -62,20 +74,21 @@ MainWindow::MainWindow(QWidget *parent)
     xmove = 0.0;
     ymove = 0.0;
     zmove = -3.0;
+    xoffset = 0.0;
+    yoffset = 0.0;
+    zoffset = 0.0;
+    orthoZoom = 1.0;
     restrictDimension = new Dimension();
     agentDimension = new Dimension();
     restrictAgentDimension = new Dimension();
-
-    /* Setup User Interface */
-    ui->setupUi(this);
-    this->setWindowTitle("FLAME Visualiser - ");
-    enableInterface(false); /* Disable UI to start */
+    on_actionLines_triggered();
 
     /* Setup 3D OpenGL visual window */
     // ui->pushButton_OpenCloseVisual->setText("Open visual");
     opengl_window_open  = false;
     /* Set update viewpoint button to be false */
     ui->pushButton_updateViewpoint->setEnabled(false);
+    on_actionPerspective_triggered();
 
     /* Setup tables in UI */
     /* Set tableViewVisual to stretch columns to table size */
@@ -338,7 +351,7 @@ void MainWindow::addPlot() {
  */
 void MainWindow::createGraphWindow(GraphWidget *graph_window) {
     graphs.append(graph_window);
-    graph_window->updateData(0);
+    graph_window->updateData(iteration);
     graph_window->resize(720, 380);
     graph_window->show();
     connect(graph_window, SIGNAL(increase_iteration()),
@@ -389,7 +402,7 @@ void MainWindow::enabledGraph(QModelIndex index) {
         enabled = !(graph_settings_model->getPlot(index.row())->getEnable());
         graph_settings_model->switchEnabled(index);
         if (enabled) {
-            GraphWidget * gw = new GraphWidget(&agents);
+            GraphWidget * gw = new GraphWidget(&agents, &graph_style);
             gw->setGraph(graph_settings_model->
                     getPlot(index.row())->getGraph());
             QList<GraphSettingsItem *> subplots =
@@ -436,6 +449,7 @@ void MainWindow::getColourVisual(QModelIndex index) {
     if (index.column() == 6) {
         colourIndex = index;
         colour = qVariantValue<QColor>(index.data());
+        QColor colourSave = colour;
         QColorDialog *colourDialog = new QColorDialog(this);
         colourDialog->setOption(QColorDialog::ShowAlphaChannel);
         colourDialog->setCurrentColor(colour);
@@ -444,7 +458,7 @@ void MainWindow::getColourVisual(QModelIndex index) {
 
         int rc = colourDialog->exec();
         if (rc == QDialog::Rejected) {
-            visual_settings_model->setData(index, qVariantFromValue(colour));
+        visual_settings_model->setData(index, qVariantFromValue(colourSave));
         }
         delete colourDialog;
     }
@@ -513,8 +527,13 @@ void MainWindow::on_pushButton_LocationFind_clicked() {
     s.append(ui->lineEdit_ResultsLocation->text());
     /* Provide dialog to select folder */
     QString filepath =
-            QFileDialog::getExistingDirectory(this, tr("Open output location"),
+            QFileDialog::getExistingDirectory(this,
+                    tr("Select results data location..."),
                     s, QFileDialog::ShowDirsOnly);
+
+    if (filepath.isEmpty())
+        return;
+
     /* Return relative path from currentPath to location */
     QDir dir(configPath);
     QString s1 = dir.canonicalPath();
@@ -534,7 +553,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         resetVisualViewpoint();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
-                restrictDimension);
+                restrictDimension, &orthoZoom);
         // Make the window destroy on close rather than hide
         visual_window->setAttribute(Qt::WA_DeleteOnClose);
         visual_window->resize(800, 600);
@@ -544,6 +563,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         visual_window->setConfigPath(&configPath);
         visual_window->setTimeScale(timeScale);
         visual_window->setTimeString(&timeString);
+        visual_window->setDimension(visual_dimension);
 
         /* Connect signals between MainWindow and visual_window */
         connect(this, SIGNAL(updateVisual()),
@@ -634,7 +654,8 @@ int MainWindow::readZeroXML() {
     }
 
     ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio,
-            agentDimension, &stringAgentTypes, &agentTypeCounts);
+            agentDimension, &stringAgentTypes, &agentTypeCounts,
+            &xoffset, &yoffset, &zoffset);
     if (!reader.read(&file)) {
         // ui->spinBox->setValue(iteration);
         ui->label_5->setText(
@@ -748,7 +769,7 @@ void MainWindow::decrement_iteration() {
  */
 void MainWindow::open_config_file() {
     QString fileName =
-             QFileDialog::getOpenFileName(this, tr("Open model"),
+             QFileDialog::getOpenFileName(this, tr("Open config file..."),
                      "", tr("XML Files (*.xml)"));
      if (fileName.isEmpty())
          return;
@@ -806,7 +827,7 @@ void MainWindow::readConfigFile(QString fileName, int it) {
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model,
             &resultsData, timeScale, &ratio, &xrotate, &yrotate,
-            &xmove, &ymove, &zmove, &delayTime);
+            &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension);
     if (!reader.read(&file)) {
         QMessageBox::warning(this, tr("flame visualiser"),
          tr("Parse error in file %1 at line %2, column %3:\n%4").
@@ -814,8 +835,11 @@ void MainWindow::readConfigFile(QString fileName, int it) {
          arg(reader.lineNumber()).
          arg(reader.columnNumber()).
          arg(reader.errorString()));
+        /* Clear anything read in */
+        close_config_file();
     } else {
-        if (opengl_window_open) visual_window->reset_camera();
+        if (visual_dimension == 2) on_actionOrthogonal_triggered();
+        if (visual_dimension == 3) on_actionPerspective_triggered();
 
         /* Setup time scale */
         timeScale->calcTotalSeconds();
@@ -878,8 +902,27 @@ void MainWindow::enableTimeScale(bool b) {
 /*! \brief Open a new config file.
  */
 void MainWindow::new_config_file() {
-    close_config_file();
-    save_as_config_file();
+    QString fileName =
+             QFileDialog::getSaveFileName(this, tr("New config file..."),
+                                          "",
+                                          tr("XML Files (*.xml)"));
+     if (fileName.isEmpty())
+         return;
+
+     /* Close any current config */
+     close_config_file();
+
+     QFile file(fileName);
+     if (!file.open(QFile::WriteOnly | QFile::Text)) {
+         QMessageBox::warning(this, tr("FLAME Visualiser"),
+                              tr("Cannot write file %1:\n%2.")
+                              .arg(fileName)
+                              .arg(file.errorString()));
+         return;
+     }
+
+     enableInterface(true);
+     writeConfigXML(&file);
 }
 
 /*! \brief Provide a dialog to save a config file.
@@ -893,7 +936,7 @@ void MainWindow::save_as_config_file() {
     }
 
     QString fileName =
-             QFileDialog::getSaveFileName(this, tr("Save config File"),
+             QFileDialog::getSaveFileName(this, tr("Save config file..."),
                                           configFile,
                                           tr("XML Files (*.xml)"));
      if (fileName.isEmpty())
@@ -907,8 +950,6 @@ void MainWindow::save_as_config_file() {
                               .arg(file.errorString()));
          return;
      }
-
-     enableInterface(true);
 
      writeConfigXML(&file);
 }
@@ -962,11 +1003,16 @@ void MainWindow::close_config_file() {
     xmove = 0.0;
     ymove = 0.0;
     zmove = -3.0;
+    xoffset = 0.0;
+    yoffset = 0.0;
+    zoffset = 0.0;
     delayTime = 0;
+    orthoZoom = 1.0;
     ui->pushButton_Animate->setText("Start Animation - A");
     ui->pushButton_Animate->setEnabled(false);
     animation = false;
     agentTypeCounts.clear();
+    on_actionPerspective_triggered();
 }
 
 /*! \brief Write a config to an xml file.
@@ -1009,12 +1055,14 @@ bool MainWindow::writeConfigXML(QFile * file) {
     stream.writeEndElement();  // animation
 
     stream.writeStartElement("visual");
+    stream.writeTextElement("view", QString("%1").arg(visual_dimension));
     stream.writeTextElement("ratio", QString("%1").arg(ratio));
     stream.writeTextElement("xrotate", QString("%1").arg(xrotate));
     stream.writeTextElement("yrotate", QString("%1").arg(yrotate));
     stream.writeTextElement("xmove", QString("%1").arg(xmove));
     stream.writeTextElement("ymove", QString("%1").arg(ymove));
     stream.writeTextElement("zmove", QString("%1").arg(zmove));
+    stream.writeTextElement("orthoZoom", QString("%1").arg(orthoZoom));
     stream.writeStartElement("rules");
     for (int i = 0; i < this->visual_settings_model->rowCount(); i++) {
         VisualSettingsItem *vsitem = visual_settings_model->getRule(i);
@@ -1077,6 +1125,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
             stream.writeTextElement("useVariable", "false");
         stream.writeTextElement("dimensionVariable", QString("%1").arg(
                 vsitem->shape().getDimensionVariable()));
+        if (vsitem->shape().getFromCentreX())
+            stream.writeTextElement("fromCentreX", "true");
+        else
+            stream.writeTextElement("fromCentreX", "false");
         stream.writeTextElement("dimensionY", QString("%1").arg(
                 vsitem->shape().getDimensionY()));
         if (vsitem->shape().getUseVariableY())
@@ -1085,6 +1137,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
             stream.writeTextElement("useVariableY", "false");
         stream.writeTextElement("dimensionVariableY", QString("%1").arg(
                 vsitem->shape().getDimensionVariableY()));
+        if (vsitem->shape().getFromCentreY())
+            stream.writeTextElement("fromCentreY", "true");
+        else
+            stream.writeTextElement("fromCentreY", "false");
         stream.writeTextElement("dimensionZ", QString("%1").arg(
                 vsitem->shape().getDimensionZ()));
         if (vsitem->shape().getUseVariableZ())
@@ -1093,6 +1149,10 @@ bool MainWindow::writeConfigXML(QFile * file) {
             stream.writeTextElement("useVariableZ", "false");
         stream.writeTextElement("dimensionVariableZ", QString("%1").arg(
                 vsitem->shape().getDimensionVariableZ()));
+        if (vsitem->shape().getFromCentreZ())
+            stream.writeTextElement("fromCentreZ", "true");
+        else
+            stream.writeTextElement("fromCentreZ", "false");
         stream.writeEndElement();  // shape
         stream.writeStartElement("colour");  // colour
         stream.writeTextElement("r", QString("%1").
@@ -1196,6 +1256,41 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
     }
 }
 
+/*! \brief Automatically work out the offset of the scene to position
+ *  centre at origin.
+ */
+void MainWindow::calcPositionOffset() {
+    double smallest_x = 0.0;
+    double largest_x = 0.0;
+    double smallest_y = 0.0;
+    double largest_y = 0.0;
+    double smallest_z = 0.0;
+    double largest_z = 0.0;
+
+    for (int j = 0; j < visual_settings_model->rowCount(); j++) {
+        for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
+                i++) {
+            if (smallest_x > visual_settings_model->getRule(j)->agents.at(i).x)
+                smallest_x = visual_settings_model->getRule(j)->agents.at(i).x;
+            if (smallest_y > visual_settings_model->getRule(j)->agents.at(i).y)
+                smallest_y = visual_settings_model->getRule(j)->agents.at(i).y;
+            if (largest_x  < visual_settings_model->getRule(j)->agents.at(i).x)
+                largest_x  = visual_settings_model->getRule(j)->agents.at(i).x;
+            if (largest_y  < visual_settings_model->getRule(j)->agents.at(i).y)
+                largest_y  = visual_settings_model->getRule(j)->agents.at(i).y;
+        }
+    }
+
+    /* Takes the middle position of x and y */
+    xoffset = -(largest_x + smallest_x)/2.0;
+    yoffset = -(largest_y + smallest_y)/2.0;
+    zoffset = -(largest_z + smallest_z)/2.0;
+
+    /*qDebug() << "xoffset: " << xoffset;
+    qDebug() << "yoffset: " << yoffset;
+    qDebug() << "zoffset: " << zoffset;*/
+}
+
 /*! \brief Automatically work out a good ratio to use to view agents visually.
  */
 void MainWindow::calcPositionRatio() {
@@ -1205,25 +1300,32 @@ void MainWindow::calcPositionRatio() {
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
-            if (smallest > visual_settings_model->getRule(j)->agents.at(i).x)
-                smallest = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (smallest > visual_settings_model->getRule(j)->agents.at(i).y)
-                smallest = visual_settings_model->getRule(j)->agents.at(i).y;
-            if (largest  < visual_settings_model->getRule(j)->agents.at(i).x)
-                largest  = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (largest  < visual_settings_model->getRule(j)->agents.at(i).y)
-                largest  = visual_settings_model->getRule(j)->agents.at(i).y;
+            double x = visual_settings_model->getRule(j)->agents.at(i).x;
+            double y = visual_settings_model->getRule(j)->agents.at(i).y;
+            double size_x =
+                visual_settings_model->getRule(j)->shape().getDimension()/2.0;
+            double size_y = size_x;
+            if (QString::compare("cube",
+                visual_settings_model->getRule(j)->shape().getShape()) == 0)
+                size_y =
+                visual_settings_model->getRule(j)->shape().getDimensionY()/2.0;
+
+            if (smallest > x-size_x) smallest = x-size_x;
+            if (smallest > y-size_y) smallest = y-size_y;
+            if (largest  < x+size_x) largest  = x+size_x;
+            if (largest  < y+size_y) largest  = y+size_y;
         }
     }
 
     // qDebug() << smallest << largest;
 
-    if (smallest == 0.0 && largest == 0.0) largest = 10.0;
-
     if (smallest < 0.0 && largest < -smallest)
         ratio = 1.0 / -smallest;
     else
         ratio = 1.0 / largest;
+
+    /* Make a largest ratio */
+    // if (ratio > 0.05) ratio = 0.05;
 
     // qDebug() << "ratio: " << ratio;
 }
@@ -1317,9 +1419,37 @@ void MainWindow::on_actionAbout_triggered() {
     QString aboutText;
     aboutText.append("<h1>FLAME Visualiser</h1>");
     aboutText.append("<h3>Simon Coakley</h3>");
-    aboutText.append("<h2>Version 2</h2>");
+    aboutText.append("<h2>Version 3</h2>");
     aboutText.append("<h3>Changelog</h3>");
     /* Add new release notes here */
+    aboutText.append("<h4>Version 3 (released 2012-02-22)</h4><ul>");
+    aboutText.append("<li>Beta third release</li>");
+    aboutText.append("<li>Added enable column for visual rules</li>");
+    aboutText.append("<li>New agent types are automatically found in ");
+    aboutText.append("new iteration files</li>");
+    aboutText.append("<li>Added a reset viewpoint button</li>");
+    aboutText.append("<li>Added orthogonal view option for visual ");
+    aboutText.append("window</li>");
+    aboutText.append("<li>Visual scene is now auto centred, no need ");
+    aboutText.append("for offsets</li>");
+    aboutText.append("<li>Added 'from centre' switch for shape size</li>");
+    aboutText.append("<li>Missing data for graphs no longer taken to be ");
+    aboutText.append("zero</li>");
+    aboutText.append("<li>Lines drawn between all data points on a ");
+    aboutText.append("graph</li>");
+    aboutText.append("<li>Style menu added for graphs to select lines, ");
+    aboutText.append("points, linespoints, or dots</li>");
+    aboutText.append("<li>Visual menu items moved under Visual menu</li>");
+    aboutText.append("<li>Changed the default shape and colour for ");
+    aboutText.append("visual rules</li>");
+    aboutText.append("<li>Removed offset labels from shape dialog</li>");
+    aboutText.append("<li>Added interation info dialog</li>");
+    aboutText.append("<li>Improved error feedback</li>");
+    aboutText.append("<li>Added application icon</li>");
+    aboutText.append("<li>Bug fix: conditions are not drawn on graph ");
+    aboutText.append("legend if not enabled</li>");
+    aboutText.append("<li>Bug fix: cancel buttons work for dialog ");
+    aboutText.append("editors</li></ul>");
     aboutText.append("<h4>Version 2 (released 2011-10-28)</h4><ul>");
     aboutText.append("<li>Beta second release</li>");
     aboutText.append("<li>Ability to change the quality of spheres ");
@@ -1417,43 +1547,8 @@ void MainWindow::calcTimeScale() {
 }
 
 void MainWindow::on_actionHelp_triggered() {
-    QTextEdit *help = new QTextEdit(this);
-    help->setWindowFlags(Qt::Dialog);
-    help->setReadOnly(true);
-    help->setAutoFormatting(QTextEdit::AutoNone);
-    QString helpText;
-    helpText.append("<h1>FLAME Visualiser Help</h1>");
-    helpText.append("<h4>Sphere Quality Setting</h4>");
-    helpText.append("The quality of spheres being drawn affects the speed of");
-    helpText.append(" the visualiser. To make the visualiser faster reduce ");
-    helpText.append("the quality of the spheres. Also if any large spheres ");
-    helpText.append("look blocky then increase their quality.");
-    helpText.append("<ul><li>8  - low quality</li>");
-    helpText.append("<li>16 - medium quality</li>");
-    helpText.append("<li>32 - high quality</li></ul>");
-    helpText.append("<h4>Change the Near Clip Plane</h4>The near clip plane ");
-    helpText.append("can be changed by holding down the <b>C key</b> and the");
-    helpText.append(" <b>right mouse button</b> and moving the mouse up and ");
-    helpText.append("down.");
-    helpText.append("<h4>Pick an Agent</h4>An agent can be picked and its ");
-    helpText.append("memory displayed by holding down the <b>P key</b> and ");
-    helpText.append("<b>left mouse clicking</b> on an agent. The agent");
-    helpText.append("picked is highlighted.");
-    helpText.append("<h4>Move the Centre of the Visual Scene</h4>The scene ");
-    helpText.append("can be shifted up,down,left and right by holding down ");
-    helpText.append("the <b>Spacebar</b> and the <b>left mouse button</b> ");
-    helpText.append("and moving the mouse.");
-    helpText.append("<h4>Restricting Drawing Axes</h4>By selecting ");
-    helpText.append("'Restrict Axes' from 'Tools' on the menubar the drawing");
-    helpText.append(" of agents can be restricted on the x,y and z axes. ");
-    helpText.append("When the minimum value sliders are fully to the left ");
-    helpText.append("and the maximum value sliders are fully to the right ");
-    helpText.append("those restrictions are turned off.");
-
-    help->setGeometry(50, 50, 600, 400);
-    help->insertHtml(helpText);
-    help->moveCursor(QTextCursor::Start);
-    help->show();
+    QDesktopServices::openUrl(
+        QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v3/"));
 }
 
 void MainWindow::on_actionRestrict_Axes_triggered() {
@@ -1498,7 +1593,15 @@ void MainWindow::on_actionIteration_Info_triggered() {
 void MainWindow::resetVisualViewpoint() {
     // Set ratio to be 1
     ratio = 1.0;
+    // Reset offsets
+    xoffset = 0.0;
+    yoffset = 0.0;
+    zoffset = 0.0;
     // Read in agents with model dimensions
+    readZeroXML();
+    // Calculate offset
+    calcPositionOffset();
+    // Reread agents with offsets
     readZeroXML();
     // Calculate model to opengl dimension ratio
     calcPositionRatio();
@@ -1507,6 +1610,62 @@ void MainWindow::resetVisualViewpoint() {
 }
 
 void MainWindow::on_pushButton_updateViewpoint_clicked() {
-    resetVisualViewpoint();
     visual_window->reset_camera();
+    resetVisualViewpoint();
+}
+
+void MainWindow::on_actionPerspective_triggered() {
+    ui->actionOrthogonal->setChecked(false);
+    ui->actionPerspective->setChecked(true);
+    visual_dimension = 3;
+    if (opengl_window_open) visual_window->setDimension(3);
+}
+
+void MainWindow::on_actionOrthogonal_triggered() {
+    ui->actionOrthogonal->setChecked(true);
+    ui->actionPerspective->setChecked(false);
+    visual_dimension = 2;
+    if (opengl_window_open) visual_window->setDimension(2);
+}
+
+void MainWindow::updateAllGraphs() {
+    int i;
+    for (i = 0; i < graphs.size(); i++)
+        graphs.at(i)->update();
+}
+
+void MainWindow::on_actionLines_triggered() {
+    ui->actionLines->setChecked(true);
+    ui->actionPoints->setChecked(false);
+    ui->actionLinespoints->setChecked(false);
+    ui->actionDots->setChecked(false);
+    graph_style = 0;
+    updateAllGraphs();
+}
+
+void MainWindow::on_actionPoints_triggered() {
+    ui->actionLines->setChecked(false);
+    ui->actionPoints->setChecked(true);
+    ui->actionLinespoints->setChecked(false);
+    ui->actionDots->setChecked(false);
+    graph_style = 1;
+    updateAllGraphs();
+}
+
+void MainWindow::on_actionLinespoints_triggered() {
+    ui->actionLines->setChecked(false);
+    ui->actionPoints->setChecked(false);
+    ui->actionLinespoints->setChecked(true);
+    ui->actionDots->setChecked(false);
+    graph_style = 2;
+    updateAllGraphs();
+}
+
+void MainWindow::on_actionDots_triggered() {
+    ui->actionLines->setChecked(false);
+    ui->actionPoints->setChecked(false);
+    ui->actionLinespoints->setChecked(false);
+    ui->actionDots->setChecked(true);
+    graph_style = 3;
+    updateAllGraphs();
 }

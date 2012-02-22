@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>705</width>
-    <height>275</height>
+    <height>280</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Shape Editor</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -94,29 +94,62 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Dimension</string>
+      <string>Size</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label_X">
-        <property name="text">
-         <string>X axis</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_11">
+        <item>
+         <widget class="QLabel" name="label_X">
+          <property name="text">
+           <string>X axis</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_X_from_centre">
+          <property name="text">
+           <string>from centre</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="0" column="1">
-       <widget class="QLabel" name="label_Y">
-        <property name="text">
-         <string>Y axis</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_12">
+        <item>
+         <widget class="QLabel" name="label_Y">
+          <property name="text">
+           <string>Y axis</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Y_from_centre">
+          <property name="text">
+           <string>from centre</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="0" column="2">
-       <widget class="QLabel" name="label_Z">
-        <property name="text">
-         <string>Z axis</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_13">
+        <item>
+         <widget class="QLabel" name="label_Z">
+          <property name="text">
+           <string>Z axis</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBox_Z_from_centre">
+          <property name="text">
+           <string>from centre</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -163,11 +196,17 @@
       <item row="2" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Offset</string>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="doubleSpinBox_X">
@@ -184,11 +223,17 @@
       <item row="2" column="1">
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Offset</string>
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="doubleSpinBox_Y">
@@ -205,11 +250,17 @@
       <item row="2" column="2">
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Offset</string>
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-         </widget>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="doubleSpinBox_Z">
@@ -239,38 +290,5 @@
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>ShapeDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>ShapeDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

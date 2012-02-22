@@ -39,6 +39,12 @@ class Shape {
     bool getUseVariableZ() { return useVariableZ; }
     void setQuality(int q) { quality = q; }
     int getQuality() { return quality; }
+    void setFromCentreX(bool b) { fromCentreX = b; }
+    bool getFromCentreX() { return fromCentreX; }
+    void setFromCentreY(bool b) { fromCentreY = b; }
+    bool getFromCentreY() { return fromCentreY; }
+    void setFromCentreZ(bool b) { fromCentreZ = b; }
+    bool getFromCentreZ() { return fromCentreZ; }
 
     void paint(QPainter *painter, const QRect &rect,
                 const QPalette &palette, EditMode mode) const;
@@ -56,6 +62,9 @@ class Shape {
     bool useVariableY;
     bool useVariableZ;
     int quality;
+    bool fromCentreX;
+    bool fromCentreY;
+    bool fromCentreZ;
 };
 
 Q_DECLARE_METATYPE(Shape)

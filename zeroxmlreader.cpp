@@ -11,7 +11,8 @@
 
 ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at,
         VisualSettingsModel *vsm, double * r, Dimension * ad,
-                             QStringList *sat, QHash<QString, int> *atc) {
+                             QStringList *sat, QHash<QString, int> *atc,
+                             float * xo, float * yo, float * zo) {
     agents = a;
     agentTypes = at;
     vsmodel = vsm;
@@ -19,6 +20,9 @@ ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at,
     agentDimension = ad;
     stringAgentTypes = sat;
     agentTypeCounts = atc;
+    xoffset = xo;
+    yoffset = yo;
+    zoffset = zo;
 
     agentDimension->xmin =  999999.9;
     agentDimension->xmax = -999999.9;
@@ -224,9 +228,9 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
                 }
 
                 if (pass) {
-                    agent->x = vsi->x().opValue;
-                    agent->y = vsi->y().opValue;
-                    agent->z = vsi->z().opValue;
+                    agent->x = *xoffset + vsi->x().opValue;
+                    agent->y = *yoffset + vsi->y().opValue;
+                    agent->z = *zoffset + vsi->z().opValue;
                     agent->shapeDimension = vsi->shape().getDimension();
                     agent->shapeDimensionY = vsi->shape().getDimensionY();
                     agent->shapeDimensionZ = vsi->shape().getDimensionZ();
@@ -264,6 +268,13 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
                                         agent->values.at(k).toDouble();
                     }
 
+                    if (vsi->shape().getFromCentreX())
+                        agent->shapeDimension  *= 2.0;
+                    if (vsi->shape().getFromCentreY())
+                        agent->shapeDimensionY *= 2.0;
+                    if (vsi->shape().getFromCentreZ())
+                        agent->shapeDimensionZ *= 2.0;
+
                     /* Calc agent scene dimension */
                     if (agentDimension->xmin > agent->x)
                         agentDimension->xmin = agent->x;
@@ -281,9 +292,12 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
                     agent->x *= *ratio;
                     agent->y *= *ratio;
                     agent->z *= *ratio;
-                    agent->shapeDimension *= *ratio;
-                    agent->shapeDimensionY *= *ratio;
-                    agent->shapeDimensionZ *= *ratio;
+                    /* Point size does not need to be ratioed */
+                    if (vsi->shape().getShape() != "point") {
+                        agent->shapeDimension *= *ratio;
+                        agent->shapeDimensionY *= *ratio;
+                        agent->shapeDimensionZ *= *ratio;
+                    }
                     vsi->agents.append(*agent);
                 }
             }

@@ -26,6 +26,8 @@ class ConditionDialog : public QDialog, public Ui::ConditionDialog {
     void setVariableComboBox(int i);
     void setOpComboBox(int i);
     void setValueSpinBox(double d);
+    void okButton();
+    void cancelButton();
 
   private slots:
     void updateEnable(bool c);

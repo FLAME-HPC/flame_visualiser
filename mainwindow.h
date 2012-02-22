@@ -109,6 +109,12 @@ class MainWindow : public QMainWindow {
     void on_horizontalSlider_delay_valueChanged(int value);
     void on_actionIteration_Info_triggered();
     void on_pushButton_updateViewpoint_clicked();
+    void on_actionPerspective_triggered();
+    void on_actionOrthogonal_triggered();
+    void on_actionLines_triggered();
+    void on_actionPoints_triggered();
+    void on_actionLinespoints_triggered();
+    void on_actionDots_triggered();
 
   private:
     int readZeroXML();
@@ -116,10 +122,12 @@ class MainWindow : public QMainWindow {
     void createGraphWindow(GraphWidget * graph_window);
     void readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
+    void calcPositionOffset();
     void calcPositionRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
     void resetVisualViewpoint();
+    void updateAllGraphs();
     Ui::MainWindow *ui;  /*!< The User Interface */
     bool opengl_window_open;  /*!< Indicates if the visual window is open */
     /*! Indicates if the image settings window is open */
@@ -158,6 +166,10 @@ class MainWindow : public QMainWindow {
     float xmove;
     float ymove;
     float zmove;
+    float xoffset;
+    float yoffset;
+    float zoffset;
+    float orthoZoom;
     Dimension * restrictAgentDimension;
     Dimension * restrictDimension;
     Dimension * agentDimension;
@@ -165,6 +177,8 @@ class MainWindow : public QMainWindow {
     RestrictAxesDialog * restrictAxesDialog;
     bool animation;
     int delayTime; /*!< The animation delay time in millisecs */
+    int visual_dimension;
+    int graph_style;
 };
 
 #endif  // MAINWINDOW_H_

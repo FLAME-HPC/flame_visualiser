@@ -23,7 +23,7 @@ class GLWidget : public QGLWidget {
 
   public:
     GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-            Dimension * rd, QWidget *parent = 0);
+            Dimension * rd, float * oz, QWidget *parent = 0);
     ~GLWidget();
     void update_agents(QList<Agent> * a);
     void set_rules(VisualSettingsModel * m);
@@ -34,6 +34,7 @@ class GLWidget : public QGLWidget {
     void setConfigPath(QString * cp) { configpath = cp; }
     void setTimeScale(TimeScale * ts) { timeScale = ts; }
     void setTimeString(QString * t) { timeString = t; }
+    void setDimension(int d);
 
   public slots:
     void iterationLoaded();
@@ -82,6 +83,7 @@ class GLWidget : public QGLWidget {
     float * xmove;
     float * ymove;
     float * zmove;
+    float * orthoZoom;
     int x_last_position;
     int y_last_position;
     int drawpoints;
@@ -115,6 +117,7 @@ class GLWidget : public QGLWidget {
     bool restrictAxesOn;
     bool delayLock;
     int delayTime;
+    int dimension;
 };
 
 #endif  // GLWIDGET_H_

@@ -65,8 +65,8 @@ QWidget *ConditionDelegate::createEditor(QWidget */*parent*/,
     ConditionDialog *editor = new ConditionDialog(agentTypes, agentType,
             index.row());
 
-    connect(editor, SIGNAL(accepted()), this, SLOT(commitAndCloseEditor()));
-    connect(editor, SIGNAL(rejected()), this, SLOT(commitAndCloseEditor()));
+    connect(editor, SIGNAL(okButton()), this, SLOT(commitAndCloseEditor()));
+    connect(editor, SIGNAL(cancelButton()), this, SLOT(rejectAndCloseEditor()));
 
     // editor->setParent(windowParent);
     editor->setModal(true);
@@ -107,5 +107,10 @@ void ConditionDelegate::setModelData(QWidget *editor,
 void ConditionDelegate::commitAndCloseEditor() {
     ConditionDialog *editor = qobject_cast<ConditionDialog *>(sender());
     emit commitData(editor);
+    emit closeEditor(editor);
+}
+
+void ConditionDelegate::rejectAndCloseEditor() {
+    ConditionDialog *editor = qobject_cast<ConditionDialog *>(sender());
     emit closeEditor(editor);
 }

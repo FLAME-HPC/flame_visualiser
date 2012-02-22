@@ -33,6 +33,7 @@ class ShapeDelegate : public QItemDelegate {
 
   private slots:
     void commitAndCloseEditor();
+    void rejectAndCloseEditor();
 
   private:
     VisualSettingsModel * vsmodel;
