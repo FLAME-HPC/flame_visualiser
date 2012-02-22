@@ -37,6 +37,10 @@
  */
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
+    /* Setup User Interface */
+    ui->setupUi(this);
+    this->setWindowTitle("FLAME Visualiser - ");
+    enableInterface(false); /* Disable UI to start */
     /* Set the application icon (for linux) as mac and win
      * have platform-dependent techniques (see .pro file).
      */
@@ -74,15 +78,11 @@ MainWindow::MainWindow(QWidget *parent)
     yoffset = 0.0;
     zoffset = 0.0;
     orthoZoom = 1.0;
-    visual_dimension = 3;
+    on_actionPerspective_triggered();
     restrictDimension = new Dimension();
     agentDimension = new Dimension();
     restrictAgentDimension = new Dimension();
-
-    /* Setup User Interface */
-    ui->setupUi(this);
-    this->setWindowTitle("FLAME Visualiser - ");
-    enableInterface(false); /* Disable UI to start */
+    on_actionLines_triggered();
 
     /* Setup 3D OpenGL visual window */
     // ui->pushButton_OpenCloseVisual->setText("Open visual");
@@ -351,7 +351,7 @@ void MainWindow::addPlot() {
  */
 void MainWindow::createGraphWindow(GraphWidget *graph_window) {
     graphs.append(graph_window);
-    graph_window->updateData(0);
+    graph_window->updateData(iteration);
     graph_window->resize(720, 380);
     graph_window->show();
     connect(graph_window, SIGNAL(increase_iteration()),
@@ -402,7 +402,7 @@ void MainWindow::enabledGraph(QModelIndex index) {
         enabled = !(graph_settings_model->getPlot(index.row())->getEnable());
         graph_settings_model->switchEnabled(index);
         if (enabled) {
-            GraphWidget * gw = new GraphWidget(&agents);
+            GraphWidget * gw = new GraphWidget(&agents, &graph_style);
             gw->setGraph(graph_settings_model->
                     getPlot(index.row())->getGraph());
             QList<GraphSettingsItem *> subplots =
@@ -838,8 +838,8 @@ void MainWindow::readConfigFile(QString fileName, int it) {
         /* Clear anything read in */
         close_config_file();
     } else {
-        if (visual_dimension == 2) on_action2D_triggered(true);
-        if (visual_dimension == 3) on_action3D_triggered(true);
+        if (visual_dimension == 2) on_actionOrthogonal_triggered();
+        if (visual_dimension == 3) on_actionPerspective_triggered();
 
         /* Setup time scale */
         timeScale->calcTotalSeconds();
@@ -1012,6 +1012,7 @@ void MainWindow::close_config_file() {
     ui->pushButton_Animate->setEnabled(false);
     animation = false;
     agentTypeCounts.clear();
+    on_actionPerspective_triggered();
 }
 
 /*! \brief Write a config to an xml file.
@@ -1438,9 +1439,12 @@ void MainWindow::on_actionAbout_triggered() {
     aboutText.append("graph</li>");
     aboutText.append("<li>Style menu added for graphs to select lines, ");
     aboutText.append("points, linespoints, or dots</li>");
+    aboutText.append("<li>Visual menu items moved under Visual menu</li>");
     aboutText.append("<li>Changed the default shape and colour for ");
     aboutText.append("visual rules</li>");
     aboutText.append("<li>Removed offset labels from shape dialog</li>");
+    aboutText.append("<li>Added interation info dialog</li>");
+    aboutText.append("<li>Improved error feedback</li>");
     aboutText.append("<li>Added application icon</li>");
     aboutText.append("<li>Bug fix: conditions are not drawn on graph ");
     aboutText.append("legend if not enabled</li>");
@@ -1610,16 +1614,58 @@ void MainWindow::on_pushButton_updateViewpoint_clicked() {
     resetVisualViewpoint();
 }
 
-void MainWindow::on_action2D_triggered(bool /*checked*/) {
-    ui->action2D->setChecked(true);
-    ui->action3D->setChecked(false);
+void MainWindow::on_actionPerspective_triggered() {
+    ui->actionOrthogonal->setChecked(false);
+    ui->actionPerspective->setChecked(true);
+    visual_dimension = 3;
+    if (opengl_window_open) visual_window->setDimension(3);
+}
+
+void MainWindow::on_actionOrthogonal_triggered() {
+    ui->actionOrthogonal->setChecked(true);
+    ui->actionPerspective->setChecked(false);
     visual_dimension = 2;
     if (opengl_window_open) visual_window->setDimension(2);
 }
 
-void MainWindow::on_action3D_triggered(bool /*checked*/) {
-    ui->action2D->setChecked(false);
-    ui->action3D->setChecked(true);
-    visual_dimension = 3;
-    if (opengl_window_open) visual_window->setDimension(3);
+void MainWindow::updateAllGraphs() {
+    int i;
+    for (i = 0; i < graphs.size(); i++)
+        graphs.at(i)->update();
+}
+
+void MainWindow::on_actionLines_triggered() {
+    ui->actionLines->setChecked(true);
+    ui->actionPoints->setChecked(false);
+    ui->actionLinespoints->setChecked(false);
+    ui->actionDots->setChecked(false);
+    graph_style = 0;
+    updateAllGraphs();
+}
+
+void MainWindow::on_actionPoints_triggered() {
+    ui->actionLines->setChecked(false);
+    ui->actionPoints->setChecked(true);
+    ui->actionLinespoints->setChecked(false);
+    ui->actionDots->setChecked(false);
+    graph_style = 1;
+    updateAllGraphs();
+}
+
+void MainWindow::on_actionLinespoints_triggered() {
+    ui->actionLines->setChecked(false);
+    ui->actionPoints->setChecked(false);
+    ui->actionLinespoints->setChecked(true);
+    ui->actionDots->setChecked(false);
+    graph_style = 2;
+    updateAllGraphs();
+}
+
+void MainWindow::on_actionDots_triggered() {
+    ui->actionLines->setChecked(false);
+    ui->actionPoints->setChecked(false);
+    ui->actionLinespoints->setChecked(false);
+    ui->actionDots->setChecked(true);
+    graph_style = 3;
+    updateAllGraphs();
 }

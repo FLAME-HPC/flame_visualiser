@@ -12,84 +12,18 @@
 #include "./graphwidget.h"
 #include "./condition.h"
 
-GraphWidget::GraphWidget(QList<Agent> *a, QWidget *parent)
+GraphWidget::GraphWidget(QList<Agent> *a, int * gs, QWidget *parent)
     : QWidget(parent) {
     agents = a;
     topValue = 0;
     topIteration = 0;
-    style = 0;
+    style = gs;
     setFocus();
-
-    QMenuBar *menu = new QMenuBar(this);
-    QMenu * graphMenu = new QMenu("Graph");
-    QMenu * styleMenu = new QMenu("style");
-
-    linesAction = new QAction("lines", this);
-    pointsAction = new QAction("points", this);
-    linespointsAction = new QAction("linespoints", this);
-    dotsAction = new QAction("dots", this);
-    linesAction->setCheckable(true);
-    pointsAction->setCheckable(true);
-    linespointsAction->setCheckable(true);
-    dotsAction->setCheckable(true);
-    connect(linesAction, SIGNAL(triggered()),
-            this, SLOT(clickStyleLines()));
-    connect(pointsAction, SIGNAL(triggered()),
-            this, SLOT(clickStylePoints()));
-    connect(linespointsAction, SIGNAL(triggered()),
-            this, SLOT(clickStyleLinespoints()));
-    connect(dotsAction, SIGNAL(triggered()),
-            this, SLOT(clickStyleDots()));
-    styleMenu->addAction(linesAction);
-    styleMenu->addAction(pointsAction);
-    styleMenu->addAction(linespointsAction);
-    styleMenu->addAction(dotsAction);
-
-    graphMenu->addMenu(styleMenu);
-    menu->addMenu(graphMenu);
-
-    linesAction->setChecked(true);
 }
 
 void GraphWidget::closeEvent(QCloseEvent *event) {
     emit(graph_window_closed(graphName));
     event->accept();
-}
-
-void GraphWidget::clickStyleLines() {
-    linesAction->setChecked(true);
-    pointsAction->setChecked(false);
-    linespointsAction->setChecked(false);
-    dotsAction->setChecked(false);
-    style = 0;
-    repaint();
-}
-
-void GraphWidget::clickStylePoints() {
-    linesAction->setChecked(false);
-    pointsAction->setChecked(true);
-    linespointsAction->setChecked(false);
-    dotsAction->setChecked(false);
-    style = 1;
-    repaint();
-}
-
-void GraphWidget::clickStyleLinespoints() {
-    linesAction->setChecked(false);
-    pointsAction->setChecked(false);
-    linespointsAction->setChecked(true);
-    dotsAction->setChecked(false);
-    style = 2;
-    repaint();
-}
-
-void GraphWidget::clickStyleDots() {
-    linesAction->setChecked(false);
-    pointsAction->setChecked(false);
-    linespointsAction->setChecked(false);
-    dotsAction->setChecked(true);
-    style = 3;
-    repaint();
 }
 
 void GraphWidget::addPlot(GraphSettingsItem *gsi) {
@@ -172,7 +106,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
                 Qt::AlignLeft, text));
 
-        if (style == 1 || style == 2) {
+        if (*style == 1 || *style == 2) {
             drawStylePoint(j%6, 2, width - 8,
                            20+(j*bbox.height())-bbox.height()/4.0, &painter);
         }
@@ -182,12 +116,15 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         if (xright > (width-bbox.width()-40)) xright = width-bbox.width()-40;
     }
 
-    int last_valid_x = 0;
-    int last_valid_y = 0;
-    bool found_valid_point = false;
+    int last_valid_x;
+    int last_valid_y;
+    bool found_valid_point;
     /* Draw data */
     for (int j = 0; j < plots.count(); j ++) {
         painter.setPen(QPen(plots.at(j)->getColour()));
+        last_valid_x = 0;
+        last_valid_y = 0;
+        found_valid_point = false;
         for (int i = 0; i < data.at(j).count(); i++) {
             /* First point is current data point */
             int x1 = xleft+( (i/static_cast<double>(topIteration))*
@@ -204,7 +141,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
             /* Second point is last data point */
             if (dataExists[i]) {
                 /* lines style */
-                if (style == 0 || style == 2) {
+                if (*style == 0 || *style == 2) {
                     if (i == 0)
                         painter.drawPoint(x1, y1);
                     else
@@ -213,11 +150,11 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
                     last_valid_y = y1;
                 }
                 /* points style */
-                if (style == 1 || style == 2) {
+                if (*style == 1 || *style == 2) {
                     drawStylePoint(j%6, 2, x1, y1, &painter);
                 }
                 /* dots style */
-                if (style == 3) {
+                if (*style == 3) {
                     painter.drawPoint(x1, y1);
                 }
             }

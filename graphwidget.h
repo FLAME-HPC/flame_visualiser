@@ -16,7 +16,7 @@ class GraphWidget: public QWidget {
   Q_OBJECT
 
   public:
-    GraphWidget(QList<Agent> *a = 0, QWidget *parent = 0);
+    GraphWidget(QList<Agent> *a = 0, int * gs = 0, QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);
     void updateData(int it);
     void addPlot(GraphSettingsItem * gsi);
@@ -34,10 +34,7 @@ class GraphWidget: public QWidget {
     void closeEvent(QCloseEvent *);
 
   private slots:
-    void clickStyleLines();
-    void clickStylePoints();
-    void clickStyleLinespoints();
-    void clickStyleDots();
+
 
   private:
     void drawStylePoint(int type, int size, int x1, int y1, QPainter *painter);
@@ -50,11 +47,7 @@ class GraphWidget: public QWidget {
     int topValue;
     int topIteration;
     QString graphName;
-    QAction * linesAction;
-    QAction * pointsAction;
-    QAction * linespointsAction;
-    QAction * dotsAction;
-    int style;
+    int * style;
 };
 
 #endif  // GRAPHWIDGET_H_

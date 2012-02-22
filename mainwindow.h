@@ -109,8 +109,12 @@ class MainWindow : public QMainWindow {
     void on_horizontalSlider_delay_valueChanged(int value);
     void on_actionIteration_Info_triggered();
     void on_pushButton_updateViewpoint_clicked();
-    void on_action2D_triggered(bool checked);
-    void on_action3D_triggered(bool checked);
+    void on_actionPerspective_triggered();
+    void on_actionOrthogonal_triggered();
+    void on_actionLines_triggered();
+    void on_actionPoints_triggered();
+    void on_actionLinespoints_triggered();
+    void on_actionDots_triggered();
 
   private:
     int readZeroXML();
@@ -123,6 +127,7 @@ class MainWindow : public QMainWindow {
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
     void resetVisualViewpoint();
+    void updateAllGraphs();
     Ui::MainWindow *ui;  /*!< The User Interface */
     bool opengl_window_open;  /*!< Indicates if the visual window is open */
     /*! Indicates if the image settings window is open */
@@ -173,6 +178,7 @@ class MainWindow : public QMainWindow {
     bool animation;
     int delayTime; /*!< The animation delay time in millisecs */
     int visual_dimension;
+    int graph_style;
 };
 
 #endif  // MAINWINDOW_H_
