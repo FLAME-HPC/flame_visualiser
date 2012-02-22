@@ -1444,6 +1444,7 @@ void MainWindow::on_actionAbout_triggered() {
     aboutText.append("visual rules</li>");
     aboutText.append("<li>Removed offset labels from shape dialog</li>");
     aboutText.append("<li>Added iteration info dialog</li>");
+    aboutText.append("<li>Added delay for animations</li>");
     aboutText.append("<li>Improved error feedback</li>");
     aboutText.append("<li>Added application icon</li>");
     aboutText.append("<li>Bug fix: conditions are not drawn on graph ");
