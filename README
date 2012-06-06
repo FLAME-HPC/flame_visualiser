@@ -4,7 +4,11 @@ FLAME Visualiser
 
 To compile you will need Qt4.
 The package for Ubuntu is called: libqt4-dev
-You will also need a C++ compiler, try: g++
+You will also need a C++ compiler.
+The package for a build environment is: build-essential
+You will also need OpenGL dev packages:
+libgl1-mesa-dev
+libglu1-mesa-dev
 
 To compile type:
 
