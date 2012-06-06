@@ -7,6 +7,9 @@
 QT       += core gui
 QT       += opengl
 
+# Qt 4.8 Doesn't include OpenGL Glu library automatically
+LIBS    += -lGLU
+
 TEMPLATE = app
 macx {
     TARGET = "FLAME Visualiser"
