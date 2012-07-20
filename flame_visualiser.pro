@@ -8,7 +8,7 @@ QT       += core gui
 QT       += opengl
 
 # Qt 4.8 Doesn't include OpenGL Glu library automatically
-LIBS    += -lGLU
+#LIBS    += -lGLU
 
 TEMPLATE = app
 macx {
@@ -90,4 +90,9 @@ FORMS    += mainwindow.ui \
     restrictaxesdialog.ui \
     iterationinfodialog.ui
 
-OTHER_FILES +=
+test {
+    SOURCES  -= main.cpp
+    SOURCES  += test_flame_visualiser.cpp
+    CONFIG   += qtestlib
+    QMAKE_CXXFLAGS +=-DTESTBUILD
+}

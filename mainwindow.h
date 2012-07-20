@@ -37,6 +37,10 @@ class MainWindow : public QMainWindow {
   public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+    /* For testing allow test class to access private functions */
+    #ifdef TESTBUILD
+    friend class TestVisualiser;
+    #endif
 
   protected:
     void keyPressEvent(QKeyEvent *event);
@@ -117,10 +121,11 @@ class MainWindow : public QMainWindow {
     void on_actionDots_triggered();
 
   private:
+    int create_new_config_file(QString fileName);
     int readZeroXML();
     bool writeConfigXML(QFile * file);
     void createGraphWindow(GraphWidget * graph_window);
-    void readConfigFile(QString fileName, int it);
+    int readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
     void calcPositionOffset();
     void calcPositionRatio();

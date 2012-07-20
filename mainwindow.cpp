@@ -616,7 +616,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
  *  \return False if the file could not be found.
  */
 int MainWindow::readZeroXML() {
-    if (itLocked) return 0;
+    if (itLocked) return 3;
 
     itLocked = true;
 
@@ -636,7 +636,7 @@ int MainWindow::readZeroXML() {
         ui->label_5->setText(QString("! Error opening %1.xml").
                     arg(QString().number(iteration)));
         itLocked = false;
-        return -1;
+        return 1;
     }
 
     // used by graphs
@@ -667,12 +667,16 @@ int MainWindow::readZeroXML() {
          QDir dir(fileName);
          QString filePath = dir.canonicalPath();
 
-         QMessageBox::warning(this, "FLAME Visualiser",
-          tr("Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
-                      filePath).arg(reader.lineNumber()).arg(
-                      reader.columnNumber()).arg(reader.errorString()));
+         QString error = tr("Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
+                     filePath).arg(reader.lineNumber()).arg(
+                     reader.columnNumber()).arg(reader.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, "FLAME Visualiser", error);
+        #endif
         itLocked = false;
-         return -2;
+         return 2;
     } else {
         itLocked = false;
          if (opengl_window_open) emit(iterationLoaded());
@@ -684,7 +688,7 @@ int MainWindow::readZeroXML() {
         emit(updateIterationInfoDialog());
     }
 
-    return 1;
+    return 0;
 }
 
 /*! \brief Change the iteration number to the number of the spin box.
@@ -695,7 +699,7 @@ void MainWindow::on_spinBox_valueChanged(int arg1) {
     if (iteration != arg1) {
         iteration = arg1;
         int rc = readZeroXML(); /* Read in new agent data */
-        if (rc == 1) if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
+        if (rc == 0) if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
     }
 }
 
@@ -709,12 +713,12 @@ void MainWindow::increment_iteration() {
      * the parameter 1 means try and read in the agent data */
     rc = readZeroXML();
     /* return codes
-       0 - itLocked is true
-      -1 - error opening file
-      -2 - error reading file
-       1 - success
+       3 - itLocked is true
+       1 - error opening file
+       2 - error reading file
+       0 - success
       */
-    if (rc == -1) {  // Can't open file
+    if (rc == 1) {  // Can't open file
         /* search forward '0' for next file */
         if (checkDirectoryForNextIteration(iteration, 0)) {
             // successful
@@ -722,7 +726,7 @@ void MainWindow::increment_iteration() {
         }
     }
 
-    if (rc != 1) {  // unsuccessful open and read
+    if (rc != 0) {  // unsuccessful open and read
         iteration--;
         if (animation) {
             slot_stopAnimation();
@@ -749,7 +753,7 @@ void MainWindow::decrement_iteration() {
     if (iteration > 0) iteration--;
     rc = readZeroXML();
 
-    if (rc == -1) {  // Can't open file
+    if (rc == 1) {  // Can't open file
         if (checkDirectoryForNextIteration(iteration, 1)) {
             rc = readZeroXML();
         }
@@ -757,7 +761,7 @@ void MainWindow::decrement_iteration() {
 
     ui->spinBox->setValue(iteration);
 
-    if (rc == 1) {
+    if (rc == 0) {
         ui->spinBox->setValue(iteration);
         if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
 
@@ -815,66 +819,79 @@ bool MainWindow::checkDirectoryForNextIteration(int it, int flag) {
  *  \param fileName The file name
  *  \param it The iteration number to be set
  */
-void MainWindow::readConfigFile(QString fileName, int it) {
+int MainWindow::readConfigFile(QString fileName, int it) {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        QMessageBox::warning(this, tr("FLAME Visualiser"),
-                             tr("Cannot read file %1:\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
-        return;
+        QString error = tr("Cannot read file %1:\n%2.")
+                .arg(fileName)
+                .arg(file.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
+
+        return 1;
     }
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model,
             &resultsData, timeScale, &ratio, &xrotate, &yrotate,
             &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension);
     if (!reader.read(&file)) {
-        QMessageBox::warning(this, tr("flame visualiser"),
-         tr("Parse error in file %1 at line %2, column %3:\n%4").
-         arg(fileName).
-         arg(reader.lineNumber()).
-         arg(reader.columnNumber()).
-         arg(reader.errorString()));
+        QString error = tr("Parse error in file %1 at line %2, column %3:\n%4").
+                arg(fileName).
+                arg(reader.lineNumber()).
+                arg(reader.columnNumber()).
+                arg(reader.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
         /* Clear anything read in */
         close_config_file();
-    } else {
-        if (visual_dimension == 2) on_actionOrthogonal_triggered();
-        if (visual_dimension == 3) on_actionPerspective_triggered();
-
-        /* Setup time scale */
-        timeScale->calcTotalSeconds();
-        enableTimeScale(timeScale->enabled);
-
-        QFileInfo fileInfo(file.fileName());
-        configPath = fileInfo.absolutePath();
-        configName = fileInfo.fileName();
-
-        QString wtitle;
-        wtitle.append("FLAME Visualiser - ");
-        wtitle.append(file.fileName());
-        this->setWindowTitle(wtitle);
-
-        iteration = it;
-        ui->spinBox->setValue(iteration);
-
-        ui->horizontalSlider_delay->setValue(
-                static_cast<int>((1000-delayTime)/1000.0 * 99));
-        // qDebug() << "slider value: " << ui->horizontalSlider_delay->value();
-
-        if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
-
-        ui->lineEdit_ResultsLocation->setText(resultsData);
-//        tryAndReadInAgentTypes();
-        readZeroXML();
-
-        /* For each new plot create a graph window */
-        for (int i = 0; i < graph_settings_model->rowCount(); i++) {
-        }
-
-        enableInterface(true);
-        fileOpen = true;
+        /* Close file */
+        file.close();
+        return 2;
     }
+
+    if (visual_dimension == 2) on_actionOrthogonal_triggered();
+    if (visual_dimension == 3) on_actionPerspective_triggered();
+
+    /* Setup time scale */
+    timeScale->calcTotalSeconds();
+    enableTimeScale(timeScale->enabled);
+
+    QFileInfo fileInfo(file.fileName());
+    configPath = fileInfo.absolutePath();
+    configName = fileInfo.fileName();
+
+    QString wtitle;
+    wtitle.append("FLAME Visualiser - ");
+    wtitle.append(file.fileName());
+    this->setWindowTitle(wtitle);
+
+    iteration = it;
+    ui->spinBox->setValue(iteration);
+
+    ui->horizontalSlider_delay->setValue(
+            static_cast<int>((1000-delayTime)/1000.0 * 99));
+    // qDebug() << "slider value: " << ui->horizontalSlider_delay->value();
+
+    if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
+
+    ui->lineEdit_ResultsLocation->setText(resultsData);
+    //        tryAndReadInAgentTypes();
+    readZeroXML();
+
+    /* For each new plot create a graph window */
+    for (int i = 0; i < graph_settings_model->rowCount(); i++) {
+    }
+
+    enableInterface(true);
+    fileOpen = true;
     file.close();
+    return 0;
 }
 
 /*! \brief Enable or disable the time scale UI.
@@ -899,6 +916,27 @@ void MainWindow::enableTimeScale(bool b) {
         emit(ui->lineEdit_timeScale->setText(""));
 }
 
+int MainWindow::create_new_config_file(QString fileName) {
+    if (fileName.isEmpty())
+        return 1;
+
+    /* Close any current config */
+    close_config_file();
+
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("FLAME Visualiser"),
+                             tr("Cannot write file %1:\n%2.")
+                             .arg(fileName)
+                             .arg(file.errorString()));
+        return 2;
+    }
+
+    enableInterface(true);
+    writeConfigXML(&file);
+    return 0;
+}
+
 /*! \brief Open a new config file.
  */
 void MainWindow::new_config_file() {
@@ -906,23 +944,7 @@ void MainWindow::new_config_file() {
              QFileDialog::getSaveFileName(this, tr("New config file..."),
                                           "",
                                           tr("XML Files (*.xml)"));
-     if (fileName.isEmpty())
-         return;
-
-     /* Close any current config */
-     close_config_file();
-
-     QFile file(fileName);
-     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-         QMessageBox::warning(this, tr("FLAME Visualiser"),
-                              tr("Cannot write file %1:\n%2.")
-                              .arg(fileName)
-                              .arg(file.errorString()));
-         return;
-     }
-
-     enableInterface(true);
-     writeConfigXML(&file);
+    create_new_config_file(fileName);
 }
 
 /*! \brief Provide a dialog to save a config file.
