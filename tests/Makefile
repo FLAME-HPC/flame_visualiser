@@ -1,84 +1,23 @@
 QT_464    = /usr/bin/qmake-4.6
 QT_474    = /Applications/QtSDK/Desktop/Qt/474/gcc/bin/qmake
 QT_481    = /Applications/QtSDK/Desktop/Qt/4.8.1/gcc/bin/qmake
-QMAKE_PAR = -spec macx-g++ test_flame_visualiser.pro
-SOURCES   = qtest/test_flame_visualiser.cpp \
-            ../main.cpp\
-            ../mainwindow.cpp \
-            ../glwidget.cpp \
-            ../zeroxmlreader.cpp \
-            ../visualsettingsmodel.cpp \
-            ../visualsettingsitem.cpp \
-            ../configxmlreader.cpp \
-            ../agenttypedelegate.cpp \
-            ../shapedelegate.cpp \
-            ../shapedialog.cpp \
-            ../shape.cpp \
-            ../colourdelegate.cpp \
-            ../positiondelegate.cpp \
-            ../positiondialog.cpp \
-            ../position.cpp \
-            ../condition.cpp \
-            ../conditiondelegate.cpp \
-            ../conditiondialog.cpp \
-            ../graphsettingsmodel.cpp \
-            ../graphsettingsitem.cpp \
-            ../graphwidget.cpp \
-            ../enableddelegate.cpp \
-            ../graphdelegate.cpp \
-            ../imagesdialog.cpp \
-            ../timedialog.cpp \
-            ../agentdialog.cpp \
-            ../restrictaxesdialog.cpp \
-            ../iterationinfodialog.cpp
-HEADERS   = ../mainwindow.h \
-            ../glwidget.h \
-            ../zeroxmlreader.h \
-            ../agent.h \
-            ../visualsettingsmodel.h \
-            ../visualsettingsitem.h \
-            ../configxmlreader.h \
-            ../agenttype.h \
-            ../agenttypedelegate.h \
-            ../shapedelegate.h \
-            ../shapedialog.h \
-            ../shape.h \
-            ../colourdelegate.h \
-            ../positiondelegate.h \
-            ../positiondialog.h \
-            ../position.h \
-            ../condition.h \
-            ../conditiondelegate.h \
-            ../conditiondialog.h \
-            ../graphsettingsmodel.h \
-            ../graphsettingsitem.h \
-            ../graphwidget.h \
-            ../enableddelegate.h \
-            ../graphdelegate.h \
-            ../imagesdialog.h \
-            ../timedialog.h \
-            ../timescale.h \
-            ../agentdialog.h \
-            ../restrictaxesdialog.h \
-            ../dimension.h \
-            ../iterationinfodialog.h
-EXECUTABLE = test_flame_visualiser.app/Contents/MacOS/test_flame_visualiser
+QMAKE_PAR = -spec macx-g++ "CONFIG+=test" flame_visualiser.pro
+EXECUTABLE = "FLAME Visualiser.app/Contents/MacOS/FLAME Visualiser"
 CPPLINT    = /Users/stc/workspace/flame/scripts/cpplint-qt.py
-CCCC       = cccc
 
 lint:
-	$(CPPLINT) $(SOURCES) $(HEADERS)
+	$(CPPLINT) ../*.cpp ../*.h
 
 4.8:
-	cd qtest; \
+	cd ..; \
 	echo "qmake ..."; \
 	$(QT_481) $(QMAKE_PAR); \
 	echo "make ..."; \
-	make > /dev/null; \
+	make; \
 	./$(EXECUTABLE)
 
 4.7:
-	cd qtest; \
+	cd ..; \
 	echo "qmake ..."; \
 	$(QT_474) $(QMAKE_PAR); \
 	echo "make ..."; \
@@ -87,18 +26,17 @@ lint:
 
 clean:
 	rm -rf cccc; \
-	cd qtest; \
+	cd ..; \
 	echo "clean up ..."; \
-	make distclean > /dev/null; \
-	rm *.png
+	make distclean > /dev/null
 
 memtest: 4.8
-	cd qtest; \
+	cd ..; \
 	valgrind --leak-check=full ./$(EXECUTABLE)
 
 CCCCSUMMARY = /Users/stc/workspace/flame/scripts/ccccsummary.py
 cccc:
-	cccc $(SOURCES) $(HEADERS) --outdir=cccc; \
+	cccc ../*.cpp ../*.h --outdir=cccc; \
 	$(CCCCSUMMARY) cccc
 
 .PHONY: cccc
