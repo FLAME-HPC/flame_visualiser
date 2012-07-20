@@ -7,16 +7,20 @@ QMAKE_PAR = "CONFIG+=test" flame_visualiser.pro
 EXECUTABLE = "FLAME Visualiser"
 # Mac OS
 else ifeq ($(UNAME), Darwin)
-QT_464    = /usr/bin/qmake-4.6
 QT_474    = /Applications/QtSDK/Desktop/Qt/474/gcc/bin/qmake
 QT_481    = /Applications/QtSDK/Desktop/Qt/4.8.1/gcc/bin/qmake
 QMAKE_PAR = -spec macx-g++ "CONFIG+=test" flame_visualiser.pro
 EXECUTABLE = "FLAME Visualiser.app/Contents/MacOS/FLAME Visualiser"
-# Win OS
-else
-
-endif
 CPPLINT    = /Users/stc/workspace/flame/scripts/cpplint-qt.py
+# Win OS
+else ifeq ($(UNAME), MINGW32_NT-5.1)
+QT_481    = "C:\QtSDK\Desktop\Qt\4.8.1\mingw\bin\qmake.exe"
+QT_474    = "C:\QtSDK\Desktop\Qt\4.7.4\mingw\bin\qmake.exe"
+QMAKE_PAR = "CONFIG+=test" "CONFIG+=release" flame_visualiser.pro
+EXECUTABLE = "release\FLAME Visualiser.exe"
+endif
+
+all: 4.8
 
 lint:
 	$(CPPLINT) ../*.cpp ../*.h
