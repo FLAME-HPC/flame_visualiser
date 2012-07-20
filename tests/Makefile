@@ -1,6 +1,14 @@
+# Find OS
+UNAME := $(shell uname)
+ifeq ($(UNAME), Linux)
+QT_481    = /usr/bin/qmake
+endif
+ifeq ($(UNAME), Darwin)
+QT_481    = /Applications/QtSDK/Desktop/Qt/4.8.1/gcc/bin/qmake
+endif
 QT_464    = /usr/bin/qmake-4.6
 QT_474    = /Applications/QtSDK/Desktop/Qt/474/gcc/bin/qmake
-QT_481    = /Applications/QtSDK/Desktop/Qt/4.8.1/gcc/bin/qmake
+
 QMAKE_PAR = -spec macx-g++ "CONFIG+=test" flame_visualiser.pro
 EXECUTABLE = "FLAME Visualiser.app/Contents/MacOS/FLAME Visualiser"
 CPPLINT    = /Users/stc/workspace/flame/scripts/cpplint-qt.py
@@ -28,7 +36,8 @@ clean:
 	rm -rf cccc; \
 	cd ..; \
 	echo "clean up ..."; \
-	make distclean > /dev/null
+	make distclean > /dev/null; \
+	rm .flamevisualisersettings
 
 memtest: 4.8
 	cd ..; \
