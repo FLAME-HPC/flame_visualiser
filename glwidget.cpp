@@ -662,16 +662,17 @@ void GLWidget::processSelection(int mx, int my) {
     drawNameAgent = false;
 
     int i, j;
-    int nitems, zmin, zmax, item = 0;
+    int nitems, zmin, item = 0;
+    //int zmax;
     int minimumDepth = 0;
-    int pickItem;
+    int pickItem = 0;
 
     // qDebug() << "hits = " << hits;
     int index = 0;
     for (i = 0; i < hits; i++) {
         nitems = select_buf[index++];
         zmin = select_buf[index++];
-        zmax = select_buf[index++];
+        //zmax = select_buf[index++];
 
         // qDebug() << zmin << zmax;
         for (j = 0; j < nitems; j++) {

@@ -8,14 +8,13 @@ QT       += core gui
 QT       += opengl
 
 # Qt 4.8 Doesn't include OpenGL Glu library automatically
-#LIBS    += -lGLU
+unix {
+    LIBS    *= -lGLU
+}
 
 TEMPLATE = app
-macx {
-    TARGET = "FLAME Visualiser"
-} else {
-    TARGET = flame_visualiser
-}
+TARGET = "FLAME Visualiser"
+
 macx:ICON = flame_icon_v.icns
 win32:RC_FILE = flame-v.rc
 
