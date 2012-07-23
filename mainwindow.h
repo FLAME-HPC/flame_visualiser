@@ -121,6 +121,7 @@ class MainWindow : public QMainWindow {
     void on_actionDots_triggered();
 
   private:
+    int save_config_file_internal(QString fileName);
     int create_new_config_file(QString fileName);
     int readZeroXML();
     bool writeConfigXML(QFile * file);

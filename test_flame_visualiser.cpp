@@ -67,21 +67,36 @@ void TestVisualiser::open_a_config() {
 }
 
 void TestVisualiser::save_a_config() {
+    rc = w.save_config_file_internal("");
+    QVERIFY(rc == 1);
 
+    /* Cannot test unwritable file (at least across platforms) */
+    /*rc = w.save_config_file_internal("");
+    QVERIFY(rc == 2);*/
+
+    rc = w.save_config_file_internal("tests/models/new_config_file.xml");
+    QVERIFY(rc == 0);
+
+    if(!QFile::remove("tests/models/new_config_file.xml")) {
+        QWARN("Could not delete test file: tests/models/new_config_file.xml");
+    }
 }
 
 void TestVisualiser::open_an_iteration() {
     rc = w.readConfigFile("tests/models/malformed_1_xml/visual_config.xml", 0);
     QVERIFY(rc == 0);
 
+    // Correct 0.xml
     w.iteration = 0;
     rc = w.readZeroXML();
     QVERIFY(rc == 0);
 
+    // Malformed 1.xml
     w.iteration = 1;
     rc = w.readZeroXML();
     QVERIFY(rc == 2);
 
+    // Non existent 2.xml
     w.iteration = 2;
     rc = w.readZeroXML();
     QVERIFY(rc == 1);

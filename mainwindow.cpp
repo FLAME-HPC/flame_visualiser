@@ -925,10 +925,14 @@ int MainWindow::create_new_config_file(QString fileName) {
 
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        QMessageBox::warning(this, tr("FLAME Visualiser"),
-                             tr("Cannot write file %1:\n%2.")
+        QString error = tr("Cannot write file %1:\n%2.")
                              .arg(fileName)
-                             .arg(file.errorString()));
+                             .arg(file.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
         return 2;
     }
 
@@ -947,6 +951,27 @@ void MainWindow::new_config_file() {
     create_new_config_file(fileName);
 }
 
+int MainWindow::save_config_file_internal(QString fileName) {
+    if (fileName.isEmpty())
+        return 1;
+
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QString error = tr("Cannot write file %1:\n%2.")
+                .arg(fileName)
+                .arg(file.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
+        return 2;
+    }
+
+    writeConfigXML(&file);
+    return 0;
+}
+
 /*! \brief Provide a dialog to save a config file.
  */
 void MainWindow::save_as_config_file() {
@@ -961,43 +986,13 @@ void MainWindow::save_as_config_file() {
              QFileDialog::getSaveFileName(this, tr("Save config file..."),
                                           configFile,
                                           tr("XML Files (*.xml)"));
-     if (fileName.isEmpty())
-         return;
-
-     QFile file(fileName);
-     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-         QMessageBox::warning(this, tr("FLAME Visualiser"),
-                              tr("Cannot write file %1:\n%2.")
-                              .arg(fileName)
-                              .arg(file.errorString()));
-         return;
-     }
-
-     writeConfigXML(&file);
+    save_config_file_internal(fileName);
 }
 
 /*! \brief Save a config file.
  */
 void MainWindow::save_config_file() {
-    if (fileOpen == false) {
-        save_as_config_file();
-    } else {
-        QString configFile;
-        configFile.append(configPath);
-        configFile.append("/");
-        configFile.append(configName);
-
-        QFile file(configFile);
-        if (!file.open(QFile::WriteOnly | QFile::Text)) {
-            QMessageBox::warning(this, tr("FLAME Visualiser"),
-                                 tr("Cannot write file %1:\n%2.")
-                                 .arg(configFile)
-                                 .arg(file.errorString()));
-            return;
-        }
-
-        writeConfigXML(&file);
-    }
+    save_as_config_file();
 }
 
 /*! \brief Close the config file and disable the user interface.
