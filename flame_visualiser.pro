@@ -13,6 +13,15 @@ unix:!macx:LIBS *= -lGLU
 TEMPLATE = app
 TARGET = "FLAME Visualiser"
 
+# Qt 4.7 Doesn't like spaces in target name on windows
+QT_VERSION = $$[QT_VERSION]
+QT_VERSION = $$split(QT_VERSION, ".")
+QT_VER_MAJ = $$member(QT_VERSION, 0)
+QT_VER_MIN = $$member(QT_VERSION, 1)
+lessThan(QT_VER_MIN, 8) & lessThan(QT_VER_MAJ, 5) {
+	win32:TARGET = FLAME_Visualiser
+}
+
 macx:ICON = flame_icon_v.icns
 win32:RC_FILE = flame-v.rc
 
