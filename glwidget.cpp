@@ -13,7 +13,7 @@
 #include <QMessageBox>
 #include <QtPlugin>
 #if QT_VERSION >= 0x040800  // If Qt version is 4.8 or higher
-    #ifdef Q_WS_MAC // If Mac
+    #ifdef Q_WS_MAC  // If Mac
         #include <OpenGL/glu.h>
     #else
         #include <GL/glu.h>
@@ -153,7 +153,7 @@ void GLWidget::nextIteration() {
     emit(increase_iteration());
 }
 
-void GLWidget::update_agents(QList<Agent> * a) {
+void GLWidget::update_agents(QList<Agent *> *a) {
     agents = a;
 }
 
@@ -293,22 +293,22 @@ void GLWidget::drawAgents(GLenum mode) {
                 /* Check the restrict dimensions */
                 if (!restrictAxesOn || (restrictAxesOn &&
                 ( (!restrictDimension->xminon ||
-                        (restrictDimension->xminon && rule->agents.at(i).x >
+                        (restrictDimension->xminon && rule->agents.at(i)->x >
                             restrictDimension->xmin)) &&
                     (!restrictDimension->xmaxon ||
-                        (restrictDimension->xmaxon && rule->agents.at(i).x <
+                        (restrictDimension->xmaxon && rule->agents.at(i)->x <
                             restrictDimension->xmax)) &&
                     (!restrictDimension->yminon ||
-                        (restrictDimension->yminon && rule->agents.at(i).y >
+                        (restrictDimension->yminon && rule->agents.at(i)->y >
                             restrictDimension->ymin)) &&
                     (!restrictDimension->ymaxon ||
-                        (restrictDimension->ymaxon && rule->agents.at(i).y <
+                        (restrictDimension->ymaxon && rule->agents.at(i)->y <
                             restrictDimension->ymax)) &&
                     (!restrictDimension->zminon ||
-                        (restrictDimension->zminon && rule->agents.at(i).z >
+                        (restrictDimension->zminon && rule->agents.at(i)->z >
                             restrictDimension->zmin)) &&
                     (!restrictDimension->zmaxon ||
-                        (restrictDimension->zmaxon && rule->agents.at(i).z <
+                        (restrictDimension->zmaxon && rule->agents.at(i)->z <
                             restrictDimension->zmax)) ))) {
                     /* If the object is opaque and first pass, or
                        if the object is transparent and is the second or third pass */
@@ -316,10 +316,10 @@ void GLWidget::drawAgents(GLenum mode) {
                             (rule->colour().alphaF() < 0.95 && pass >= 2))) {
                         glPushMatrix();
 
-                        glTranslatef(rule->agents.at(i).x, rule->agents.at(i).y,
-                                rule->agents.at(i).z);
+                        glTranslatef(rule->agents.at(i)->x, rule->agents.at(i)->y,
+                                rule->agents.at(i)->z);
 
-                        if (rule->agents.at(i).isPicked) {
+                        if (rule->agents.at(i)->isPicked) {
                             mat_ambientA[0] = 1.0-rule->colour().redF();
                             mat_ambientA[1] = 1.0-rule->colour().greenF();
                             mat_ambientA[2] = 1.0-rule->colour().blueF();
@@ -337,9 +337,9 @@ void GLWidget::drawAgents(GLenum mode) {
                         else
                             glColor4fv(mat_ambientA);
 
-                        size = rule->agents.at(i).shapeDimension;
-                        sizeY = rule->agents.at(i).shapeDimensionY;
-                        sizeZ = rule->agents.at(i).shapeDimensionZ;
+                        size = rule->agents.at(i)->shapeDimension;
+                        sizeY = rule->agents.at(i)->shapeDimensionY;
+                        sizeZ = rule->agents.at(i)->shapeDimensionZ;
 
                         if (QString::compare("sphere", rule->shape().
                                 getShape()) == 0) {
@@ -358,7 +358,7 @@ void GLWidget::drawAgents(GLenum mode) {
                             } else {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
-                                    nameAgents.insert(name, &rule->agents[i]);
+                                    nameAgents.insert(name, rule->agents.at(i));
                                 }
                                 // Draw front face
                                 glCullFace(GL_BACK);
@@ -370,7 +370,7 @@ void GLWidget::drawAgents(GLenum mode) {
                             if (pass != 2) {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
-                                    nameAgents.insert(name, &rule->agents[i]);
+                                    nameAgents.insert(name, rule->agents[i]);
                                 }
 
                                 glDisable(GL_LIGHTING);
@@ -392,7 +392,7 @@ void GLWidget::drawAgents(GLenum mode) {
                             } else {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
-                                    nameAgents.insert(name, &rule->agents[i]);
+                                    nameAgents.insert(name, rule->agents[i]);
                                 }
                                 // Draw front face
                                 glCullFace(GL_BACK);
@@ -663,16 +663,17 @@ void GLWidget::processSelection(int mx, int my) {
 
     int i, j;
     int nitems, zmin, item = 0;
-    //int zmax;
+    //  int zmax;
     int minimumDepth = 0;
-    int pickItem = 0;
+    int pickItem = -1;
 
     // qDebug() << "hits = " << hits;
     int index = 0;
     for (i = 0; i < hits; i++) {
         nitems = select_buf[index++];
         zmin = select_buf[index++];
-        //zmax = select_buf[index++];
+        //  zmax = select_buf[index++];
+        index++;
 
         // qDebug() << zmin << zmax;
         for (j = 0; j < nitems; j++) {
@@ -693,10 +694,10 @@ void GLWidget::processSelection(int mx, int my) {
             }
         }
     }
-    if (hits > 0) {
-        Agent * a = nameAgents.value(pickItem);
-        nameAgent.tags = QStringList(a->tags);
-        nameAgent.values = QStringList(a->values);
+    if (pickItem != -1) {
+        RuleAgent * a = nameAgents.value(pickItem);
+        nameAgent.tags = QStringList(a->agent->tags);
+        nameAgent.values = QStringList(a->agent->values);
         drawNameAgent = false;  // true;
 
         a->isPicked = true;
@@ -705,7 +706,7 @@ void GLWidget::processSelection(int mx, int my) {
          * agent dialog */
         pickOn = false;
         /* Create dialog */
-        AgentDialog * agentDialog = new AgentDialog(a, this);
+        AgentDialog * agentDialog = new AgentDialog(a->agent, this);
         agentDialog->show();
     }
 

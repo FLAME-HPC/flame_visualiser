@@ -8,8 +8,9 @@
 #include <QtGui>
 #include "./zeroxmlreader.h"
 #include "./visualsettingsitem.h"
+#include "./ruleagent.h"
 
-ZeroXMLReader::ZeroXMLReader(QList<Agent> *a, QList<AgentType> *at,
+ZeroXMLReader::ZeroXMLReader(QList<Agent *> *a, QList<AgentType> *at,
         VisualSettingsModel *vsm, double * r, Dimension * ad,
                              QStringList *sat, QHash<QString, int> *atc,
                              float * xo, float * yo, float * zo) {
@@ -91,6 +92,7 @@ void ZeroXMLReader::readZeroXML() {
 }
 
 void ZeroXMLReader::readEnvironmentXML() {
+    // Create 'agent' with type environment
     Agent agent = Agent();
     int index = -1;
     agent.isEnvironment = true;
@@ -142,7 +144,7 @@ void ZeroXMLReader::readAgentsXML() {
 }
 
 void ZeroXMLReader::readAgentXML() {
-    Agent agent = Agent();
+    Agent * agent = new Agent;
     QString agentname = "";
     QString elementName = "";
     int index = -1;
@@ -150,13 +152,12 @@ void ZeroXMLReader::readAgentXML() {
     while (!atEnd()) {
          readNext();
 
-         if (isEndElement())
-             break;
+         if (isEndElement()) break;
 
          if (isStartElement()) {
              if (name() == "name") {
                  agentname = readElementText();
-                 agent.agentType = agentname;
+                 agent->agentType = agentname;
                  /* Increment agent counts for iteration info */
                  agentTypeCounts->insert(agentname,
                                         agentTypeCounts->value(agentname) + 1);
@@ -166,18 +167,15 @@ void ZeroXMLReader::readAgentXML() {
                      stringAgentTypes->append(agentname);
                      agentTypes->append(AgentType(agentname));
                      index = agentTypes->count() - 1;
-                 } else {
-                     index = -1;
-                 }
+                 } else { index = -1; }
              } else {
                  elementName = name().toString();
-                 agent.tags.append(elementName);
-                 agent.values.append(readElementText());
+                 agent->tags.append(elementName);
+                 agent->values.append(readElementText());
                  /* If agent is unknown then add variables to agent type */
-                 if (index != -1) {
+                 if (index != -1)
                     // qDebug() << "\t" << elementName;
                     (*agentTypes)[index].variables.append(elementName);
-                 }
              }
          }
      }
@@ -186,94 +184,108 @@ void ZeroXMLReader::readAgentXML() {
     agents->append(agent);
 
     // New
-    applyRulesToAgent(&agent);
+    applyRulesToAgent(agent);
+}
+
+bool ZeroXMLReader::passAgentCondition(Agent *agent, VisualSettingsItem * vsi) {
+    bool pass = true;
+    // If condition is enabled
+    if (vsi->condition().enable) {
+        pass = false;
+        // For each agent variable
+        for (int k = 0; k < agent->tags.count(); k++) {
+            // If the variable is used in the condition
+            if (QString::compare(vsi->condition().variable,
+                    agent->tags.at(k)) == 0) {
+                // Check each possible operator and its outcome
+                if (vsi->condition().op == "==" &&
+                        agent->values.at(k).toDouble() ==
+                        vsi->condition().value) pass = true;
+                else if (vsi->condition().op == "!=" &&
+                        agent->values.at(k).toDouble() !=
+                        vsi->condition().value) pass = true;
+                else if (vsi->condition().op == ">" &&
+                        agent->values.at(k).toDouble() >
+                        vsi->condition().value) pass = true;
+                else if (vsi->condition().op == "<" &&
+                        agent->values.at(k).toDouble() <
+                        vsi->condition().value) pass = true;
+                else if (vsi->condition().op == ">=" &&
+                        agent->values.at(k).toDouble() >=
+                        vsi->condition().value) pass = true;
+                else if (vsi->condition().op == "<=" &&
+                        agent->values.at(k).toDouble() <=
+                        vsi->condition().value) pass = true;
+            }
+        }
+    }
+    return pass;
 }
 
 void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
     for (int i = 0; i < vsmodel->rowCount(); i++) {
         VisualSettingsItem * vsi = vsmodel->getRule(i);
-
-        /* If the rule is enabled */
+        // If the rule is enabled
         if (vsi->enabled()) {
+            // If the agent corresponds to the rule agent
             if (agent->agentType == vsi->agentType()) {
-                bool pass = true;
+                // If the agent passes any condition
+                if (passAgentCondition(agent, vsi)) {
+                    // Change agent drawing variables for this rule
+                    // Then add a copy of this agent to the agent list of
+                    // the drawing rule.
 
-                // Check condition variable
-                if (vsi->condition().enable) {
-                    pass = false;
+                    // Create a new rule agent to handle drawing this agent
+                    // under this rule
 
-                    for (int k = 0; k < agent->tags.count(); k++) {
-                        if (QString::compare(vsi->condition().variable,
-                                agent->tags.at(k)) == 0) {
-                            if (vsi->condition().op == "==" &&
-                                    agent->values.at(k).toDouble() ==
-                                    vsi->condition().value) pass = true;
-                            else if (vsi->condition().op == "!=" &&
-                                    agent->values.at(k).toDouble() !=
-                                    vsi->condition().value) pass = true;
-                            else if (vsi->condition().op == ">" &&
-                                    agent->values.at(k).toDouble() >
-                                    vsi->condition().value) pass = true;
-                            else if (vsi->condition().op == "<" &&
-                                    agent->values.at(k).toDouble() <
-                                    vsi->condition().value) pass = true;
-                            else if (vsi->condition().op == ">=" &&
-                                    agent->values.at(k).toDouble() >=
-                                    vsi->condition().value) pass = true;
-                            else if (vsi->condition().op == "<=" &&
-                                    agent->values.at(k).toDouble() <=
-                                    vsi->condition().value) pass = true;
-                        }
-                    }
-                }
+                    RuleAgent * ruleagent = new RuleAgent(agent);
 
-                if (pass) {
-                    agent->x = *xoffset + vsi->x().opValue;
-                    agent->y = *yoffset + vsi->y().opValue;
-                    agent->z = *zoffset + vsi->z().opValue;
-                    agent->shapeDimension = vsi->shape().getDimension();
-                    agent->shapeDimensionY = vsi->shape().getDimensionY();
-                    agent->shapeDimensionZ = vsi->shape().getDimensionZ();
+                    ruleagent->x = *xoffset + vsi->x().opValue;
+                    ruleagent->y = *yoffset + vsi->y().opValue;
+                    ruleagent->z = *zoffset + vsi->z().opValue;
+                    ruleagent->shapeDimension = vsi->shape().getDimension();
+                    ruleagent->shapeDimensionY = vsi->shape().getDimensionY();
+                    ruleagent->shapeDimensionZ = vsi->shape().getDimensionZ();
 
                     for (int k = 0; k < agent->tags.count(); k++) {
                         if (vsi->x().useVariable)
                             if (QString::compare(vsi->x().positionVariable,
                                     agent->tags.at(k)) == 0)
-                                agent->x += agent->values.at(k).toDouble();
+                                ruleagent->x += agent->values.at(k).toDouble();
                         if (vsi->y().useVariable)
                             if (QString::compare(vsi->y().positionVariable,
                                     agent->tags.at(k)) == 0)
-                                agent->y += agent->values.at(k).toDouble();
+                                ruleagent->y += agent->values.at(k).toDouble();
                         if (vsi->z().useVariable)
                             if (QString::compare(vsi->z().positionVariable,
                                     agent->tags.at(k)) == 0)
-                                agent->z += agent->values.at(k).toDouble();
+                                ruleagent->z += agent->values.at(k).toDouble();
                         if (vsi->shape().getUseVariable())
                             if (QString::compare(
                                     vsi->shape().getDimensionVariable(),
                                     agent->tags.at(k)) == 0)
-                                agent->shapeDimension +=
+                                ruleagent->shapeDimension +=
                                         agent->values.at(k).toDouble();
                         if (vsi->shape().getUseVariableY())
                             if (QString::compare(
                                     vsi->shape().getDimensionVariableY(),
                                     agent->tags.at(k)) == 0)
-                                agent->shapeDimensionY +=
+                                ruleagent->shapeDimensionY +=
                                         agent->values.at(k).toDouble();
                         if (vsi->shape().getUseVariableZ())
                             if (QString::compare(
                                     vsi->shape().getDimensionVariableZ(),
                                     agent->tags.at(k)) == 0)
-                                agent->shapeDimensionZ +=
+                                ruleagent->shapeDimensionZ +=
                                         agent->values.at(k).toDouble();
                     }
 
                     if (vsi->shape().getFromCentreX())
-                        agent->shapeDimension  *= 2.0;
+                        ruleagent->shapeDimension  *= 2.0;
                     if (vsi->shape().getFromCentreY())
-                        agent->shapeDimensionY *= 2.0;
+                        ruleagent->shapeDimensionY *= 2.0;
                     if (vsi->shape().getFromCentreZ())
-                        agent->shapeDimensionZ *= 2.0;
+                        ruleagent->shapeDimensionZ *= 2.0;
 
                     /* Calc agent scene dimension */
                     if (agentDimension->xmin > agent->x)
@@ -289,16 +301,16 @@ void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
                     if (agentDimension->zmax < agent->z)
                         agentDimension->zmax = agent->z;
 
-                    agent->x *= *ratio;
-                    agent->y *= *ratio;
-                    agent->z *= *ratio;
+                    ruleagent->x *= *ratio;
+                    ruleagent->y *= *ratio;
+                    ruleagent->z *= *ratio;
                     /* Point size does not need to be ratioed */
                     if (vsi->shape().getShape() != "point") {
-                        agent->shapeDimension *= *ratio;
-                        agent->shapeDimensionY *= *ratio;
-                        agent->shapeDimensionZ *= *ratio;
+                        ruleagent->shapeDimension *= *ratio;
+                        ruleagent->shapeDimensionY *= *ratio;
+                        ruleagent->shapeDimensionZ *= *ratio;
                     }
-                    vsi->agents.append(*agent);
+                    vsi->agents.append(ruleagent);
                 }
             }
         }

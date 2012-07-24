@@ -639,19 +639,20 @@ int MainWindow::readZeroXML() {
         return 1;
     }
 
+    // used by visual
+    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+        for (int j = 0; j < visual_settings_model->getRule(i)->agents.size(); j++)
+            delete visual_settings_model->getRule(i)->agents.at(j);
+        visual_settings_model->getRule(i)->agents.clear();
+    }
     // used by graphs
+    for (int j = 0; j < agents.size(); j++)
+        delete agents.at(j);
     agents.clear();
     // used by iteration info dialog
     QHash<QString, int>::iterator i;
-    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i) {
+    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i)
         i.value() = 0;
-     // qDebug() << i.key() << ": " << i.value();
-    }
-
-    // used by visual
-    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
-        visual_settings_model->getRule(i)->agents.clear();
-    }
 
     ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio,
             agentDimension, &stringAgentTypes, &agentTypeCounts,
@@ -667,9 +668,10 @@ int MainWindow::readZeroXML() {
          QDir dir(fileName);
          QString filePath = dir.canonicalPath();
 
-         QString error = tr("Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
-                     filePath).arg(reader.lineNumber()).arg(
-                     reader.columnNumber()).arg(reader.errorString());
+         QString error = tr(
+             "Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
+             filePath).arg(reader.lineNumber()).arg(
+             reader.columnNumber()).arg(reader.errorString());
         #ifdef TESTBUILD
         qDebug() << error;
         #else
@@ -1029,6 +1031,7 @@ void MainWindow::close_config_file() {
     ui->pushButton_Animate->setEnabled(false);
     animation = false;
     agentTypeCounts.clear();
+    stringAgentTypes.clear();
     on_actionPerspective_triggered();
 }
 
@@ -1287,14 +1290,14 @@ void MainWindow::calcPositionOffset() {
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
-            if (smallest_x > visual_settings_model->getRule(j)->agents.at(i).x)
-                smallest_x = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (smallest_y > visual_settings_model->getRule(j)->agents.at(i).y)
-                smallest_y = visual_settings_model->getRule(j)->agents.at(i).y;
-            if (largest_x  < visual_settings_model->getRule(j)->agents.at(i).x)
-                largest_x  = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (largest_y  < visual_settings_model->getRule(j)->agents.at(i).y)
-                largest_y  = visual_settings_model->getRule(j)->agents.at(i).y;
+            if (smallest_x > visual_settings_model->getRule(j)->agents.at(i)->x)
+                smallest_x = visual_settings_model->getRule(j)->agents.at(i)->x;
+            if (smallest_y > visual_settings_model->getRule(j)->agents.at(i)->y)
+                smallest_y = visual_settings_model->getRule(j)->agents.at(i)->y;
+            if (largest_x  < visual_settings_model->getRule(j)->agents.at(i)->x)
+                largest_x  = visual_settings_model->getRule(j)->agents.at(i)->x;
+            if (largest_y  < visual_settings_model->getRule(j)->agents.at(i)->y)
+                largest_y  = visual_settings_model->getRule(j)->agents.at(i)->y;
         }
     }
 
@@ -1317,8 +1320,8 @@ void MainWindow::calcPositionRatio() {
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
-            double x = visual_settings_model->getRule(j)->agents.at(i).x;
-            double y = visual_settings_model->getRule(j)->agents.at(i).y;
+            double x = visual_settings_model->getRule(j)->agents.at(i)->x;
+            double y = visual_settings_model->getRule(j)->agents.at(i)->y;
             double size_x =
                 visual_settings_model->getRule(j)->shape().getDimension()/2.0;
             double size_y = size_x;

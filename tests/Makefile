@@ -74,9 +74,7 @@ else
 	rm .flamevisualisersettings
 endif
 
-
-
-memtest: 4.8
+memtest:
 	cd ..; \
 	valgrind --leak-check=full ./$(EXECUTABLE)
 

@@ -143,7 +143,7 @@ class MainWindow : public QMainWindow {
     GLWidget *visual_window;  /*!< The visual window */
     int iteration;  /*!< The current iteration number */
     bool fileOpen;  /*!< Indicates if a file is open */
-    QList<Agent> agents;  /*!< The list of agents */
+    QList<Agent*> agents;  /*!< The list of agents */
     QList<AgentType> agentTypes;  /*!< The list of agent types */
     /*! A string list of agent type names  */
     QStringList stringAgentTypes;

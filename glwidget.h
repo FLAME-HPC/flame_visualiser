@@ -25,7 +25,7 @@ class GLWidget : public QGLWidget {
     GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
             Dimension * rd, float * oz, QWidget *parent = 0);
     ~GLWidget();
-    void update_agents(QList<Agent> * a);
+    void update_agents(QList<Agent*> * a);
     void set_rules(VisualSettingsModel * m);
     void reset_camera();
     QString getName() { return name; }
@@ -76,7 +76,7 @@ class GLWidget : public QGLWidget {
     void drawAgents(GLenum mode);
     void drawCube(float sizeX, float sizeY, float sizeZ);
     QString name;
-    QList<Agent> * agents;
+    QList<Agent*> * agents;
     bool block;
     float * xrotate;
     float * yrotate;
@@ -109,7 +109,7 @@ class GLWidget : public QGLWidget {
     float zNear;  /*!< \brief The near clipping plane */
     bool clippingOn;
     int windowWidth, windowHeight;
-    QHash<int, Agent*> nameAgents;
+    QHash<int, RuleAgent*> nameAgents;
     Agent nameAgent;  /*!< \brief A copy of the picked agent */
     bool drawNameAgent;
     bool moveOn;

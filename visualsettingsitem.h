@@ -13,7 +13,7 @@
 #include "./shape.h"
 #include "./position.h"
 #include "./condition.h"
-#include "./agent.h"
+#include "./ruleagent.h"
 
 class VisualSettingsItem {
   public:
@@ -40,7 +40,7 @@ class VisualSettingsItem {
     void setEnabled(bool b) { boolEnabled = b; }
     bool enabled() const { return boolEnabled; }
 
-    QList<Agent> agents;  /*!< The list of agents */
+    QList<RuleAgent *> agents;  /*!< The list of agents to draw */
 
   private:
     QString agentTypeString;

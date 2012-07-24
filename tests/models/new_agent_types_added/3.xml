@@ -9,4 +9,11 @@
 <y>0</y>
 <z>0</z>
 </xagent>
+<xagent>
+<name>e</name>
+<id>0</id>
+<x>0</x>
+<y>0</y>
+<z>0</z>
+</xagent>
 </states>

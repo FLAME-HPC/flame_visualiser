@@ -84,7 +84,8 @@ HEADERS  += mainwindow.h \
     agentdialog.h \
     restrictaxesdialog.h \
     dimension.h \
-    iterationinfodialog.h
+    iterationinfodialog.h \
+    ruleagent.h
 
 FORMS    += mainwindow.ui \
     positiondialog.ui \

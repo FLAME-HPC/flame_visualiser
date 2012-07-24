@@ -12,7 +12,7 @@
 #include "./graphwidget.h"
 #include "./condition.h"
 
-GraphWidget::GraphWidget(QList<Agent> *a, int * gs, QWidget *parent)
+GraphWidget::GraphWidget(QList<Agent*> *a, int * gs, QWidget *parent)
     : QWidget(parent) {
     agents = a;
     topValue = 0;
@@ -186,30 +186,30 @@ void GraphWidget::updateData(int it) {
         count = 0;
 
         for (int i = 0; i < agents->count(); i++) {
-            if (QString::compare(agents->at(i).agentType,
+            if (QString::compare(agents->at(i)->agentType,
                     plots.at(j)->getYaxis()) == 0) {
                 /* If a condition is enabled then check it */
                 if (plots.at(j)->condition().enable) {
-                    for (int k = 0; k < agents->at(i).tags.count(); k++) {
+                    for (int k = 0; k < agents->at(i)->tags.count(); k++) {
                         if (QString::compare(plots.at(j)->condition().variable,
-                                agents->at(i).tags.at(k)) == 0) {
+                                agents->at(i)->tags.at(k)) == 0) {
                             if (plots.at(j)->condition().op == "==" &&
-                                    agents->at(i).values.at(k).toDouble() ==
+                                    agents->at(i)->values.at(k).toDouble() ==
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == "!=" &&
-                                    agents->at(i).values.at(k).toDouble() !=
+                                    agents->at(i)->values.at(k).toDouble() !=
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == ">" &&
-                                    agents->at(i).values.at(k).toDouble() >
+                                    agents->at(i)->values.at(k).toDouble() >
                             plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == "<" &&
-                                    agents->at(i).values.at(k).toDouble() <
+                                    agents->at(i)->values.at(k).toDouble() <
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == ">=" &&
-                                    agents->at(i).values.at(k).toDouble() >=
+                                    agents->at(i)->values.at(k).toDouble() >=
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == "<=" &&
-                                    agents->at(i).values.at(k).toDouble() <=
+                                    agents->at(i)->values.at(k).toDouble() <=
                                     plots.at(j)->condition().value) count++;
                         }
                     }
