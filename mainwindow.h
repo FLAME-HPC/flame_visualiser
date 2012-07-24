@@ -128,8 +128,7 @@ class MainWindow : public QMainWindow {
     void createGraphWindow(GraphWidget * graph_window);
     int readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
-    void calcPositionOffset();
-    void calcPositionRatio();
+    void calcPositionOffsetAndRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
     void resetVisualViewpoint();
@@ -172,9 +171,9 @@ class MainWindow : public QMainWindow {
     float xmove;
     float ymove;
     float zmove;
-    float xoffset;
-    float yoffset;
-    float zoffset;
+    double xoffset;
+    double yoffset;
+    double zoffset;
     float orthoZoom;
     Dimension * restrictAgentDimension;
     Dimension * restrictDimension;

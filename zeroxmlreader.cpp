@@ -11,9 +11,9 @@
 #include "./ruleagent.h"
 
 ZeroXMLReader::ZeroXMLReader(QList<Agent *> *a, QList<AgentType> *at,
-        VisualSettingsModel *vsm, double * r, Dimension * ad,
+        VisualSettingsModel *vsm, double r, Dimension * ad,
                              QStringList *sat, QHash<QString, int> *atc,
-                             float * xo, float * yo, float * zo) {
+                             double xo, double yo, double zo) {
     agents = a;
     agentTypes = at;
     vsmodel = vsm;
@@ -37,18 +37,28 @@ bool ZeroXMLReader::read(QIODevice * device) {
     setDevice(device);
 
     while (!atEnd()) {
-         readNext();
+    readNext();
 
-         if (isStartElement()) {
-             if (name() == "states")
-                 readZeroXML();
-             else
-                 raiseError(QObject::tr(
-                         "The file does not contain the root tag 'states'"));
-         }
-     }
+    if (isStartElement()) {
+        if (name() == "states")
+            readZeroXML();
+            else
+            raiseError(QObject::tr(
+                "The file does not contain the root tag 'states'"));
+        }
+    }
 
-     return !error();
+    // Populate rules with ruleagents
+    for (int i = 0; i < vsmodel->rowCount(); i++) {
+        vsmodel->getRule(i)->populate(agents);
+        vsmodel->getRule(i)->copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+    }
+    for (int i = 0; i < vsmodel->rowCount(); i++) {
+        vsmodel->getRule(i)->applyOffset(xoffset, yoffset, zoffset);
+        vsmodel->getRule(i)->applyRatio(ratio);
+    }
+
+    return !error();
 }
 
 void ZeroXMLReader::readUnknownElement() {
@@ -124,7 +134,7 @@ void ZeroXMLReader::readEnvironmentXML() {
          }
      }
 
-    applyRulesToAgent(&agent);
+    //applyRulesToAgent(&agent);
 }
 
 void ZeroXMLReader::readAgentsXML() {
@@ -184,135 +194,5 @@ void ZeroXMLReader::readAgentXML() {
     agents->append(agent);
 
     // New
-    applyRulesToAgent(agent);
-}
-
-bool ZeroXMLReader::passAgentCondition(Agent *agent, VisualSettingsItem * vsi) {
-    bool pass = true;
-    // If condition is enabled
-    if (vsi->condition().enable) {
-        pass = false;
-        // For each agent variable
-        for (int k = 0; k < agent->tags.count(); k++) {
-            // If the variable is used in the condition
-            if (QString::compare(vsi->condition().variable,
-                    agent->tags.at(k)) == 0) {
-                // Check each possible operator and its outcome
-                if (vsi->condition().op == "==" &&
-                        agent->values.at(k).toDouble() ==
-                        vsi->condition().value) pass = true;
-                else if (vsi->condition().op == "!=" &&
-                        agent->values.at(k).toDouble() !=
-                        vsi->condition().value) pass = true;
-                else if (vsi->condition().op == ">" &&
-                        agent->values.at(k).toDouble() >
-                        vsi->condition().value) pass = true;
-                else if (vsi->condition().op == "<" &&
-                        agent->values.at(k).toDouble() <
-                        vsi->condition().value) pass = true;
-                else if (vsi->condition().op == ">=" &&
-                        agent->values.at(k).toDouble() >=
-                        vsi->condition().value) pass = true;
-                else if (vsi->condition().op == "<=" &&
-                        agent->values.at(k).toDouble() <=
-                        vsi->condition().value) pass = true;
-            }
-        }
-    }
-    return pass;
-}
-
-void ZeroXMLReader::applyRulesToAgent(Agent *agent) {
-    for (int i = 0; i < vsmodel->rowCount(); i++) {
-        VisualSettingsItem * vsi = vsmodel->getRule(i);
-        // If the rule is enabled
-        if (vsi->enabled()) {
-            // If the agent corresponds to the rule agent
-            if (agent->agentType == vsi->agentType()) {
-                // If the agent passes any condition
-                if (passAgentCondition(agent, vsi)) {
-                    // Change agent drawing variables for this rule
-                    // Then add a copy of this agent to the agent list of
-                    // the drawing rule.
-
-                    // Create a new rule agent to handle drawing this agent
-                    // under this rule
-
-                    RuleAgent * ruleagent = new RuleAgent(agent);
-
-                    ruleagent->x = *xoffset + vsi->x().opValue;
-                    ruleagent->y = *yoffset + vsi->y().opValue;
-                    ruleagent->z = *zoffset + vsi->z().opValue;
-                    ruleagent->shapeDimension = vsi->shape().getDimension();
-                    ruleagent->shapeDimensionY = vsi->shape().getDimensionY();
-                    ruleagent->shapeDimensionZ = vsi->shape().getDimensionZ();
-
-                    for (int k = 0; k < agent->tags.count(); k++) {
-                        if (vsi->x().useVariable)
-                            if (QString::compare(vsi->x().positionVariable,
-                                    agent->tags.at(k)) == 0)
-                                ruleagent->x += agent->values.at(k).toDouble();
-                        if (vsi->y().useVariable)
-                            if (QString::compare(vsi->y().positionVariable,
-                                    agent->tags.at(k)) == 0)
-                                ruleagent->y += agent->values.at(k).toDouble();
-                        if (vsi->z().useVariable)
-                            if (QString::compare(vsi->z().positionVariable,
-                                    agent->tags.at(k)) == 0)
-                                ruleagent->z += agent->values.at(k).toDouble();
-                        if (vsi->shape().getUseVariable())
-                            if (QString::compare(
-                                    vsi->shape().getDimensionVariable(),
-                                    agent->tags.at(k)) == 0)
-                                ruleagent->shapeDimension +=
-                                        agent->values.at(k).toDouble();
-                        if (vsi->shape().getUseVariableY())
-                            if (QString::compare(
-                                    vsi->shape().getDimensionVariableY(),
-                                    agent->tags.at(k)) == 0)
-                                ruleagent->shapeDimensionY +=
-                                        agent->values.at(k).toDouble();
-                        if (vsi->shape().getUseVariableZ())
-                            if (QString::compare(
-                                    vsi->shape().getDimensionVariableZ(),
-                                    agent->tags.at(k)) == 0)
-                                ruleagent->shapeDimensionZ +=
-                                        agent->values.at(k).toDouble();
-                    }
-
-                    if (vsi->shape().getFromCentreX())
-                        ruleagent->shapeDimension  *= 2.0;
-                    if (vsi->shape().getFromCentreY())
-                        ruleagent->shapeDimensionY *= 2.0;
-                    if (vsi->shape().getFromCentreZ())
-                        ruleagent->shapeDimensionZ *= 2.0;
-
-                    /* Calc agent scene dimension */
-                    if (agentDimension->xmin > agent->x)
-                        agentDimension->xmin = agent->x;
-                    if (agentDimension->xmax < agent->x)
-                        agentDimension->xmax = agent->x;
-                    if (agentDimension->ymin > agent->y)
-                        agentDimension->ymin = agent->y;
-                    if (agentDimension->ymax < agent->y)
-                        agentDimension->ymax = agent->y;
-                    if (agentDimension->zmin > agent->z)
-                        agentDimension->zmin = agent->z;
-                    if (agentDimension->zmax < agent->z)
-                        agentDimension->zmax = agent->z;
-
-                    ruleagent->x *= *ratio;
-                    ruleagent->y *= *ratio;
-                    ruleagent->z *= *ratio;
-                    /* Point size does not need to be ratioed */
-                    if (vsi->shape().getShape() != "point") {
-                        ruleagent->shapeDimension *= *ratio;
-                        ruleagent->shapeDimensionY *= *ratio;
-                        ruleagent->shapeDimensionZ *= *ratio;
-                    }
-                    vsi->agents.append(ruleagent);
-                }
-            }
-        }
-    }
+    //applyRulesToAgent(agent);
 }

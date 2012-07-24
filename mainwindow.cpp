@@ -640,13 +640,15 @@ int MainWindow::readZeroXML() {
     }
 
     // used by visual
-    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+/*    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
         for (int j = 0; j < visual_settings_model->getRule(i)->agents.size(); j++)
+            // Free memory of ruleagent data
             delete visual_settings_model->getRule(i)->agents.at(j);
         visual_settings_model->getRule(i)->agents.clear();
-    }
+    }*/
     // used by graphs
     for (int j = 0; j < agents.size(); j++)
+        // Free memory of agent tag data
         delete agents.at(j);
     agents.clear();
     // used by iteration info dialog
@@ -654,9 +656,9 @@ int MainWindow::readZeroXML() {
     for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i)
         i.value() = 0;
 
-    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio,
+    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, ratio,
             agentDimension, &stringAgentTypes, &agentTypeCounts,
-            &xoffset, &yoffset, &zoffset);
+            xoffset, yoffset, zoffset);
     if (!reader.read(&file)) {
         // ui->spinBox->setValue(iteration);
         ui->label_5->setText(
@@ -1279,13 +1281,15 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 /*! \brief Automatically work out the offset of the scene to position
  *  centre at origin.
  */
-void MainWindow::calcPositionOffset() {
+void MainWindow::calcPositionOffsetAndRatio() {
     double smallest_x = 0.0;
     double largest_x = 0.0;
     double smallest_y = 0.0;
     double largest_y = 0.0;
     double smallest_z = 0.0;
     double largest_z = 0.0;
+    double smallest = 0.0;
+    double largest = 0.0;
 
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
@@ -1298,28 +1302,6 @@ void MainWindow::calcPositionOffset() {
                 largest_x  = visual_settings_model->getRule(j)->agents.at(i)->x;
             if (largest_y  < visual_settings_model->getRule(j)->agents.at(i)->y)
                 largest_y  = visual_settings_model->getRule(j)->agents.at(i)->y;
-        }
-    }
-
-    /* Takes the middle position of x and y */
-    xoffset = -(largest_x + smallest_x)/2.0;
-    yoffset = -(largest_y + smallest_y)/2.0;
-    zoffset = -(largest_z + smallest_z)/2.0;
-
-    /*qDebug() << "xoffset: " << xoffset;
-    qDebug() << "yoffset: " << yoffset;
-    qDebug() << "zoffset: " << zoffset;*/
-}
-
-/*! \brief Automatically work out a good ratio to use to view agents visually.
- */
-void MainWindow::calcPositionRatio() {
-    double smallest = 0.0;
-    double largest = 0.0;
-
-    for (int j = 0; j < visual_settings_model->rowCount(); j++) {
-        for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
-                i++) {
             double x = visual_settings_model->getRule(j)->agents.at(i)->x;
             double y = visual_settings_model->getRule(j)->agents.at(i)->y;
             double size_x =
@@ -1337,17 +1319,19 @@ void MainWindow::calcPositionRatio() {
         }
     }
 
-    // qDebug() << smallest << largest;
+    /* Takes the middle position of x and y */
+    xoffset = -(largest_x + smallest_x)/2.0;
+    yoffset = -(largest_y + smallest_y)/2.0;
+    zoffset = -(largest_z + smallest_z)/2.0;
+
+    /*qDebug() << "xoffset: " << xoffset;
+    qDebug() << "yoffset: " << yoffset;
+    qDebug() << "zoffset: " << zoffset;*/
 
     if (smallest < 0.0 && largest < -smallest)
         ratio = 1.0 / -smallest;
     else
         ratio = 1.0 / largest;
-
-    /* Make a largest ratio */
-    // if (ratio > 0.05) ratio = 0.05;
-
-    // qDebug() << "ratio: " << ratio;
 }
 
 void MainWindow::slot_stopAnimation() {
@@ -1618,16 +1602,33 @@ void MainWindow::resetVisualViewpoint() {
     xoffset = 0.0;
     yoffset = 0.0;
     zoffset = 0.0;
+
+    // Agent data already read in, no need to do it again
+    // Just need to recalculate ruleagent variables from
+    // agent tags
+
     // Read in agents with model dimensions
-    readZeroXML();
+    //readZeroXML();
     // Calculate offset
-    calcPositionOffset();
+    //calcPositionOffset();
     // Reread agents with offsets
-    readZeroXML();
+    //readZeroXML();
     // Calculate model to opengl dimension ratio
-    calcPositionRatio();
+    //calcPositionRatio();
     // Reread agents with opengl dimension using new ratio
-    readZeroXML();
+    //readZeroXML();
+
+    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+        visual_settings_model->getRule(i)->
+        copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+    }
+    calcPositionOffsetAndRatio();
+    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+        visual_settings_model->getRule(i)->
+            applyOffset(xoffset, yoffset, zoffset);
+        visual_settings_model->getRule(i)->
+            applyRatio(ratio);
+    }
 }
 
 void MainWindow::on_pushButton_updateViewpoint_clicked() {
