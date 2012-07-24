@@ -189,10 +189,6 @@ void ZeroXMLReader::readAgentXML() {
              }
          }
      }
-
-    // Old (keep for graphs)
+    // Add agent to list of agents
     agents->append(agent);
-
-    // New
-    //applyRulesToAgent(agent);
 }

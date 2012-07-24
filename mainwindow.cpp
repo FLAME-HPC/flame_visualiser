@@ -387,8 +387,11 @@ void MainWindow::enabledRule(QModelIndex index) {
     if (index.column() == 7) {
         /* Switch the enabled value */
         visual_settings_model->switchEnabled(index);
-        /* Reread the iteration to apply the changes */
-        readZeroXML();
+        /* Populate rule agents */
+        visual_settings_model->getRule(index.row())->populate(&agents);
+        visual_settings_model->getRule(index.row())->copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+        visual_settings_model->getRule(index.row())->applyOffset(xoffset, yoffset, zoffset);
+        visual_settings_model->getRule(index.row())->applyRatio(ratio);
     }
 }
 
@@ -1305,12 +1308,12 @@ void MainWindow::calcPositionOffsetAndRatio() {
             double x = visual_settings_model->getRule(j)->agents.at(i)->x;
             double y = visual_settings_model->getRule(j)->agents.at(i)->y;
             double size_x =
-                visual_settings_model->getRule(j)->shape().getDimension()/2.0;
+                visual_settings_model->getRule(j)->shape().getDimension();
             double size_y = size_x;
             if (QString::compare("cube",
                 visual_settings_model->getRule(j)->shape().getShape()) == 0)
                 size_y =
-                visual_settings_model->getRule(j)->shape().getDimensionY()/2.0;
+                visual_settings_model->getRule(j)->shape().getDimensionY();
 
             if (smallest > x-size_x) smallest = x-size_x;
             if (smallest > y-size_y) smallest = y-size_y;
@@ -1602,21 +1605,6 @@ void MainWindow::resetVisualViewpoint() {
     xoffset = 0.0;
     yoffset = 0.0;
     zoffset = 0.0;
-
-    // Agent data already read in, no need to do it again
-    // Just need to recalculate ruleagent variables from
-    // agent tags
-
-    // Read in agents with model dimensions
-    //readZeroXML();
-    // Calculate offset
-    //calcPositionOffset();
-    // Reread agents with offsets
-    //readZeroXML();
-    // Calculate model to opengl dimension ratio
-    //calcPositionRatio();
-    // Reread agents with opengl dimension using new ratio
-    //readZeroXML();
 
     for (int i = 0; i < visual_settings_model->rowCount(); i++) {
         visual_settings_model->getRule(i)->
