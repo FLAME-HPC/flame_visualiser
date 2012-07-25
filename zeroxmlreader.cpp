@@ -48,13 +48,15 @@ bool ZeroXMLReader::read(QIODevice * device) {
         }
     }
 
-    // Populate rules with ruleagents
+    // For every rule
     for (int i = 0; i < vsmodel->rowCount(); i++) {
+        // Populate rule with ruleagents from agents
         vsmodel->getRule(i)->populate(agents);
+        // Calculate visual variables for ruleagent
         vsmodel->getRule(i)->copyAgentDrawDataToRuleAgentDrawData(agentDimension);
-    }
-    for (int i = 0; i < vsmodel->rowCount(); i++) {
+        // Apply offset to ruleagents to centre the scene
         vsmodel->getRule(i)->applyOffset(xoffset, yoffset, zoffset);
+        // Apply ratio to ruleagents to go from model space to opengl space
         vsmodel->getRule(i)->applyRatio(ratio);
     }
 
@@ -103,10 +105,10 @@ void ZeroXMLReader::readZeroXML() {
 
 void ZeroXMLReader::readEnvironmentXML() {
     // Create 'agent' with type environment
-    Agent agent = Agent();
+    Agent * agent = new Agent;
     int index = -1;
-    agent.isEnvironment = true;
-    agent.agentType = "environment";
+    agent->isEnvironment = true;
+    agent->agentType = "environment";
 
     if (stringAgentTypes->contains("environment") == false) {
      // qDebug() << "new agent type found: environment";
@@ -125,16 +127,16 @@ void ZeroXMLReader::readEnvironmentXML() {
              break;
 
          if (isStartElement()) {
-             agent.tags.append(name().toString());
-             agent.values.append(readElementText());
+             agent->tags.append(name().toString());
+             agent->values.append(readElementText());
              if (index != -1) {
-                // qDebug() << "\t" << name().toString();
                 (*agentTypes)[index].variables.append(name().toString());
              }
          }
      }
 
-    //applyRulesToAgent(&agent);
+    // Add agent to list of agents
+    agents->append(agent);
 }
 
 void ZeroXMLReader::readAgentsXML() {
@@ -156,7 +158,6 @@ void ZeroXMLReader::readAgentsXML() {
 void ZeroXMLReader::readAgentXML() {
     Agent * agent = new Agent;
     QString agentname = "";
-    QString elementName = "";
     int index = -1;
 
     while (!atEnd()) {
@@ -166,6 +167,7 @@ void ZeroXMLReader::readAgentXML() {
 
          if (isStartElement()) {
              if (name() == "name") {
+                 // Agent type
                  agentname = readElementText();
                  agent->agentType = agentname;
                  /* Increment agent counts for iteration info */
@@ -179,13 +181,12 @@ void ZeroXMLReader::readAgentXML() {
                      index = agentTypes->count() - 1;
                  } else { index = -1; }
              } else {
-                 elementName = name().toString();
-                 agent->tags.append(elementName);
+                 // Agent memory variable
+                 agent->tags.append(name().toString());
                  agent->values.append(readElementText());
                  /* If agent is unknown then add variables to agent type */
                  if (index != -1)
-                    // qDebug() << "\t" << elementName;
-                    (*agentTypes)[index].variables.append(elementName);
+                    (*agentTypes)[index].variables.append(name().toString());
              }
          }
      }
