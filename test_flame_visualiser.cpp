@@ -119,32 +119,33 @@ void TestVisualiser::adding_agent_types() {
     w.iteration = 0;
     rc = w.readZeroXML();
     QCOMPARE(rc, 0);
-    QCOMPARE(w.agentTypes.size(), 1);
-    QCOMPARE(w.agentTypes.at(0).name, QString("a"));
+    QCOMPARE(w.agentTypes.size(), 2);
+    QCOMPARE(w.agentTypes.at(0).name, QString("environment"));
+    QCOMPARE(w.agentTypes.at(1).name, QString("a"));
 
     w.iteration = 1;
     rc = w.readZeroXML();
     QCOMPARE(rc, 0);
-    QCOMPARE(w.agentTypes.size(), 2);
-    QCOMPARE(w.agentTypes.at(1).name, QString("b"));
+    QCOMPARE(w.agentTypes.size(), 3);
+    QCOMPARE(w.agentTypes.at(2).name, QString("b"));
 
     w.iteration = 2;
     rc = w.readZeroXML();
     QCOMPARE(rc, 0);
-    QCOMPARE(w.agentTypes.size(), 3);
-    QCOMPARE(w.agentTypes.at(2).name, QString("c"));
+    QCOMPARE(w.agentTypes.size(), 4);
+    QCOMPARE(w.agentTypes.at(3).name, QString("c"));
 
     w.iteration = 3;
     rc = w.readZeroXML();
     QCOMPARE(rc, 0);
-    QCOMPARE(w.agentTypes.size(), 5);
-    QCOMPARE(w.agentTypes.at(3).name, QString("d"));
-    QCOMPARE(w.agentTypes.at(4).name, QString("e"));
+    QCOMPARE(w.agentTypes.size(), 6);
+    QCOMPARE(w.agentTypes.at(4).name, QString("d"));
+    QCOMPARE(w.agentTypes.at(5).name, QString("e"));
 
     w.iteration = 4;
     rc = w.readZeroXML();
     QCOMPARE(rc, 0);
-    QCOMPARE(w.agentTypes.size(), 5);
+    QCOMPARE(w.agentTypes.size(), 6);
 
     w.close_config_file();
 }
