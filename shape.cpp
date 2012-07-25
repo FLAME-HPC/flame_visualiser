@@ -19,7 +19,6 @@ Shape::Shape() {
     useVariable = false;
     useVariableY = false;
     useVariableZ = false;
-    quality = 16;
     fromCentreX = false;
     fromCentreY = false;
     fromCentreZ = false;

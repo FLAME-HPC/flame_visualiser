@@ -12,13 +12,6 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QtPlugin>
-#if QT_VERSION >= 0x040800  // If Qt version is 4.8 or higher
-    #ifdef Q_WS_MAC  // If Mac
-        #include <OpenGL/glu.h>
-    #else
-        #include <GL/glu.h>
-    #endif
-#endif
 #include "./glwidget.h"
 #include "./visualsettingsmodel.h"
 #include "./visualsettingsitem.h"
@@ -78,6 +71,8 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
 }
 
 GLWidget::~GLWidget() {
+    // Delete display lists
+    glDeleteLists(nPartsList, 5);
     emit(visual_window_closed());
 }
 
@@ -214,6 +209,30 @@ void GLWidget::initializeGL() {
     glEnable(GL_LIGHT0);
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Display lists
+    nPartsList = glGenLists(5);
+    SPHERE_4  = nPartsList;
+    SPHERE_8  = nPartsList+1;
+    SPHERE_16 = nPartsList+2;
+    SPHERE_32 = nPartsList+3;
+    SPHERE_64 = nPartsList+4;
+    dl_qobj = gluNewQuadric();
+    glNewList(SPHERE_4, GL_COMPILE);
+        gluSphere(dl_qobj, 1.0, 4, 4);
+    glEndList();
+    glNewList(SPHERE_8, GL_COMPILE);
+        gluSphere(dl_qobj, 1.0, 8, 8);
+    glEndList();
+    glNewList(SPHERE_16, GL_COMPILE);
+        gluSphere(dl_qobj, 1.0, 16, 16);
+    glEndList();
+    glNewList(SPHERE_32, GL_COMPILE);
+        gluSphere(dl_qobj, 1.0, 32, 32);
+    glEndList();
+    glNewList(SPHERE_64, GL_COMPILE);
+        gluSphere(dl_qobj, 1.0, 64, 64);
+    glEndList();
 }
 
 void GLWidget::resizeGL(int w, int h) {
@@ -249,6 +268,11 @@ void GLWidget::paintGL() {
     glPopMatrix();
 }
 
+void GLWidget::drawSphere(double size) {
+    if (size > 0.4) glCallList(SPHERE_64);
+    else glCallList(SPHERE_16);
+}
+
 void GLWidget::drawAgents(GLenum mode) {
     double size = 0.0;
     double sizeY = 0.0;
@@ -257,19 +281,19 @@ void GLWidget::drawAgents(GLenum mode) {
     int name = 0;
     GLfloat mat_ambientA[4];
     nameAgents.clear();
-
-    int style = 0;
+    /*int style = 0;
     GLUquadricObj * qobj = gluNewQuadric();
+
     if (style == 0) {
-        gluQuadricDrawStyle(qobj, GLU_FILL); /* smooth shaded */
+        gluQuadricDrawStyle(qobj, GLU_FILL); // smooth shaded
         gluQuadricNormals(qobj, GLU_SMOOTH);
     } else if (style == 1) {
-        gluQuadricDrawStyle(qobj, GLU_FILL); /* flat shaded */
+        gluQuadricDrawStyle(qobj, GLU_FILL); // flat shaded
         gluQuadricNormals(qobj, GLU_FLAT);
     } else if (style == 2) {
-        gluQuadricDrawStyle(qobj, GLU_LINE); /* all polygons wireframe */
+        gluQuadricDrawStyle(qobj, GLU_LINE); // all polygons wireframe
         gluQuadricNormals(qobj, GLU_NONE);
-    }
+    }*/
 
     for (int pass = 1; pass < 4; pass++) {
         if (pass == 1) {
@@ -337,9 +361,11 @@ void GLWidget::drawAgents(GLenum mode) {
                         else
                             glColor4fv(mat_ambientA);
 
-                        size = rule->agents.at(i)->shapeDimension;
-                        sizeY = rule->agents.at(i)->shapeDimensionY;
-                        sizeZ = rule->agents.at(i)->shapeDimensionZ;
+                        size = rule->agents.at(i)->shapeDimension/2.0;
+                        sizeY = rule->agents.at(i)->shapeDimensionY/2.0;
+                        sizeZ = rule->agents.at(i)->shapeDimensionZ/2.0;
+
+                        //qDebug() << size;
 
                         if (QString::compare("sphere", rule->shape().
                                 getShape()) == 0) {
@@ -347,14 +373,19 @@ void GLWidget::drawAgents(GLenum mode) {
                             // higher grade
                             /*grade = 16;
                             if(size > 0.1) grade = 32;*/
-                            int grade = rule->shape().getQuality();
+                            //int grade = rule->shape().getQuality();
 
                             glEnable(GL_CULL_FACE);
                             if (pass == 2) {
                                 if (mode == GL_SELECT) glLoadName(0);
                                 // Draw back face
                                 glCullFace(GL_FRONT);
-                                gluSphere(qobj, size/2.0, grade, grade);
+                                glPushMatrix();
+                                glScalef(size, size, size);
+                                glEnable(GL_NORMALIZE);
+                                drawSphere(size);
+                                glDisable(GL_NORMALIZE);
+                                glPopMatrix();
                             } else {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
@@ -362,7 +393,12 @@ void GLWidget::drawAgents(GLenum mode) {
                                 }
                                 // Draw front face
                                 glCullFace(GL_BACK);
-                                gluSphere(qobj, size/2.0, grade, grade);
+                                glPushMatrix();
+                                glScalef(size, size, size);
+                                glEnable(GL_NORMALIZE);
+                                drawSphere(size);
+                                glDisable(GL_NORMALIZE);
+                                glPopMatrix();
                             }
                             glDisable(GL_CULL_FACE);
                         } else if (QString::compare("point", rule->shape().
@@ -375,7 +411,7 @@ void GLWidget::drawAgents(GLenum mode) {
 
                                 glDisable(GL_LIGHTING);
                                 glColor4fv(mat_ambientA);
-                                glPointSize(static_cast<int>(size));
+                                glPointSize(static_cast<int>(rule->agents.at(i)->shapeDimension));
                                 glBegin(GL_POINTS);
                                 glVertex3f(0.0, 0.0, 0.0);
                                 glEnd();
@@ -413,40 +449,40 @@ void GLWidget::drawAgents(GLenum mode) {
 void GLWidget::drawCube(float size, float sizeY, float sizeZ) {
     glBegin(GL_QUADS);  // Draw using quads, T-Top B-Bottom
     glNormal3f(0.0f, 0.5f, 0.0f);
-    glVertex3f(size/2.0, sizeY/2.0, -sizeZ/2.0);  // T-right of the quad (T)
-    glVertex3f(-size/2.0, sizeY/2.0, -sizeZ/2.0);  // T-left of the quad (T)
-    glVertex3f(-size/2.0, sizeY/2.0,  sizeZ/2.0);  // B-left of the quad (T)
-    glVertex3f(size/2.0, sizeY/2.0,  sizeZ/2.0);  // B-right of the quad (T)
+    glVertex3f(size, sizeY, -sizeZ);  // T-right of the quad (T)
+    glVertex3f(-size, sizeY, -sizeZ);  // T-left of the quad (T)
+    glVertex3f(-size, sizeY,  sizeZ);  // B-left of the quad (T)
+    glVertex3f(size, sizeY,  sizeZ);  // B-right of the quad (T)
 
     glNormal3f(0.0f, -0.5f, 0.0f);
-    glVertex3f(size/2.0, -sizeY/2.0,  sizeZ/2.0);  // T-right of the quad (B)
-    glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0);  // T-left of the quad (B)
-    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-left of the quad (B)
-    glVertex3f(size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-right of the quad (B)
+    glVertex3f(size, -sizeY,  sizeZ);  // T-right of the quad (B)
+    glVertex3f(-size, -sizeY,  sizeZ);  // T-left of the quad (B)
+    glVertex3f(-size, -sizeY, -sizeZ);  // B-left of the quad (B)
+    glVertex3f(size, -sizeY, -sizeZ);  // B-right of the quad (B)
 
     glNormal3f(0.0f, 0.0f, 0.5f);
-    glVertex3f(size/2.0,  sizeY/2.0, sizeZ/2.0);  // T-right of the quad (F)
-    glVertex3f(-size/2.0,  sizeY/2.0, sizeZ/2.0);  // T-left of the quad (F)
-    glVertex3f(-size/2.0, -sizeY/2.0, sizeZ/2.0);  // B-left of the quad (F)
-    glVertex3f(size/2.0, -sizeY/2.0, sizeZ/2.0);  // B-right of the quad (F)
+    glVertex3f(size,  sizeY, sizeZ);  // T-right of the quad (F)
+    glVertex3f(-size,  sizeY, sizeZ);  // T-left of the quad (F)
+    glVertex3f(-size, -sizeY, sizeZ);  // B-left of the quad (F)
+    glVertex3f(size, -sizeY, sizeZ);  // B-right of the quad (F)
 
     glNormal3f(0.0f, 0.0f, -0.5f);
-    glVertex3f(size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-left of the quad (B)
-    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-right of the quad (B)
-    glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-right of the quad (B)
-    glVertex3f(size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-left of the quad (B)
+    glVertex3f(size, -sizeY, -sizeZ);  // B-left of the quad (B)
+    glVertex3f(-size, -sizeY, -sizeZ);  // B-right of the quad (B)
+    glVertex3f(-size,  sizeY, -sizeZ);  // T-right of the quad (B)
+    glVertex3f(size,  sizeY, -sizeZ);  // T-left of the quad (B)
 
     glNormal3f(-0.5f, 0.0f, 0.0f);
-    glVertex3f(-size/2.0,  sizeY/2.0,  sizeZ/2.0);  // T-right of the quad (L)
-    glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-left of the quad (L)
-    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-left of the quad (L)
-    glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0);  // B-right of the quad (L)
+    glVertex3f(-size,  sizeY,  sizeZ);  // T-right of the quad (L)
+    glVertex3f(-size,  sizeY, -sizeZ);  // T-left of the quad (L)
+    glVertex3f(-size, -sizeY, -sizeZ);  // B-left of the quad (L)
+    glVertex3f(-size, -sizeY,  sizeZ);  // B-right of the quad (L)
 
     glNormal3f(0.5f, 0.0f, 0.0f);
-    glVertex3f(size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-right of the quad (R)
-    glVertex3f(size/2.0,  sizeY/2.0,  sizeZ/2.0);  // T-left of the quad (R)
-    glVertex3f(size/2.0, -sizeY/2.0,  sizeZ/2.0);  // B-left of the quad (R)
-    glVertex3f(size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-right of the quad (R)
+    glVertex3f(size,  sizeY, -sizeZ);  // T-right of the quad (R)
+    glVertex3f(size,  sizeY,  sizeZ);  // T-left of the quad (R)
+    glVertex3f(size, -sizeY,  sizeZ);  // B-left of the quad (R)
+    glVertex3f(size, -sizeY, -sizeZ);  // B-right of the quad (R)
     glEnd();   // Done drawing the color cube
 }
 

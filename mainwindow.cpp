@@ -1140,8 +1140,6 @@ bool MainWindow::writeConfigXML(QFile * file) {
         stream.writeStartElement("shape");  // shape
         stream.writeTextElement("object", vsitem->shape().getShape());
         if (QString::compare(vsitem->shape().getShape(), "sphere") == 0)
-            stream.writeTextElement("quality", QString("%1").arg(
-                    vsitem->shape().getQuality()));
         stream.writeTextElement("dimension", QString("%1").arg(
                 vsitem->shape().getDimension()));
         if (vsitem->shape().getUseVariable())

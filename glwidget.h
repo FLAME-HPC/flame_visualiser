@@ -15,6 +15,13 @@
 #include "./visualsettingsmodel.h"
 #include "./dimension.h"
 #include "./timescale.h"
+#if QT_VERSION >= 0x040800  // If Qt version is 4.8 or higher
+    #ifdef Q_WS_MAC  // If Mac
+        #include <OpenGL/glu.h>
+    #else
+        #include <GL/glu.h>
+    #endif
+#endif
 
 class QTimer;
 
@@ -75,6 +82,7 @@ class GLWidget : public QGLWidget {
     void processSelection(int mx, int my);
     void drawAgents(GLenum mode);
     void drawCube(float sizeX, float sizeY, float sizeZ);
+    void drawSphere(double size);
     QString name;
     QList<Agent*> * agents;
     bool block;
@@ -118,6 +126,13 @@ class GLWidget : public QGLWidget {
     bool delayLock;
     int delayTime;
     int dimension;
+    GLuint nPartsList; /*!< \brief Use with display lists */
+    GLuint SPHERE_4;  /*!< \brief Sphere with grade 4 */
+    GLuint SPHERE_8;  /*!< \brief Sphere with grade 8 */
+    GLuint SPHERE_16;  /*!< \brief Sphere with grade 16 */
+    GLuint SPHERE_32;  /*!< \brief Sphere with grade 32 */
+    GLuint SPHERE_64;  /*!< \brief Sphere with grade 64 */
+    GLUquadricObj * dl_qobj;
 };
 
 #endif  // GLWIDGET_H_
