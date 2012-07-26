@@ -14,7 +14,7 @@
 ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
         GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r,
              float * xr, float *yr, float *xm, float * ym, float * zm,
-             int * delay, float * oz, int * vd) {
+             int * delay, float * oz, int * vd, QColor * vbg) {
     vsmodel = vsm;
     gsmodel = gsm;
     resultsData = rD;
@@ -28,6 +28,7 @@ ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
     delayTime = delay;
     orthoZoom = oz;
     visual_dimension = vd;
+    backgroundColour = vbg;
 }
 
 bool ConfigXMLReader::read(QIODevice * device) {
@@ -190,6 +191,7 @@ void ConfigXMLReader::readVisual() {
     /* Defaults if tags missing */
     *visual_dimension = 3;
     *orthoZoom = 1.0;
+    *backgroundColour = Qt::white;
 
     while (!atEnd()) {
          readNext();
@@ -214,6 +216,8 @@ void ConfigXMLReader::readVisual() {
                  *zmove = readElementText().toFloat();
              else if (name() == "orthoZoom")
                  *orthoZoom = readElementText().toFloat();
+             else if (name() == "backgroundColour")
+                 *backgroundColour = readColour();
              else if (name() == "rules")
                  readRules();
              else

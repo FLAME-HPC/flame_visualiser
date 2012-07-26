@@ -59,6 +59,7 @@ class MainWindow : public QMainWindow {
     void takeAnimationSlot(bool);
     void updateImagesLocationSlot(QString);
     void colourChanged(QColor);
+    void backgroundColourChanged(QColor c);
     void calcTimeScale();
     void restrict_axes_closed();
     void slot_stopAnimation();
@@ -119,8 +120,9 @@ class MainWindow : public QMainWindow {
     void on_actionPoints_triggered();
     void on_actionLinespoints_triggered();
     void on_actionDots_triggered();
+    void on_actionBackground_triggered();
 
-  private:
+private:
     int save_config_file_internal(QString fileName);
     int create_new_config_file(QString fileName);
     int readZeroXML();
@@ -184,6 +186,7 @@ class MainWindow : public QMainWindow {
     int delayTime; /*!< The animation delay time in millisecs */
     int visual_dimension;
     int graph_style;
+    QColor visualBackground;
 };
 
 #endif  // MAINWINDOW_H_

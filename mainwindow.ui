@@ -388,6 +388,7 @@
     </widget>
     <addaction name="actionRestrict_Axes"/>
     <addaction name="menuView"/>
+    <addaction name="actionBackground"/>
    </widget>
    <widget class="QMenu" name="menuGraph">
     <property name="title">
@@ -535,6 +536,11 @@
    </property>
    <property name="text">
     <string>dots</string>
+   </property>
+  </action>
+  <action name="actionBackground">
+   <property name="text">
+    <string>Background...</string>
    </property>
   </action>
  </widget>

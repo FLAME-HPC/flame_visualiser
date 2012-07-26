@@ -69,6 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(
                 plotGraphChanged(GraphSettingsItem*, QString, QString)));
     /* Visual window camera variables */
+    visualBackground = Qt::white;
     xrotate = 0.0;
     yrotate = 0.0;
     xmove = 0.0;
@@ -567,6 +568,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         visual_window->setTimeScale(timeScale);
         visual_window->setTimeString(&timeString);
         visual_window->setDimension(visual_dimension);
+        visual_window->setBackgroundColour(visualBackground);
 
         /* Connect signals between MainWindow and visual_window */
         connect(this, SIGNAL(updateVisual()),
@@ -843,7 +845,8 @@ int MainWindow::readConfigFile(QString fileName, int it) {
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model,
             &resultsData, timeScale, &ratio, &xrotate, &yrotate,
-            &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension);
+            &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension,
+            &visualBackground);
     if (!reader.read(&file)) {
         QString error = tr("Parse error in file %1 at line %2, column %3:\n%4").
                 arg(fileName).
@@ -1088,6 +1091,14 @@ bool MainWindow::writeConfigXML(QFile * file) {
     stream.writeTextElement("ymove", QString("%1").arg(ymove));
     stream.writeTextElement("zmove", QString("%1").arg(zmove));
     stream.writeTextElement("orthoZoom", QString("%1").arg(orthoZoom));
+    stream.writeStartElement("backgroundColour");  // backgroundColour
+    stream.writeTextElement("r", QString("%1").
+            arg(visualBackground.red()));
+    stream.writeTextElement("g", QString("%1").
+            arg(visualBackground.green()));
+    stream.writeTextElement("b", QString("%1").
+            arg(visualBackground.blue()));
+    stream.writeEndElement();  // backgroundColour
     stream.writeStartElement("rules");
     for (int i = 0; i < this->visual_settings_model->rowCount(); i++) {
         VisualSettingsItem *vsitem = visual_settings_model->getRule(i);
@@ -1676,4 +1687,23 @@ void MainWindow::on_actionDots_triggered() {
     ui->actionDots->setChecked(true);
     graph_style = 3;
     updateAllGraphs();
+}
+
+void MainWindow::backgroundColourChanged(QColor c) {
+    visualBackground = c;
+    if (opengl_window_open) visual_window->setBackgroundColour(visualBackground);
+}
+
+void MainWindow::on_actionBackground_triggered()
+{
+    QColor savedColour = visualBackground;
+    QColorDialog *colourDialog = new QColorDialog(this);
+    colourDialog->setCurrentColor(visualBackground);
+    connect(colourDialog, SIGNAL(currentColorChanged(QColor)),
+            this, SLOT(backgroundColourChanged(QColor)));
+
+    int rc = colourDialog->exec();
+    if (rc == QDialog::Rejected)
+        backgroundColourChanged(savedColour);
+    delete colourDialog;
 }

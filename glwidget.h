@@ -11,6 +11,7 @@
 #include <QMainWindow>
 #include <QGLWidget>
 #include <QTime>
+#include <QColor>
 #include "./agent.h"
 #include "./visualsettingsmodel.h"
 #include "./dimension.h"
@@ -42,6 +43,8 @@ class GLWidget : public QGLWidget {
     void setTimeScale(TimeScale * ts) { timeScale = ts; }
     void setTimeString(QString * t) { timeString = t; }
     void setDimension(int d);
+    QColor getBackgroundColour() { return background; }
+    void setBackgroundColour(QColor b);
 
   public slots:
     void iterationLoaded();
@@ -83,6 +86,8 @@ class GLWidget : public QGLWidget {
     void drawAgents(GLenum mode);
     void drawCube(float sizeX, float sizeY, float sizeZ);
     void drawSphere(double size);
+    float SphereInFrustum(float x, float y, float z, float radius);
+    void ExtractFrustum();
     QString name;
     QList<Agent*> * agents;
     bool block;
@@ -133,6 +138,8 @@ class GLWidget : public QGLWidget {
     GLuint SPHERE_32;  /*!< \brief Sphere with grade 32 */
     GLuint SPHERE_64;  /*!< \brief Sphere with grade 64 */
     GLUquadricObj * dl_qobj;
+    float frustum[6][4];
+    QColor background;
 };
 
 #endif  // GLWIDGET_H_
