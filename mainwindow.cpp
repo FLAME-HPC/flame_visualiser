@@ -133,7 +133,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableViewGraph->setSelectionBehavior(QAbstractItemView::SelectRows);
     /* Set tableViewGraph delegates for each column below */
     ui->tableViewGraph->setItemDelegateForColumn(0,
-            new GraphDelegate(graph_settings_model));
+            new GraphDelegate(graph_settings_model, 0));
+    ui->tableViewGraph->setItemDelegateForColumn(1,
+            new GraphDelegate(graph_settings_model, 1));
     ui->tableViewGraph->setItemDelegateForColumn(2,
             new AgentTypeDelegate(&agentTypes));
     ui->tableViewGraph->setItemDelegateForColumn(3,
@@ -241,14 +243,8 @@ void MainWindow::visual_window_closed() {
             this, SLOT(visual_window_closed()));
     disconnect(this, SIGNAL(iterationLoaded()),
             visual_window, SLOT(iterationLoaded()));
-    disconnect(this, SIGNAL(startAnimation()),
-            visual_window, SLOT(startAnimation()));
-    disconnect(this, SIGNAL(stopAnimation()),
-            visual_window, SLOT(stopAnimation()));
-    disconnect(visual_window, SIGNAL(signal_startAnimation()),
-            this, SLOT(slot_startAnimation()));
-    disconnect(visual_window, SIGNAL(signal_stopAnimation()),
-            this, SLOT(slot_stopAnimation()));
+    disconnect(visual_window, SIGNAL(signal_toggleAnimation()),
+            this, SLOT(slot_toggleAnimation()));
     disconnect(this, SIGNAL(takeSnapshotSignal()),
             visual_window, SLOT(takeSnapshot()));
     disconnect(visual_window, SIGNAL(imageStatus(QString)),
@@ -257,8 +253,6 @@ void MainWindow::visual_window_closed() {
             visual_window, SIGNAL(takeAnimation(bool)));
     disconnect(this, SIGNAL(updateImagesLocationSignal(QString)),
             visual_window, SLOT(updateImagesLocation(QString)));
-    disconnect(this, SIGNAL(stopAnimation()),
-            visual_window, SLOT(stopAnimation()));
     disconnect(this, SIGNAL(restrictAxes(bool)),
             visual_window, SLOT(restrictAxes(bool)));
     disconnect(this, SIGNAL(updateDelayTime(int)),
@@ -359,6 +353,8 @@ void MainWindow::createGraphWindow(GraphWidget *graph_window) {
             this, SLOT(increment_iteration()));
     connect(graph_window, SIGNAL(decrease_iteration()),
             this, SLOT(decrement_iteration()));
+    connect(graph_window, SIGNAL(signal_toggleAnimation()),
+            this, SLOT(slot_toggleAnimation()));
     connect(graph_window, SIGNAL(graph_window_closed(QString)),
             this, SLOT(graph_window_closed(QString)));
 }
@@ -406,7 +402,7 @@ void MainWindow::enabledGraph(QModelIndex index) {
         enabled = !(graph_settings_model->getPlot(index.row())->getEnable());
         graph_settings_model->switchEnabled(index);
         if (enabled) {
-            GraphWidget * gw = new GraphWidget(&agents, &graph_style);
+            GraphWidget * gw = new GraphWidget(&agents, &graph_style, timeScale);
             gw->setGraph(graph_settings_model->
                     getPlot(index.row())->getGraph());
             QList<GraphSettingsItem *> subplots =
@@ -557,7 +553,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         resetVisualViewpoint();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
-                restrictDimension, &orthoZoom);
+                restrictDimension, &orthoZoom, &animation);
         // Make the window destroy on close rather than hide
         visual_window->setAttribute(Qt::WA_DeleteOnClose);
         visual_window->resize(800, 600);
@@ -581,14 +577,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
                 this, SLOT(visual_window_closed()));
         connect(this, SIGNAL(iterationLoaded()),
                 visual_window, SLOT(iterationLoaded()));
-        connect(this, SIGNAL(startAnimation()),
-                visual_window, SLOT(startAnimation()));
-        connect(this, SIGNAL(stopAnimation()),
-                visual_window, SLOT(stopAnimation()));
-        connect(visual_window, SIGNAL(signal_startAnimation()),
-                this, SLOT(slot_startAnimation()));
-        connect(visual_window, SIGNAL(signal_stopAnimation()),
-                this, SLOT(slot_stopAnimation()));
+        connect(visual_window, SIGNAL(signal_toggleAnimation()),
+                this, SLOT(slot_toggleAnimation()));
         connect(this, SIGNAL(takeSnapshotSignal()),
                 visual_window, SLOT(takeSnapshot()));
         connect(visual_window, SIGNAL(imageStatus(QString)),
@@ -597,8 +587,6 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
                 visual_window, SLOT(takeAnimation(bool)));
         connect(this, SIGNAL(updateImagesLocationSignal(QString)),
                 visual_window, SLOT(updateImagesLocation(QString)));
-        connect(this, SIGNAL(stopAnimation()),
-                visual_window, SLOT(stopAnimation()));
         connect(this, SIGNAL(restrictAxes(bool)),
                 visual_window, SLOT(restrictAxes(bool)));
         connect(this, SIGNAL(updateDelayTime(int)),
@@ -738,8 +726,7 @@ void MainWindow::increment_iteration() {
     if (rc != 0) {  // unsuccessful open and read
         iteration--;
         if (animation) {
-            slot_stopAnimation();
-            emit(stopAnimation());
+            slot_toggleAnimation();
         }
     } else {
         if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
@@ -1346,26 +1333,25 @@ void MainWindow::calcPositionOffsetAndRatio() {
         ratio = 1.0 / largest;
 }
 
-void MainWindow::slot_stopAnimation() {
-    animation = false;
-    ui->pushButton_Animate->setText("Start Animation - A");
-}
-
-void MainWindow::slot_startAnimation() {
-    animation = true;
-    ui->pushButton_Animate->setText("Stop Animation - A");
+void MainWindow::slot_toggleAnimation() {
+    if (opengl_window_open) {
+        animation = !animation;
+        if(animation) ui->pushButton_Animate->setText("Stop Animation - A");
+        else ui->pushButton_Animate->setText("Start Animation - A");
+    }
 }
 
 /*! \brief Emit animate signal when the animate button is pressed.
  */
 void MainWindow::on_pushButton_Animate_clicked() {
-    if (animation) {
+    slot_toggleAnimation();
+    /*if (animation) {
         slot_stopAnimation();
         emit(stopAnimation());
     } else {
         slot_startAnimation();
         emit(startAnimation());
-    }
+    }*/
 }
 
 /*! \brief Open or close the image settings dialog.
@@ -1516,51 +1502,8 @@ void MainWindow::on_pushButton_timeScale_clicked() {
 }
 
 void MainWindow::calcTimeScale() {
-    double tsecs;
-    double tmsecs = timeScale->millisecond*iteration/1000.0;
-    tmsecs = modf(tmsecs, &tsecs);
-    int totalseconds = static_cast<int>(tsecs);
-    totalseconds += timeScale->totalseconds*iteration;
-
-    QString ts;
-    size_t BufSize = 1000;
-    char buf[BufSize];
-    int days = static_cast<int>(totalseconds/86400);
-    int hours = static_cast<int>((totalseconds%86400)/3600);
-    int minutes = static_cast<int>(((totalseconds%86400)%3600)/60);
-    int seconds = static_cast<int>(((totalseconds%86400)%3600)%60);
-    if (days > 0 || timeScale->lowestScale == 4) {
-        snprintf(buf, BufSize, "%3d day", days);
-        ts.append(QString().fromAscii(buf));
-        if (days > 1)
-            ts.append("s");
-        else
-            ts.append(" ");
-        ts.append(" ");
-    }
-    if (hours > 0 || timeScale->lowestScale < 4) {
-        snprintf(buf, BufSize, "%02d hrs", hours);
-        ts.append(QString().fromAscii(buf));
-        // if(hours > 1) ts.append("s"); else ts.append(" ");
-        ts.append(" ");
-    }
-    if (minutes > 0 || timeScale->lowestScale < 3) {
-        snprintf(buf, BufSize, "%02d hrs", minutes);
-        ts.append(QString().fromAscii(buf));
-        // if(minutes > 1) ts.append("s"); else ts.append(" ");
-        ts.append(" ");
-    }
-    if (timeScale->lowestScale == 1) {
-        snprintf(buf, BufSize, "%02d s", seconds);
-        ts.append(QString().fromAscii(buf));
-    } else if (timeScale->lowestScale == 0) {
-        snprintf(buf, BufSize, "%02.3f s", seconds+tmsecs);
-        ts.append(QString().fromAscii(buf));
-    }
-
-    timeString = ts;
-
-    emit(ui->lineEdit_timeScale->setText(ts));
+    timeString = timeScale->calcTimeScale(iteration);
+    emit(ui->lineEdit_timeScale->setText(timeString));
 }
 
 void MainWindow::on_actionHelp_triggered() {

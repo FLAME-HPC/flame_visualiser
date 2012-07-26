@@ -11,12 +11,13 @@
 #include <QWidget>
 #include "./agent.h"
 #include "./graphsettingsitem.h"
+#include "./timescale.h"
 
 class GraphWidget: public QWidget {
   Q_OBJECT
 
   public:
-    GraphWidget(QList<Agent*> *a = 0, int * gs = 0, QWidget *parent = 0);
+    GraphWidget(QList<Agent*> *a = 0, int * gs = 0, TimeScale * ts = 0, QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);
     void updateData(int it);
     void addPlot(GraphSettingsItem * gsi);
@@ -27,6 +28,7 @@ class GraphWidget: public QWidget {
   signals:
     void increase_iteration();
     void decrease_iteration();
+    void signal_toggleAnimation();
     void graph_window_closed(QString graphName);
 
   protected:
@@ -38,6 +40,7 @@ class GraphWidget: public QWidget {
 
   private:
     void drawStylePoint(int type, int size, int x1, int y1, QPainter *painter);
+    bool plotsContainTimeScale();
     QList<Agent*> *agents;
     // GraphSettingsModel * gsmodel;
     QList<GraphSettingsItem*> plots;
@@ -48,6 +51,7 @@ class GraphWidget: public QWidget {
     int topIteration;
     QString graphName;
     int * style;
+    TimeScale * timeScale;
 };
 
 #endif  // GRAPHWIDGET_H_

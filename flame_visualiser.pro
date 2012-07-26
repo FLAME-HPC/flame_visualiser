@@ -52,7 +52,8 @@ SOURCES += main.cpp\
     timedialog.cpp \
     agentdialog.cpp \
     restrictaxesdialog.cpp \
-    iterationinfodialog.cpp
+    iterationinfodialog.cpp \
+    timescale.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \

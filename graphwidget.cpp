@@ -12,12 +12,13 @@
 #include "./graphwidget.h"
 #include "./condition.h"
 
-GraphWidget::GraphWidget(QList<Agent*> *a, int * gs, QWidget *parent)
+GraphWidget::GraphWidget(QList<Agent*> *a, int * gs, TimeScale * ts, QWidget *parent)
     : QWidget(parent) {
     agents = a;
     topValue = 0;
     topIteration = 0;
     style = gs;
+    timeScale = ts;
     setFocus();
 }
 
@@ -169,12 +170,26 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     painter.drawLine(xleft, ytop, xleft, ybottom);
     painter.drawLine(xleft, ybottom, xright, ybottom);
     /* Draw graph markers */
+    // Y-axis
     painter.drawLine(xleft, ytop, xleft-5, ytop);
     painter.drawText(5, ytop-5, 30, 10, Qt::AlignCenter,
             QString("%1").arg(topValue));
+    // X-axis
     painter.drawLine(xright, ybottom, xright, ybottom+5);
-    painter.drawText(xright-15, ybottom+10, 30, 10, Qt::AlignCenter,
+    painter.drawText(xright-15, ybottom+10, 40, 10, Qt::AlignCenter,
             QString("%1").arg(topIteration));
+    if (plotsContainTimeScale()) {
+        painter.drawText(xright-15, ybottom, 40, 10, Qt::AlignCenter,
+                timeScale->timeString);
+    }
+}
+
+bool GraphWidget::plotsContainTimeScale() {
+    bool ts = false;
+    for (int j = 0; j < plots.count(); j ++) {
+        if(plots.at(j)->getXaxis() == "time scale") ts = true;
+    }
+    return ts;
 }
 
 void GraphWidget::updateData(int it) {
@@ -241,6 +256,9 @@ void GraphWidget::keyPressEvent(QKeyEvent* event) {
             break;
         case Qt::Key_X:
             emit(increase_iteration());
+            break;
+        case Qt::Key_A:
+            emit(signal_toggleAnimation());
             break;
         default:
             event->ignore();

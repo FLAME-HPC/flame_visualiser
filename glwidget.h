@@ -31,7 +31,7 @@ class GLWidget : public QGLWidget {
 
   public:
     GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-            Dimension * rd, float * oz, QWidget *parent = 0);
+            Dimension * rd, float * oz, bool * ani, QWidget *parent = 0);
     ~GLWidget();
     void update_agents(QList<Agent*> * a);
     void set_rules(VisualSettingsModel * m);
@@ -52,8 +52,6 @@ class GLWidget : public QGLWidget {
     void takeSnapshot();
     void takeAnimation(bool);
     void updateImagesLocation(QString);
-    void stopAnimation();
-    void startAnimation();
     void restrictAxes(bool);
     void updateDelayTime(int);
 
@@ -62,8 +60,7 @@ class GLWidget : public QGLWidget {
     void decrease_iteration();
     void visual_window_closed();
     void imageStatus(QString);
-    void signal_stopAnimation();
-    void signal_startAnimation();
+    void signal_toggleAnimation();
 
   protected:
     void paintEvent(QPaintEvent *event);
@@ -109,7 +106,7 @@ class GLWidget : public QGLWidget {
     QTime time;
     QTimer *delayTimer;
     VisualSettingsModel * model;
-    bool animation;
+    bool * animation;
     bool locked;
     bool animationImages;
     bool imageLock;

@@ -62,8 +62,7 @@ class MainWindow : public QMainWindow {
     void backgroundColourChanged(QColor c);
     void calcTimeScale();
     void restrict_axes_closed();
-    void slot_stopAnimation();
-    void slot_startAnimation();
+    void slot_toggleAnimation();
     void iterationInfoDialog_closed();
 
   signals:

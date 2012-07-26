@@ -19,7 +19,7 @@
 #include "./agentdialog.h"
 
 GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-        Dimension * rd, float * oz, QWidget *parent)
+        Dimension * rd, float * oz, bool *ani, QWidget *parent)
     : QGLWidget(parent) {
     agents = 0;
     setMouseTracking(true);
@@ -41,7 +41,7 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
     itforward = false;
     itback = false;
     block = false;
-    animation = false;
+    animation = ani;
     locked = false;
     animationImages = false;
     imageLock = false;
@@ -132,14 +132,6 @@ void GLWidget::takeSnapshot() {
         emit(imageStatus(QString("Saved: %1").arg(filename)));
     }
     imageLock = false;
-}
-
-void GLWidget::stopAnimation() {
-    animation = false;
-}
-
-void GLWidget::startAnimation() {
-    animation = true;
 }
 
 void GLWidget::takeAnimation(bool b) {
@@ -538,7 +530,7 @@ void GLWidget::paintEvent(QPaintEvent */*event*/) {
     /* Start the timer with timeout units of milliseconds */
     timer->start(qMax(0, 20 - delay));
 
-    if (animation && !locked && !imageLock && !delayLock) {
+    if (*animation && !locked && !imageLock && !delayLock) {
         if (delayTime > 0) {
             delayLock = true;
             delayTimer->start(delayTime);
@@ -620,13 +612,7 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             emit(increase_iteration());
             break;
         case Qt::Key_A:
-            if (animation) {
-                animation = false;
-                emit(signal_stopAnimation());
-            } else {
-                animation = true;
-                emit(signal_startAnimation());
-            }
+            emit(signal_toggleAnimation());
             break;
         case Qt::Key_P:
             pickOn = true;
