@@ -88,7 +88,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     QSize windowSize = size();
     int width = windowSize.width();
     int height = windowSize.height();
-    int xleft = 40;
+    int xleft = 0;
     int xright = width-40;
     int ytop = 20;
     int ybottom = height-40;
@@ -100,7 +100,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         painter.setPen(QPen(plots.at(j)->getColour()));
         QString text = QString("%1").arg(plots[j]->getYaxis());
         if (plots[j]->condition().enable)
-        text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
+            text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
         /* Add space for points symbol */
         text.append(" ");
 
@@ -114,8 +114,87 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
 
         painter.drawText(width-bbox.width()-10, 20+(j*bbox.height()), text);
 
-        if (xright > (width-bbox.width()-40)) xright = width-bbox.width()-40;
+        if (xright > (width-bbox.width()-10)) xright = width-bbox.width()-10;
     }
+
+    //painter.drawLine(QPoint(xright, 0), QPoint(xright, height));
+
+    // Use topValue to position xright and xleft
+    const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
+            Qt::AlignLeft, QString("%1").arg(topValue)));
+    xright -= bbox.width() + 10;
+
+    //painter.drawLine(QPoint(xright, 0), QPoint(xright, height));
+
+    /* Draw graph markers */
+    // Y-axis
+    painter.drawText(5, ytop-5, bbox.width(), 10, Qt::AlignRight | Qt::AlignVCenter,
+            QString("%1").arg(topValue));
+    xleft += bbox.width() + 15;
+    painter.drawLine(xleft, ytop, xleft-5, ytop);
+    /*int mod = 1;
+    int tp = topValue;
+    while(mod != 0 && tp > 0) {
+        mod = tp%10;
+        if(mod != 0) tp--;
+    }
+    qDebug() << tp;
+    if(tp > 9) {
+        int tip = ybottom-(((tp/static_cast<double>(topValue)))*(ybottom-ytop));
+        painter.drawLine(xleft, tip, xleft-5, tip);
+        painter.drawText(5, tip+5, QString("%1").arg(tp));
+        int tip5 = ybottom-((((tp/2.0)/static_cast<double>(topValue)))*(ybottom-ytop));
+        painter.drawLine(xleft, tip5, xleft-5, tip5);
+        painter.drawText(5, tip5+5, QString("%1").arg(tp/2.0));
+
+    }*/
+    painter.drawText(5, ybottom-5, bbox.width(), 10, Qt::AlignRight | Qt::AlignVCenter,
+            QString("0"));
+    painter.drawLine(xleft, ybottom, xleft-5, ybottom);
+
+
+    // X-axis
+    // 0
+    painter.drawLine(xleft, ybottom, xleft, ybottom+5);
+    painter.drawText(xleft-15, ybottom+10, bbox.width(), 10, Qt::AlignCenter, QString("0"));
+    // tics
+    /*if (timeScale->days >= 4) {
+        int mod = 1;
+        int topDays = timeScale->days;
+        while(mod != 0 && topDays > 0) {
+            mod = topDays%4;
+            if(mod != 0) topDays--;
+        }
+
+        int mdays = topDays/2.0;
+        int x1 = xleft+( ((mdays)/static_cast<double>(topIteration))*(xright-xleft));
+        painter.drawLine(x1, ybottom, x1, ybottom+5);
+        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
+                Qt::AlignLeft, QString("%1").arg(mdays)));
+        painter.drawText(x1-bbox.width(), ybottom+10, bbox.width(), 10, Qt::AlignCenter, QString("%1").arg(mdays));
+    }*/
+    // end
+    painter.drawLine(xright, ybottom, xright, ybottom+5);
+    if (plotsContainTimeScale()) {
+        // Time
+        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
+                Qt::AlignLeft, timeScale->timeString));
+        //painter.drawRect(bbox.translated(xright, ybottom+10));
+        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(), Qt::AlignCenter,
+                timeScale->timeString);
+        //qDebug() << timeScale->timeString;
+    } else {
+        // Iterations
+        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
+                Qt::AlignLeft, QString("%1 iterations").arg(topIteration)));
+        //painter.drawRect(bbox.translated(xright, ybottom+10));
+        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(), Qt::AlignCenter,
+                QString("%1 iterations").arg(topIteration));
+    }
+    /* Draw graph sides */
+    painter.setPen(QPen(Qt::black));
+    painter.drawLine(xleft, ytop, xleft, ybottom);
+    painter.drawLine(xleft, ybottom, xright, ybottom);
 
     int last_valid_x;
     int last_valid_y;
@@ -163,24 +242,6 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         painter.drawText(xright+5, ybottom-(((data[j].back()/
                 static_cast<double>(topValue)))*(ybottom-ytop))+5,
                 QString("%1").arg(data[j].back()));
-    }
-
-    /* Draw graph sides */
-    painter.setPen(QPen(Qt::black));
-    painter.drawLine(xleft, ytop, xleft, ybottom);
-    painter.drawLine(xleft, ybottom, xright, ybottom);
-    /* Draw graph markers */
-    // Y-axis
-    painter.drawLine(xleft, ytop, xleft-5, ytop);
-    painter.drawText(5, ytop-5, 30, 10, Qt::AlignCenter,
-            QString("%1").arg(topValue));
-    // X-axis
-    painter.drawLine(xright, ybottom, xright, ybottom+5);
-    painter.drawText(xright-15, ybottom+10, 40, 10, Qt::AlignCenter,
-            QString("%1").arg(topIteration));
-    if (plotsContainTimeScale()) {
-        painter.drawText(xright-15, ybottom, 40, 10, Qt::AlignCenter,
-                timeScale->timeString);
     }
 }
 
