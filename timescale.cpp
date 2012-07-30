@@ -54,25 +54,25 @@ QString TimeScale::calcTimeScale(int iteration) {
     seconds = static_cast<int>(((totalseconds2%86400)%3600)%60);
 
     if (days > 0 || lowestScale == 4) {
-        snprintf(buf, BufSize, "%3d day", days);
+        snprintf(buf, BufSize, "%d day", days);
         ts.append(QString().fromAscii(buf));
         if (days > 1)
             ts.append("s");
         else
             ts.append(" ");
-        ts.append(" ");
+        if(lowestScale < 4) ts.append(" ");
     }
     if (hours > 0 || lowestScale < 4) {
         snprintf(buf, BufSize, "%02d hrs", hours);
         ts.append(QString().fromAscii(buf));
         // if(hours > 1) ts.append("s"); else ts.append(" ");
-        ts.append(" ");
+        if(lowestScale < 3) ts.append(" ");
     }
     if (minutes > 0 || lowestScale < 3) {
-        snprintf(buf, BufSize, "%02d hrs", minutes);
+        snprintf(buf, BufSize, "%02d mins", minutes);
         ts.append(QString().fromAscii(buf));
         // if(minutes > 1) ts.append("s"); else ts.append(" ");
-        ts.append(" ");
+        if(lowestScale < 2) ts.append(" ");
     }
     if (lowestScale == 1) {
         snprintf(buf, BufSize, "%02d s", seconds);
