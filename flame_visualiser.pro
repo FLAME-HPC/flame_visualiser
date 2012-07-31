@@ -25,8 +25,16 @@ lessThan(QT_VER_MIN, 8):lessThan(QT_VER_MAJ, 5) {
 macx:ICON = flame_icon_v.icns
 win32:RC_FILE = flame-v.rc
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
+SOURCES += main.cpp
+
+test {
+    SOURCES  -= main.cpp
+    SOURCES  += test_flame_visualiser.cpp
+    CONFIG   += qtestlib
+    QMAKE_CXXFLAGS +=-DTESTBUILD
+}
+
+SOURCES += mainwindow.cpp \
     glwidget.cpp \
     zeroxmlreader.cpp \
     visualsettingsmodel.cpp \
@@ -97,10 +105,3 @@ FORMS    += mainwindow.ui \
     agentdialog.ui \
     restrictaxesdialog.ui \
     iterationinfodialog.ui
-
-test {
-    SOURCES  -= main.cpp
-    SOURCES  += test_flame_visualiser.cpp
-    CONFIG   += qtestlib
-    QMAKE_CXXFLAGS +=-DTESTBUILD
-}
