@@ -8,6 +8,13 @@
 #ifndef GLWIDGET_H_
 #define GLWIDGET_H_
 
+#if QT_VERSION >= 0x040800  // If Qt version is 4.8 or higher
+    #ifdef Q_WS_MAC  // If Mac
+        #include <OpenGL/glu.h>
+    #else
+        #include <GL/glu.h>
+    #endif
+#endif
 #include <QMainWindow>
 #include <QGLWidget>
 #include <QTime>
@@ -16,13 +23,6 @@
 #include "./visualsettingsmodel.h"
 #include "./dimension.h"
 #include "./timescale.h"
-#if QT_VERSION >= 0x040800  // If Qt version is 4.8 or higher
-    #ifdef Q_WS_MAC  // If Mac
-        #include <OpenGL/glu.h>
-    #else
-        #include <GL/glu.h>
-    #endif
-#endif
 
 class QTimer;
 

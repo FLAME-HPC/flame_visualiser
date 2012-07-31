@@ -16,7 +16,8 @@ class GraphDelegate : public QItemDelegate {
     Q_OBJECT
 
   public:
-    GraphDelegate(GraphSettingsModel * gsm = 0, int type = 0, QObject *parent = 0);
+    GraphDelegate(GraphSettingsModel * gsm = 0,
+                  int type = 0, QObject *parent = 0);
 
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
                               const QModelIndex &index) const;

@@ -121,7 +121,7 @@ class MainWindow : public QMainWindow {
     void on_actionDots_triggered();
     void on_actionBackground_triggered();
 
-private:
+  private:
     int save_config_file_internal(QString fileName);
     int create_new_config_file(QString fileName);
     int readZeroXML();
@@ -186,6 +186,7 @@ private:
     int visual_dimension;
     int graph_style;
     QColor visualBackground;
+    bool openedValidIteration;
 };
 
 #endif  // MAINWINDOW_H_

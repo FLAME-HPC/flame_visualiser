@@ -5,14 +5,14 @@
  * \copyright Copyright (c) 2012 University of Sheffield
  * \brief Header file for rule agent
  */
-#ifndef RULEAGENT_H
-#define RULEAGENT_H
+#ifndef RULEAGENT_H_
+#define RULEAGENT_H_
 
 #include "./agent.h"
 
 class RuleAgent {
   public:
-    RuleAgent(Agent * a) {
+    explicit RuleAgent(Agent * a) {
         x = 0.0;
         y = 0.0;
         z = 0.0;
@@ -39,4 +39,4 @@ class RuleAgent {
     Agent * agent;
 };
 
-#endif // RULEAGENT_H
+#endif  // RULEAGENT_H_

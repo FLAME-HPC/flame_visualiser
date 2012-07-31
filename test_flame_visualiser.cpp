@@ -113,7 +113,8 @@ void TestVisualiser::open_an_iteration() {
 }
 
 void TestVisualiser::adding_agent_types() {
-    rc = w.readConfigFile("tests/models/new_agent_types_added/visual_config.xml", 0);
+    rc = w.readConfigFile(
+                "tests/models/new_agent_types_added/visual_config.xml", 0);
     QCOMPARE(rc, 0);
 
     w.iteration = 0;

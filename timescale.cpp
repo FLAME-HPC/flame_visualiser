@@ -60,19 +60,19 @@ QString TimeScale::calcTimeScale(int iteration) {
             ts.append("s");
         else
             ts.append(" ");
-        if(lowestScale < 4) ts.append(" ");
+        if (lowestScale < 4) ts.append(" ");
     }
     if (hours > 0 || lowestScale < 4) {
         snprintf(buf, BufSize, "%02d hrs", hours);
         ts.append(QString().fromAscii(buf));
         // if(hours > 1) ts.append("s"); else ts.append(" ");
-        if(lowestScale < 3) ts.append(" ");
+        if (lowestScale < 3) ts.append(" ");
     }
     if (minutes > 0 || lowestScale < 3) {
         snprintf(buf, BufSize, "%02d mins", minutes);
         ts.append(QString().fromAscii(buf));
         // if(minutes > 1) ts.append("s"); else ts.append(" ");
-        if(lowestScale < 2) ts.append(" ");
+        if (lowestScale < 2) ts.append(" ");
     }
     if (lowestScale == 1) {
         snprintf(buf, BufSize, "%02d s", seconds);

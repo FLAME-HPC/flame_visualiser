@@ -12,7 +12,8 @@
 #include "./graphwidget.h"
 #include "./condition.h"
 
-GraphWidget::GraphWidget(QList<Agent*> *a, int * gs, TimeScale * ts, QWidget *parent)
+GraphWidget::GraphWidget(QList<Agent*> *a, int * gs,
+    TimeScale * ts, QWidget *parent)
     : QWidget(parent) {
     agents = a;
     topValue = 0;
@@ -100,7 +101,8 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         painter.setPen(QPen(plots.at(j)->getColour()));
         QString text = QString("%1").arg(plots[j]->getYaxis());
         if (plots[j]->condition().enable)
-            text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
+            text.append(QString(" (%2)").
+                arg(plots[j]->condition().getString()));
         /* Add space for points symbol */
         text.append(" ");
 
@@ -117,19 +119,15 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         if (xright > (width-bbox.width()-10)) xright = width-bbox.width()-10;
     }
 
-    //painter.drawLine(QPoint(xright, 0), QPoint(xright, height));
-
     // Use topValue to position xright and xleft
     const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
             Qt::AlignLeft, QString("%1").arg(topValue)));
     xright -= bbox.width() + 10;
 
-    //painter.drawLine(QPoint(xright, 0), QPoint(xright, height));
-
     /* Draw graph markers */
     // Y-axis
-    painter.drawText(5, ytop-5, bbox.width(), 10, Qt::AlignRight | Qt::AlignVCenter,
-            QString("%1").arg(topValue));
+    painter.drawText(5, ytop-5, bbox.width(), 10,
+            Qt::AlignRight | Qt::AlignVCenter, QString("%1").arg(topValue));
     xleft += bbox.width() + 15;
     painter.drawLine(xleft, ytop, xleft-5, ytop);
     /*int mod = 1;
@@ -148,15 +146,16 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         painter.drawText(5, tip5+5, QString("%1").arg(tp/2.0));
 
     }*/
-    painter.drawText(5, ybottom-5, bbox.width(), 10, Qt::AlignRight | Qt::AlignVCenter,
-            QString("0"));
+    painter.drawText(5, ybottom-5, bbox.width(), 10,
+            Qt::AlignRight | Qt::AlignVCenter, QString("0"));
     painter.drawLine(xleft, ybottom, xleft-5, ybottom);
 
 
     // X-axis
     // 0
     painter.drawLine(xleft, ybottom, xleft, ybottom+5);
-    painter.drawText(xleft-15, ybottom+10, bbox.width(), 10, Qt::AlignCenter, QString("0"));
+    painter.drawText(xleft-15, ybottom+10, bbox.width(), 10,
+                     Qt::AlignCenter, QString("0"));
     // tics
     /*if (timeScale->days >= 4) {
         int mod = 1;
@@ -179,17 +178,14 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         // Time
         const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
                 Qt::AlignLeft, timeScale->timeString));
-        //painter.drawRect(bbox.translated(xright, ybottom+10));
-        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(), Qt::AlignCenter,
-                timeScale->timeString);
-        //qDebug() << timeScale->timeString;
+        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(),
+                         Qt::AlignCenter, timeScale->timeString);
     } else {
         // Iterations
         const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
                 Qt::AlignLeft, QString("%1 iterations").arg(topIteration)));
-        //painter.drawRect(bbox.translated(xright, ybottom+10));
-        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(), Qt::AlignCenter,
-                QString("%1 iterations").arg(topIteration));
+        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(),
+            Qt::AlignCenter, QString("%1 iterations").arg(topIteration));
     }
     /* Draw graph sides */
     painter.setPen(QPen(Qt::black));
@@ -248,7 +244,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
 bool GraphWidget::plotsContainTimeScale() {
     bool ts = false;
     for (int j = 0; j < plots.count(); j ++) {
-        if(plots.at(j)->getXaxis() == "time scale") ts = true;
+        if (plots.at(j)->getXaxis() == "time scale") ts = true;
     }
     return ts;
 }

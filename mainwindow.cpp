@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
     iterationInfo_dialog_open = false;
     timeString = "";
     iteration = 0;
+    openedValidIteration = false;
     delayTime = 0;
     configPath = "";
     configName = "";
@@ -386,8 +387,10 @@ void MainWindow::enabledRule(QModelIndex index) {
         visual_settings_model->switchEnabled(index);
         /* Populate rule agents */
         visual_settings_model->getRule(index.row())->populate(&agents);
-        visual_settings_model->getRule(index.row())->copyAgentDrawDataToRuleAgentDrawData(agentDimension);
-        visual_settings_model->getRule(index.row())->applyOffset(xoffset, yoffset, zoffset);
+        visual_settings_model->getRule(index.row())->
+                copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+        visual_settings_model->getRule(index.row())->
+                applyOffset(xoffset, yoffset, zoffset);
         visual_settings_model->getRule(index.row())->applyRatio(ratio);
     }
 }
@@ -402,7 +405,8 @@ void MainWindow::enabledGraph(QModelIndex index) {
         enabled = !(graph_settings_model->getPlot(index.row())->getEnable());
         graph_settings_model->switchEnabled(index);
         if (enabled) {
-            GraphWidget * gw = new GraphWidget(&agents, &graph_style, timeScale);
+            GraphWidget * gw = new GraphWidget(
+                        &agents, &graph_style, timeScale);
             gw->setGraph(graph_settings_model->
                     getPlot(index.row())->getGraph());
             QList<GraphSettingsItem *> subplots =
@@ -685,6 +689,9 @@ int MainWindow::readZeroXML() {
         emit(updateIterationInfoDialog());
     }
 
+    if (openedValidIteration == false && opengl_window_open == true)
+        resetVisualViewpoint();
+    openedValidIteration = true;
     return 0;
 }
 
@@ -879,6 +886,7 @@ int MainWindow::readConfigFile(QString fileName, int it) {
 
     ui->lineEdit_ResultsLocation->setText(resultsData);
     //        tryAndReadInAgentTypes();
+    openedValidIteration = false;
     readZeroXML();
 
     /* For each new plot create a graph window */
@@ -1289,6 +1297,7 @@ void MainWindow::calcPositionOffsetAndRatio() {
     double smallest = 0.0;
     double largest = 0.0;
 
+    // Calc offset first
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
@@ -1300,15 +1309,30 @@ void MainWindow::calcPositionOffsetAndRatio() {
                 largest_x  = visual_settings_model->getRule(j)->agents.at(i)->x;
             if (largest_y  < visual_settings_model->getRule(j)->agents.at(i)->y)
                 largest_y  = visual_settings_model->getRule(j)->agents.at(i)->y;
+        }
+    }
+    /* Takes the middle position of x and y */
+    xoffset = -(largest_x + smallest_x)/2.0;
+    yoffset = -(largest_y + smallest_y)/2.0;
+    zoffset = -(largest_z + smallest_z)/2.0;
+
+    // Apply offset and calc ratio
+    for (int j = 0; j < visual_settings_model->rowCount(); j++) {
+        for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
+                i++) {
+            // Apply offset
+            visual_settings_model->getRule(j)->agents.at(i)->x += xoffset;
+            visual_settings_model->getRule(j)->agents.at(i)->y += yoffset;
+            visual_settings_model->getRule(j)->agents.at(i)->z += zoffset;
             double x = visual_settings_model->getRule(j)->agents.at(i)->x;
             double y = visual_settings_model->getRule(j)->agents.at(i)->y;
             double size_x =
-                visual_settings_model->getRule(j)->shape().getDimension();
+                visual_settings_model->getRule(j)->shape().getDimension()/2.0;
             double size_y = size_x;
             if (QString::compare("cube",
                 visual_settings_model->getRule(j)->shape().getShape()) == 0)
                 size_y =
-                visual_settings_model->getRule(j)->shape().getDimensionY();
+                visual_settings_model->getRule(j)->shape().getDimensionY()/2.0;
 
             if (smallest > x-size_x) smallest = x-size_x;
             if (smallest > y-size_y) smallest = y-size_y;
@@ -1316,27 +1340,24 @@ void MainWindow::calcPositionOffsetAndRatio() {
             if (largest  < y+size_y) largest  = y+size_y;
         }
     }
-
-    /* Takes the middle position of x and y */
-    xoffset = -(largest_x + smallest_x)/2.0;
-    yoffset = -(largest_y + smallest_y)/2.0;
-    zoffset = -(largest_z + smallest_z)/2.0;
-
-    /*qDebug() << "xoffset: " << xoffset;
-    qDebug() << "yoffset: " << yoffset;
-    qDebug() << "zoffset: " << zoffset;*/
-
     if (smallest < 0.0 && largest < -smallest)
         ratio = 1.0 / -smallest;
     else
         ratio = 1.0 / largest;
+
+    // Apply ratio
+    for (int j = 0; j < visual_settings_model->rowCount(); j++) {
+        visual_settings_model->getRule(j)->applyRatio(ratio);
+    }
 }
 
 void MainWindow::slot_toggleAnimation() {
     if (opengl_window_open) {
         animation = !animation;
-        if(animation) ui->pushButton_Animate->setText("Stop Animation - A");
-        else ui->pushButton_Animate->setText("Start Animation - A");
+        if (animation)
+            ui->pushButton_Animate->setText("Stop Animation - A");
+        else
+            ui->pushButton_Animate->setText("Start Animation - A");
     }
 }
 
@@ -1425,10 +1446,12 @@ void MainWindow::on_actionAbout_triggered() {
     /* Add new release notes here */
     aboutText.append("<h4>Version 4 (released 2012-07-31)</h4><ul>");
     aboutText.append("<li>Beta fourth release</li>");
-    aboutText.append("<li>Better memory management so some speed up for larger models</li>");
+    aboutText.append("<li>Better memory management so some speed ");
+    aboutText.append("up for larger models</li>");
     aboutText.append("<li>Quality removed from shape as now automatic</li>");
     aboutText.append("<li>Ability to change background colour</li>");
-    aboutText.append("<li>Bug fix: finding new agent types when opening another config file</li></ul>");
+    aboutText.append("<li>Bug fix: finding new agent types when ");
+    aboutText.append("opening another config file</li></ul>");
     aboutText.append("<h4>Version 3 (released 2012-02-22)</h4><ul>");
     aboutText.append("<li>Beta third release</li>");
     aboutText.append("<li>Added enable column for visual rules</li>");
@@ -1563,17 +1586,10 @@ void MainWindow::resetVisualViewpoint() {
     yoffset = 0.0;
     zoffset = 0.0;
 
-    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+    for (int i = 0; i < visual_settings_model->rowCount(); i++)
         visual_settings_model->getRule(i)->
-        copyAgentDrawDataToRuleAgentDrawData(agentDimension);
-    }
+            copyAgentDrawDataToRuleAgentDrawData(agentDimension);
     calcPositionOffsetAndRatio();
-    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
-        visual_settings_model->getRule(i)->
-            applyOffset(xoffset, yoffset, zoffset);
-        visual_settings_model->getRule(i)->
-            applyRatio(ratio);
-    }
 }
 
 void MainWindow::on_pushButton_updateViewpoint_clicked() {
@@ -1639,11 +1655,11 @@ void MainWindow::on_actionDots_triggered() {
 
 void MainWindow::backgroundColourChanged(QColor c) {
     visualBackground = c;
-    if (opengl_window_open) visual_window->setBackgroundColour(visualBackground);
+    if (opengl_window_open)
+        visual_window->setBackgroundColour(visualBackground);
 }
 
-void MainWindow::on_actionBackground_triggered()
-{
+void MainWindow::on_actionBackground_triggered() {
     QColor savedColour = visualBackground;
     QColorDialog *colourDialog = new QColorDialog(this);
     colourDialog->setCurrentColor(visualBackground);

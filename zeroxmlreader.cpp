@@ -53,7 +53,8 @@ bool ZeroXMLReader::read(QIODevice * device) {
         // Populate rule with ruleagents from agents
         vsmodel->getRule(i)->populate(agents);
         // Calculate visual variables for ruleagent
-        vsmodel->getRule(i)->copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+        vsmodel->getRule(i)->
+                copyAgentDrawDataToRuleAgentDrawData(agentDimension);
         // Apply offset to ruleagents to centre the scene
         vsmodel->getRule(i)->applyOffset(xoffset, yoffset, zoffset);
         // Apply ratio to ruleagents to go from model space to opengl space

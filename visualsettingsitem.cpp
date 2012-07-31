@@ -85,7 +85,8 @@ void VisualSettingsItem::populate(QList<Agent *> *a) {
     }
 }
 
-void VisualSettingsItem::applyOffset(double xoffset, double yoffset, double zoffset) {
+void VisualSettingsItem::applyOffset(
+        double xoffset, double yoffset, double zoffset) {
     for (int j = 0; j < agents.size(); j++) {
         agents.at(j)->x += xoffset;
         agents.at(j)->y += yoffset;
@@ -107,7 +108,8 @@ void VisualSettingsItem::applyRatio(double ratio) {
     }
 }
 
-void VisualSettingsItem::copyAgentDrawDataToRuleAgentDrawData(Dimension * agentDimension) {
+void VisualSettingsItem::copyAgentDrawDataToRuleAgentDrawData(
+        Dimension * agentDimension) {
     for (int j = 0; j < agents.size(); j++) {
         RuleAgent * ruleagent = agents.at(j);
         Agent * agent = ruleagent->agent;

@@ -17,7 +17,8 @@ class GraphWidget: public QWidget {
   Q_OBJECT
 
   public:
-    GraphWidget(QList<Agent*> *a = 0, int * gs = 0, TimeScale * ts = 0, QWidget *parent = 0);
+    GraphWidget(QList<Agent*> *a = 0, int * gs = 0,
+                TimeScale * ts = 0, QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);
     void updateData(int it);
     void addPlot(GraphSettingsItem * gsi);
