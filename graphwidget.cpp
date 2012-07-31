@@ -123,12 +123,13 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
             Qt::AlignLeft, QString("%1").arg(topValue)));
     xright -= bbox.width() + 10;
+    xleft += bbox.width() + 15;
 
+    painter.setPen(QPen(Qt::black));
     /* Draw graph markers */
     // Y-axis
     painter.drawText(5, ytop-5, bbox.width(), 10,
             Qt::AlignRight | Qt::AlignVCenter, QString("%1").arg(topValue));
-    xleft += bbox.width() + 15;
     painter.drawLine(xleft, ytop, xleft-5, ytop);
     /*int mod = 1;
     int tp = topValue;
@@ -187,10 +188,6 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(),
             Qt::AlignCenter, QString("%1 iterations").arg(topIteration));
     }
-    /* Draw graph sides */
-    painter.setPen(QPen(Qt::black));
-    painter.drawLine(xleft, ytop, xleft, ybottom);
-    painter.drawLine(xleft, ybottom, xright, ybottom);
 
     int last_valid_x;
     int last_valid_y;
@@ -239,6 +236,11 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
                 static_cast<double>(topValue)))*(ybottom-ytop))+5,
                 QString("%1").arg(data[j].back()));
     }
+
+    /* Draw graph sides */
+    painter.setPen(QPen(Qt::black));
+    painter.drawLine(xleft, ytop, xleft, ybottom);
+    painter.drawLine(xleft, ybottom, xright, ybottom);
 }
 
 bool GraphWidget::plotsContainTimeScale() {
