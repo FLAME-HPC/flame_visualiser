@@ -13,7 +13,10 @@ AgentDialog::AgentDialog(Agent * a, QWidget *parent)
     ui->setupUi(this);
     agent = a;
 
-    setWindowTitle("Agent Memory");
+    QString title = "Agent '";
+    title.append(a->agentType);
+    title.append("' Memory");
+    setWindowTitle(title);
 
     ui->tableWidget_Variables->setColumnCount(2);
     ui->tableWidget_Variables->setRowCount(a->tags.size());

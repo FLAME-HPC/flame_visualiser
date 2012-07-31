@@ -74,14 +74,6 @@ void ShapeDialog::setShape(Shape s) {
     }
     comboBox_Z->setCurrentIndex(index);
 
-    if (QString::compare(shape.getShape(), "sphere") == 0) {
-        groupBox_Quality->setEnabled(true);
-        spinBoxQuality->setValue(shape.getQuality());
-    } else {
-        spinBoxQuality->setValue(16);
-        groupBox_Quality->setEnabled(false);
-    }
-
     doubleSpinBox_X->setValue(shape.getDimension());
     doubleSpinBox_Y->setValue(shape.getDimensionY());
     doubleSpinBox_Z->setValue(shape.getDimensionZ());
@@ -117,8 +109,6 @@ Shape ShapeDialog::getShape() {
     shape.setUseVariableZ(checkBox_Z->isChecked());
     shape.setFromCentreZ(checkBox_Z_from_centre->isChecked());
 
-    shape.setQuality(spinBoxQuality->value());
-
     return shape;
 }
 
@@ -148,11 +138,5 @@ void ShapeDialog::shapeUpdated(QString s) {
         enableYZ(true);
     } else {
         enableYZ(false);
-    }
-
-    if (QString::compare("sphere", s) == 0) {
-        groupBox_Quality->setEnabled(true);
-    } else {
-        groupBox_Quality->setEnabled(false);
     }
 }

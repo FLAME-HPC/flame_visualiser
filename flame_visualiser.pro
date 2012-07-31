@@ -7,20 +7,34 @@
 QT       += core gui
 QT       += opengl
 
-# Qt 4.8 Doesn't include OpenGL Glu library automatically
-LIBS    += -lGLU
+# Qt 4.8 Doesn't include OpenGL Glu library automatically on linux
+unix:!macx:LIBS *= -lGLU
 
 TEMPLATE = app
-macx {
-    TARGET = "FLAME Visualiser"
-} else {
-    TARGET = flame_visualiser
+TARGET = "FLAME Visualiser"
+
+# Qt 4.7 Doesn't like spaces in target name on windows
+QT_VERSION = $$[QT_VERSION]
+QT_VERSION = $$split(QT_VERSION, ".")
+QT_VER_MAJ = $$member(QT_VERSION, 0)
+QT_VER_MIN = $$member(QT_VERSION, 1)
+lessThan(QT_VER_MIN, 8):lessThan(QT_VER_MAJ, 5) {
+	win32:TARGET = FLAME_Visualiser
 }
+
 macx:ICON = flame_icon_v.icns
 win32:RC_FILE = flame-v.rc
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
+SOURCES += main.cpp
+
+test {
+    SOURCES  -= main.cpp
+    SOURCES  += test_flame_visualiser.cpp
+    CONFIG   += qtestlib
+    QMAKE_CXXFLAGS +=-DTESTBUILD
+}
+
+SOURCES += mainwindow.cpp \
     glwidget.cpp \
     zeroxmlreader.cpp \
     visualsettingsmodel.cpp \
@@ -46,7 +60,8 @@ SOURCES += main.cpp\
     timedialog.cpp \
     agentdialog.cpp \
     restrictaxesdialog.cpp \
-    iterationinfodialog.cpp
+    iterationinfodialog.cpp \
+    timescale.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
@@ -78,7 +93,8 @@ HEADERS  += mainwindow.h \
     agentdialog.h \
     restrictaxesdialog.h \
     dimension.h \
-    iterationinfodialog.h
+    iterationinfodialog.h \
+    ruleagent.h
 
 FORMS    += mainwindow.ui \
     positiondialog.ui \
@@ -89,5 +105,3 @@ FORMS    += mainwindow.ui \
     agentdialog.ui \
     restrictaxesdialog.ui \
     iterationinfodialog.ui
-
-OTHER_FILES +=

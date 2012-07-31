@@ -13,7 +13,8 @@
 #include "./shape.h"
 #include "./position.h"
 #include "./condition.h"
-#include "./agent.h"
+#include "./ruleagent.h"
+#include "./dimension.h"
 
 class VisualSettingsItem {
   public:
@@ -39,8 +40,13 @@ class VisualSettingsItem {
     QColor colour() const { return colourColor; }
     void setEnabled(bool b) { boolEnabled = b; }
     bool enabled() const { return boolEnabled; }
+    void applyOffset(double xoffset, double yoffset, double zoffset);
+    void applyRatio(double ratio);
+    void copyAgentDrawDataToRuleAgentDrawData(Dimension * agentDimension);
+    bool passAgentCondition(Agent *agent);
+    void populate(QList<Agent *> *a);
 
-    QList<Agent> agents;  /*!< The list of agents */
+    QList<RuleAgent *> agents;  /*!< The list of agents to draw */
 
   private:
     QString agentTypeString;

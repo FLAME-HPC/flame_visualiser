@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
     iterationInfo_dialog_open = false;
     timeString = "";
     iteration = 0;
+    openedValidIteration = false;
     delayTime = 0;
     configPath = "";
     configName = "";
@@ -69,6 +70,7 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(
                 plotGraphChanged(GraphSettingsItem*, QString, QString)));
     /* Visual window camera variables */
+    visualBackground = Qt::white;
     xrotate = 0.0;
     yrotate = 0.0;
     xmove = 0.0;
@@ -132,7 +134,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableViewGraph->setSelectionBehavior(QAbstractItemView::SelectRows);
     /* Set tableViewGraph delegates for each column below */
     ui->tableViewGraph->setItemDelegateForColumn(0,
-            new GraphDelegate(graph_settings_model));
+            new GraphDelegate(graph_settings_model, 0));
+    ui->tableViewGraph->setItemDelegateForColumn(1,
+            new GraphDelegate(graph_settings_model, 1));
     ui->tableViewGraph->setItemDelegateForColumn(2,
             new AgentTypeDelegate(&agentTypes));
     ui->tableViewGraph->setItemDelegateForColumn(3,
@@ -240,14 +244,8 @@ void MainWindow::visual_window_closed() {
             this, SLOT(visual_window_closed()));
     disconnect(this, SIGNAL(iterationLoaded()),
             visual_window, SLOT(iterationLoaded()));
-    disconnect(this, SIGNAL(startAnimation()),
-            visual_window, SLOT(startAnimation()));
-    disconnect(this, SIGNAL(stopAnimation()),
-            visual_window, SLOT(stopAnimation()));
-    disconnect(visual_window, SIGNAL(signal_startAnimation()),
-            this, SLOT(slot_startAnimation()));
-    disconnect(visual_window, SIGNAL(signal_stopAnimation()),
-            this, SLOT(slot_stopAnimation()));
+    disconnect(visual_window, SIGNAL(signal_toggleAnimation()),
+            this, SLOT(slot_toggleAnimation()));
     disconnect(this, SIGNAL(takeSnapshotSignal()),
             visual_window, SLOT(takeSnapshot()));
     disconnect(visual_window, SIGNAL(imageStatus(QString)),
@@ -256,8 +254,6 @@ void MainWindow::visual_window_closed() {
             visual_window, SIGNAL(takeAnimation(bool)));
     disconnect(this, SIGNAL(updateImagesLocationSignal(QString)),
             visual_window, SLOT(updateImagesLocation(QString)));
-    disconnect(this, SIGNAL(stopAnimation()),
-            visual_window, SLOT(stopAnimation()));
     disconnect(this, SIGNAL(restrictAxes(bool)),
             visual_window, SLOT(restrictAxes(bool)));
     disconnect(this, SIGNAL(updateDelayTime(int)),
@@ -358,6 +354,8 @@ void MainWindow::createGraphWindow(GraphWidget *graph_window) {
             this, SLOT(increment_iteration()));
     connect(graph_window, SIGNAL(decrease_iteration()),
             this, SLOT(decrement_iteration()));
+    connect(graph_window, SIGNAL(signal_toggleAnimation()),
+            this, SLOT(slot_toggleAnimation()));
     connect(graph_window, SIGNAL(graph_window_closed(QString)),
             this, SLOT(graph_window_closed(QString)));
 }
@@ -387,8 +385,13 @@ void MainWindow::enabledRule(QModelIndex index) {
     if (index.column() == 7) {
         /* Switch the enabled value */
         visual_settings_model->switchEnabled(index);
-        /* Reread the iteration to apply the changes */
-        readZeroXML();
+        /* Populate rule agents */
+        visual_settings_model->getRule(index.row())->populate(&agents);
+        visual_settings_model->getRule(index.row())->
+                copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+        visual_settings_model->getRule(index.row())->
+                applyOffset(xoffset, yoffset, zoffset);
+        visual_settings_model->getRule(index.row())->applyRatio(ratio);
     }
 }
 
@@ -402,7 +405,8 @@ void MainWindow::enabledGraph(QModelIndex index) {
         enabled = !(graph_settings_model->getPlot(index.row())->getEnable());
         graph_settings_model->switchEnabled(index);
         if (enabled) {
-            GraphWidget * gw = new GraphWidget(&agents, &graph_style);
+            GraphWidget * gw = new GraphWidget(
+                        &agents, &graph_style, timeScale);
             gw->setGraph(graph_settings_model->
                     getPlot(index.row())->getGraph());
             QList<GraphSettingsItem *> subplots =
@@ -553,7 +557,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         resetVisualViewpoint();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
-                restrictDimension, &orthoZoom);
+                restrictDimension, &orthoZoom, &animation);
         // Make the window destroy on close rather than hide
         visual_window->setAttribute(Qt::WA_DeleteOnClose);
         visual_window->resize(800, 600);
@@ -564,6 +568,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         visual_window->setTimeScale(timeScale);
         visual_window->setTimeString(&timeString);
         visual_window->setDimension(visual_dimension);
+        visual_window->setBackgroundColour(visualBackground);
 
         /* Connect signals between MainWindow and visual_window */
         connect(this, SIGNAL(updateVisual()),
@@ -576,14 +581,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
                 this, SLOT(visual_window_closed()));
         connect(this, SIGNAL(iterationLoaded()),
                 visual_window, SLOT(iterationLoaded()));
-        connect(this, SIGNAL(startAnimation()),
-                visual_window, SLOT(startAnimation()));
-        connect(this, SIGNAL(stopAnimation()),
-                visual_window, SLOT(stopAnimation()));
-        connect(visual_window, SIGNAL(signal_startAnimation()),
-                this, SLOT(slot_startAnimation()));
-        connect(visual_window, SIGNAL(signal_stopAnimation()),
-                this, SLOT(slot_stopAnimation()));
+        connect(visual_window, SIGNAL(signal_toggleAnimation()),
+                this, SLOT(slot_toggleAnimation()));
         connect(this, SIGNAL(takeSnapshotSignal()),
                 visual_window, SLOT(takeSnapshot()));
         connect(visual_window, SIGNAL(imageStatus(QString)),
@@ -592,8 +591,6 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
                 visual_window, SLOT(takeAnimation(bool)));
         connect(this, SIGNAL(updateImagesLocationSignal(QString)),
                 visual_window, SLOT(updateImagesLocation(QString)));
-        connect(this, SIGNAL(stopAnimation()),
-                visual_window, SLOT(stopAnimation()));
         connect(this, SIGNAL(restrictAxes(bool)),
                 visual_window, SLOT(restrictAxes(bool)));
         connect(this, SIGNAL(updateDelayTime(int)),
@@ -616,7 +613,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
  *  \return False if the file could not be found.
  */
 int MainWindow::readZeroXML() {
-    if (itLocked) return 0;
+    if (itLocked) return 3;
 
     itLocked = true;
 
@@ -636,26 +633,29 @@ int MainWindow::readZeroXML() {
         ui->label_5->setText(QString("! Error opening %1.xml").
                     arg(QString().number(iteration)));
         itLocked = false;
-        return -1;
-    }
-
-    // used by graphs
-    agents.clear();
-    // used by iteration info dialog
-    QHash<QString, int>::iterator i;
-    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i) {
-        i.value() = 0;
-     // qDebug() << i.key() << ": " << i.value();
+        return 1;
     }
 
     // used by visual
-    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+/*    for (int i = 0; i < visual_settings_model->rowCount(); i++) {
+        for (int j = 0; j < visual_settings_model->getRule(i)->agents.size(); j++)
+            // Free memory of ruleagent data
+            delete visual_settings_model->getRule(i)->agents.at(j);
         visual_settings_model->getRule(i)->agents.clear();
-    }
+    }*/
+    // used by graphs
+    for (int j = 0; j < agents.size(); j++)
+        // Free memory of agent tag data
+        delete agents.at(j);
+    agents.clear();
+    // used by iteration info dialog
+    QHash<QString, int>::iterator i;
+    for (i = agentTypeCounts.begin(); i != agentTypeCounts.end(); ++i)
+        i.value() = 0;
 
-    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, &ratio,
+    ZeroXMLReader reader(&agents, &agentTypes, visual_settings_model, ratio,
             agentDimension, &stringAgentTypes, &agentTypeCounts,
-            &xoffset, &yoffset, &zoffset);
+            xoffset, yoffset, zoffset);
     if (!reader.read(&file)) {
         // ui->spinBox->setValue(iteration);
         ui->label_5->setText(
@@ -667,12 +667,17 @@ int MainWindow::readZeroXML() {
          QDir dir(fileName);
          QString filePath = dir.canonicalPath();
 
-         QMessageBox::warning(this, "FLAME Visualiser",
-          tr("Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
-                      filePath).arg(reader.lineNumber()).arg(
-                      reader.columnNumber()).arg(reader.errorString()));
+         QString error = tr(
+             "Cannot parse iteration file %1 at line %2, column %3:\n%4").arg(
+             filePath).arg(reader.lineNumber()).arg(
+             reader.columnNumber()).arg(reader.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, "FLAME Visualiser", error);
+        #endif
         itLocked = false;
-         return -2;
+         return 2;
     } else {
         itLocked = false;
          if (opengl_window_open) emit(iterationLoaded());
@@ -684,7 +689,10 @@ int MainWindow::readZeroXML() {
         emit(updateIterationInfoDialog());
     }
 
-    return 1;
+    if (openedValidIteration == false && opengl_window_open == true)
+        resetVisualViewpoint();
+    openedValidIteration = true;
+    return 0;
 }
 
 /*! \brief Change the iteration number to the number of the spin box.
@@ -695,7 +703,7 @@ void MainWindow::on_spinBox_valueChanged(int arg1) {
     if (iteration != arg1) {
         iteration = arg1;
         int rc = readZeroXML(); /* Read in new agent data */
-        if (rc == 1) if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
+        if (rc == 0) if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
     }
 }
 
@@ -709,12 +717,12 @@ void MainWindow::increment_iteration() {
      * the parameter 1 means try and read in the agent data */
     rc = readZeroXML();
     /* return codes
-       0 - itLocked is true
-      -1 - error opening file
-      -2 - error reading file
-       1 - success
+       3 - itLocked is true
+       1 - error opening file
+       2 - error reading file
+       0 - success
       */
-    if (rc == -1) {  // Can't open file
+    if (rc == 1) {  // Can't open file
         /* search forward '0' for next file */
         if (checkDirectoryForNextIteration(iteration, 0)) {
             // successful
@@ -722,11 +730,10 @@ void MainWindow::increment_iteration() {
         }
     }
 
-    if (rc != 1) {  // unsuccessful open and read
+    if (rc != 0) {  // unsuccessful open and read
         iteration--;
         if (animation) {
-            slot_stopAnimation();
-            emit(stopAnimation());
+            slot_toggleAnimation();
         }
     } else {
         if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
@@ -749,7 +756,7 @@ void MainWindow::decrement_iteration() {
     if (iteration > 0) iteration--;
     rc = readZeroXML();
 
-    if (rc == -1) {  // Can't open file
+    if (rc == 1) {  // Can't open file
         if (checkDirectoryForNextIteration(iteration, 1)) {
             rc = readZeroXML();
         }
@@ -757,7 +764,7 @@ void MainWindow::decrement_iteration() {
 
     ui->spinBox->setValue(iteration);
 
-    if (rc == 1) {
+    if (rc == 0) {
         ui->spinBox->setValue(iteration);
         if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
 
@@ -815,66 +822,81 @@ bool MainWindow::checkDirectoryForNextIteration(int it, int flag) {
  *  \param fileName The file name
  *  \param it The iteration number to be set
  */
-void MainWindow::readConfigFile(QString fileName, int it) {
+int MainWindow::readConfigFile(QString fileName, int it) {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        QMessageBox::warning(this, tr("FLAME Visualiser"),
-                             tr("Cannot read file %1:\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
-        return;
+        QString error = tr("Cannot read file %1:\n%2.")
+                .arg(fileName)
+                .arg(file.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
+
+        return 1;
     }
 
     ConfigXMLReader reader(visual_settings_model, graph_settings_model,
             &resultsData, timeScale, &ratio, &xrotate, &yrotate,
-            &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension);
+            &xmove, &ymove, &zmove, &delayTime, &orthoZoom, &visual_dimension,
+            &visualBackground);
     if (!reader.read(&file)) {
-        QMessageBox::warning(this, tr("flame visualiser"),
-         tr("Parse error in file %1 at line %2, column %3:\n%4").
-         arg(fileName).
-         arg(reader.lineNumber()).
-         arg(reader.columnNumber()).
-         arg(reader.errorString()));
+        QString error = tr("Parse error in file %1 at line %2, column %3:\n%4").
+                arg(fileName).
+                arg(reader.lineNumber()).
+                arg(reader.columnNumber()).
+                arg(reader.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
         /* Clear anything read in */
         close_config_file();
-    } else {
-        if (visual_dimension == 2) on_actionOrthogonal_triggered();
-        if (visual_dimension == 3) on_actionPerspective_triggered();
-
-        /* Setup time scale */
-        timeScale->calcTotalSeconds();
-        enableTimeScale(timeScale->enabled);
-
-        QFileInfo fileInfo(file.fileName());
-        configPath = fileInfo.absolutePath();
-        configName = fileInfo.fileName();
-
-        QString wtitle;
-        wtitle.append("FLAME Visualiser - ");
-        wtitle.append(file.fileName());
-        this->setWindowTitle(wtitle);
-
-        iteration = it;
-        ui->spinBox->setValue(iteration);
-
-        ui->horizontalSlider_delay->setValue(
-                static_cast<int>((1000-delayTime)/1000.0 * 99));
-        // qDebug() << "slider value: " << ui->horizontalSlider_delay->value();
-
-        if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
-
-        ui->lineEdit_ResultsLocation->setText(resultsData);
-//        tryAndReadInAgentTypes();
-        readZeroXML();
-
-        /* For each new plot create a graph window */
-        for (int i = 0; i < graph_settings_model->rowCount(); i++) {
-        }
-
-        enableInterface(true);
-        fileOpen = true;
+        /* Close file */
+        file.close();
+        return 2;
     }
+
+    if (visual_dimension == 2) on_actionOrthogonal_triggered();
+    if (visual_dimension == 3) on_actionPerspective_triggered();
+
+    /* Setup time scale */
+    timeScale->calcTotalSeconds();
+    enableTimeScale(timeScale->enabled);
+
+    QFileInfo fileInfo(file.fileName());
+    configPath = fileInfo.absolutePath();
+    configName = fileInfo.fileName();
+
+    QString wtitle;
+    wtitle.append("FLAME Visualiser - ");
+    wtitle.append(file.fileName());
+    this->setWindowTitle(wtitle);
+
+    iteration = it;
+    ui->spinBox->setValue(iteration);
+
+    ui->horizontalSlider_delay->setValue(
+            static_cast<int>((1000-delayTime)/1000.0 * 99));
+    // qDebug() << "slider value: " << ui->horizontalSlider_delay->value();
+
+    if (ui->checkBox_timeScale->isChecked()) calcTimeScale();
+
+    ui->lineEdit_ResultsLocation->setText(resultsData);
+    //        tryAndReadInAgentTypes();
+    openedValidIteration = false;
+    readZeroXML();
+
+    /* For each new plot create a graph window */
+    for (int i = 0; i < graph_settings_model->rowCount(); i++) {
+    }
+
+    enableInterface(true);
+    fileOpen = true;
     file.close();
+    return 0;
 }
 
 /*! \brief Enable or disable the time scale UI.
@@ -899,6 +921,31 @@ void MainWindow::enableTimeScale(bool b) {
         emit(ui->lineEdit_timeScale->setText(""));
 }
 
+int MainWindow::create_new_config_file(QString fileName) {
+    if (fileName.isEmpty())
+        return 1;
+
+    /* Close any current config */
+    close_config_file();
+
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QString error = tr("Cannot write file %1:\n%2.")
+                             .arg(fileName)
+                             .arg(file.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
+        return 2;
+    }
+
+    enableInterface(true);
+    writeConfigXML(&file);
+    return 0;
+}
+
 /*! \brief Open a new config file.
  */
 void MainWindow::new_config_file() {
@@ -906,23 +953,28 @@ void MainWindow::new_config_file() {
              QFileDialog::getSaveFileName(this, tr("New config file..."),
                                           "",
                                           tr("XML Files (*.xml)"));
-     if (fileName.isEmpty())
-         return;
+    create_new_config_file(fileName);
+}
 
-     /* Close any current config */
-     close_config_file();
+int MainWindow::save_config_file_internal(QString fileName) {
+    if (fileName.isEmpty())
+        return 1;
 
-     QFile file(fileName);
-     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-         QMessageBox::warning(this, tr("FLAME Visualiser"),
-                              tr("Cannot write file %1:\n%2.")
-                              .arg(fileName)
-                              .arg(file.errorString()));
-         return;
-     }
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QString error = tr("Cannot write file %1:\n%2.")
+                .arg(fileName)
+                .arg(file.errorString());
+        #ifdef TESTBUILD
+        qDebug() << error;
+        #else
+        QMessageBox::warning(this, tr("FLAME Visualiser"), error);
+        #endif
+        return 2;
+    }
 
-     enableInterface(true);
-     writeConfigXML(&file);
+    writeConfigXML(&file);
+    return 0;
 }
 
 /*! \brief Provide a dialog to save a config file.
@@ -939,43 +991,13 @@ void MainWindow::save_as_config_file() {
              QFileDialog::getSaveFileName(this, tr("Save config file..."),
                                           configFile,
                                           tr("XML Files (*.xml)"));
-     if (fileName.isEmpty())
-         return;
-
-     QFile file(fileName);
-     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-         QMessageBox::warning(this, tr("FLAME Visualiser"),
-                              tr("Cannot write file %1:\n%2.")
-                              .arg(fileName)
-                              .arg(file.errorString()));
-         return;
-     }
-
-     writeConfigXML(&file);
+    save_config_file_internal(fileName);
 }
 
 /*! \brief Save a config file.
  */
 void MainWindow::save_config_file() {
-    if (fileOpen == false) {
-        save_as_config_file();
-    } else {
-        QString configFile;
-        configFile.append(configPath);
-        configFile.append("/");
-        configFile.append(configName);
-
-        QFile file(configFile);
-        if (!file.open(QFile::WriteOnly | QFile::Text)) {
-            QMessageBox::warning(this, tr("FLAME Visualiser"),
-                                 tr("Cannot write file %1:\n%2.")
-                                 .arg(configFile)
-                                 .arg(file.errorString()));
-            return;
-        }
-
-        writeConfigXML(&file);
-    }
+    save_as_config_file();
 }
 
 /*! \brief Close the config file and disable the user interface.
@@ -1012,6 +1034,7 @@ void MainWindow::close_config_file() {
     ui->pushButton_Animate->setEnabled(false);
     animation = false;
     agentTypeCounts.clear();
+    stringAgentTypes.clear();
     on_actionPerspective_triggered();
 }
 
@@ -1063,6 +1086,14 @@ bool MainWindow::writeConfigXML(QFile * file) {
     stream.writeTextElement("ymove", QString("%1").arg(ymove));
     stream.writeTextElement("zmove", QString("%1").arg(zmove));
     stream.writeTextElement("orthoZoom", QString("%1").arg(orthoZoom));
+    stream.writeStartElement("backgroundColour");  // backgroundColour
+    stream.writeTextElement("r", QString("%1").
+            arg(visualBackground.red()));
+    stream.writeTextElement("g", QString("%1").
+            arg(visualBackground.green()));
+    stream.writeTextElement("b", QString("%1").
+            arg(visualBackground.blue()));
+    stream.writeEndElement();  // backgroundColour
     stream.writeStartElement("rules");
     for (int i = 0; i < this->visual_settings_model->rowCount(); i++) {
         VisualSettingsItem *vsitem = visual_settings_model->getRule(i);
@@ -1114,9 +1145,6 @@ bool MainWindow::writeConfigXML(QFile * file) {
         stream.writeEndElement();  // z
         stream.writeStartElement("shape");  // shape
         stream.writeTextElement("object", vsitem->shape().getShape());
-        if (QString::compare(vsitem->shape().getShape(), "sphere") == 0)
-            stream.writeTextElement("quality", QString("%1").arg(
-                    vsitem->shape().getQuality()));
         stream.writeTextElement("dimension", QString("%1").arg(
                 vsitem->shape().getDimension()));
         if (vsitem->shape().getUseVariable())
@@ -1259,49 +1287,45 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 /*! \brief Automatically work out the offset of the scene to position
  *  centre at origin.
  */
-void MainWindow::calcPositionOffset() {
+void MainWindow::calcPositionOffsetAndRatio() {
     double smallest_x = 0.0;
     double largest_x = 0.0;
     double smallest_y = 0.0;
     double largest_y = 0.0;
     double smallest_z = 0.0;
     double largest_z = 0.0;
+    double smallest = 0.0;
+    double largest = 0.0;
 
+    // Calc offset first
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
-            if (smallest_x > visual_settings_model->getRule(j)->agents.at(i).x)
-                smallest_x = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (smallest_y > visual_settings_model->getRule(j)->agents.at(i).y)
-                smallest_y = visual_settings_model->getRule(j)->agents.at(i).y;
-            if (largest_x  < visual_settings_model->getRule(j)->agents.at(i).x)
-                largest_x  = visual_settings_model->getRule(j)->agents.at(i).x;
-            if (largest_y  < visual_settings_model->getRule(j)->agents.at(i).y)
-                largest_y  = visual_settings_model->getRule(j)->agents.at(i).y;
+            if (smallest_x > visual_settings_model->getRule(j)->agents.at(i)->x)
+                smallest_x = visual_settings_model->getRule(j)->agents.at(i)->x;
+            if (smallest_y > visual_settings_model->getRule(j)->agents.at(i)->y)
+                smallest_y = visual_settings_model->getRule(j)->agents.at(i)->y;
+            if (largest_x  < visual_settings_model->getRule(j)->agents.at(i)->x)
+                largest_x  = visual_settings_model->getRule(j)->agents.at(i)->x;
+            if (largest_y  < visual_settings_model->getRule(j)->agents.at(i)->y)
+                largest_y  = visual_settings_model->getRule(j)->agents.at(i)->y;
         }
     }
-
     /* Takes the middle position of x and y */
     xoffset = -(largest_x + smallest_x)/2.0;
     yoffset = -(largest_y + smallest_y)/2.0;
     zoffset = -(largest_z + smallest_z)/2.0;
 
-    /*qDebug() << "xoffset: " << xoffset;
-    qDebug() << "yoffset: " << yoffset;
-    qDebug() << "zoffset: " << zoffset;*/
-}
-
-/*! \brief Automatically work out a good ratio to use to view agents visually.
- */
-void MainWindow::calcPositionRatio() {
-    double smallest = 0.0;
-    double largest = 0.0;
-
+    // Apply offset and calc ratio
     for (int j = 0; j < visual_settings_model->rowCount(); j++) {
         for (int i= 0; i < visual_settings_model->getRule(j)->agents.count();
                 i++) {
-            double x = visual_settings_model->getRule(j)->agents.at(i).x;
-            double y = visual_settings_model->getRule(j)->agents.at(i).y;
+            // Apply offset
+            visual_settings_model->getRule(j)->agents.at(i)->x += xoffset;
+            visual_settings_model->getRule(j)->agents.at(i)->y += yoffset;
+            visual_settings_model->getRule(j)->agents.at(i)->z += zoffset;
+            double x = visual_settings_model->getRule(j)->agents.at(i)->x;
+            double y = visual_settings_model->getRule(j)->agents.at(i)->y;
             double size_x =
                 visual_settings_model->getRule(j)->shape().getDimension()/2.0;
             double size_y = size_x;
@@ -1316,40 +1340,38 @@ void MainWindow::calcPositionRatio() {
             if (largest  < y+size_y) largest  = y+size_y;
         }
     }
-
-    // qDebug() << smallest << largest;
-
     if (smallest < 0.0 && largest < -smallest)
         ratio = 1.0 / -smallest;
     else
         ratio = 1.0 / largest;
 
-    /* Make a largest ratio */
-    // if (ratio > 0.05) ratio = 0.05;
-
-    // qDebug() << "ratio: " << ratio;
+    // Apply ratio
+    for (int j = 0; j < visual_settings_model->rowCount(); j++) {
+        visual_settings_model->getRule(j)->applyRatio(ratio);
+    }
 }
 
-void MainWindow::slot_stopAnimation() {
-    animation = false;
-    ui->pushButton_Animate->setText("Start Animation - A");
-}
-
-void MainWindow::slot_startAnimation() {
-    animation = true;
-    ui->pushButton_Animate->setText("Stop Animation - A");
+void MainWindow::slot_toggleAnimation() {
+    if (opengl_window_open) {
+        animation = !animation;
+        if (animation)
+            ui->pushButton_Animate->setText("Stop Animation - A");
+        else
+            ui->pushButton_Animate->setText("Start Animation - A");
+    }
 }
 
 /*! \brief Emit animate signal when the animate button is pressed.
  */
 void MainWindow::on_pushButton_Animate_clicked() {
-    if (animation) {
+    slot_toggleAnimation();
+    /*if (animation) {
         slot_stopAnimation();
         emit(stopAnimation());
     } else {
         slot_startAnimation();
         emit(startAnimation());
-    }
+    }*/
 }
 
 /*! \brief Open or close the image settings dialog.
@@ -1419,9 +1441,17 @@ void MainWindow::on_actionAbout_triggered() {
     QString aboutText;
     aboutText.append("<h1>FLAME Visualiser</h1>");
     aboutText.append("<h3>Simon Coakley</h3>");
-    aboutText.append("<h2>Version 3</h2>");
+    aboutText.append("<h2>Version 4</h2>");
     aboutText.append("<h3>Changelog</h3>");
     /* Add new release notes here */
+    aboutText.append("<h4>Version 4 (released 2012-07-31)</h4><ul>");
+    aboutText.append("<li>Beta fourth release</li>");
+    aboutText.append("<li>Better memory management so some speed ");
+    aboutText.append("up for larger models</li>");
+    aboutText.append("<li>Quality removed from shape as now automatic</li>");
+    aboutText.append("<li>Ability to change background colour</li>");
+    aboutText.append("<li>Bug fix: finding new agent types when ");
+    aboutText.append("opening another config file</li></ul>");
     aboutText.append("<h4>Version 3 (released 2012-02-22)</h4><ul>");
     aboutText.append("<li>Beta third release</li>");
     aboutText.append("<li>Added enable column for visual rules</li>");
@@ -1500,56 +1530,13 @@ void MainWindow::on_pushButton_timeScale_clicked() {
 }
 
 void MainWindow::calcTimeScale() {
-    double tsecs;
-    double tmsecs = timeScale->millisecond*iteration/1000.0;
-    tmsecs = modf(tmsecs, &tsecs);
-    int totalseconds = static_cast<int>(tsecs);
-    totalseconds += timeScale->totalseconds*iteration;
-
-    QString ts;
-    size_t BufSize = 1000;
-    char buf[BufSize];
-    int days = static_cast<int>(totalseconds/86400);
-    int hours = static_cast<int>((totalseconds%86400)/3600);
-    int minutes = static_cast<int>(((totalseconds%86400)%3600)/60);
-    int seconds = static_cast<int>(((totalseconds%86400)%3600)%60);
-    if (days > 0 || timeScale->lowestScale == 4) {
-        snprintf(buf, BufSize, "%3d day", days);
-        ts.append(QString().fromAscii(buf));
-        if (days > 1)
-            ts.append("s");
-        else
-            ts.append(" ");
-        ts.append(" ");
-    }
-    if (hours > 0 || timeScale->lowestScale < 4) {
-        snprintf(buf, BufSize, "%02d hrs", hours);
-        ts.append(QString().fromAscii(buf));
-        // if(hours > 1) ts.append("s"); else ts.append(" ");
-        ts.append(" ");
-    }
-    if (minutes > 0 || timeScale->lowestScale < 3) {
-        snprintf(buf, BufSize, "%02d hrs", minutes);
-        ts.append(QString().fromAscii(buf));
-        // if(minutes > 1) ts.append("s"); else ts.append(" ");
-        ts.append(" ");
-    }
-    if (timeScale->lowestScale == 1) {
-        snprintf(buf, BufSize, "%02d s", seconds);
-        ts.append(QString().fromAscii(buf));
-    } else if (timeScale->lowestScale == 0) {
-        snprintf(buf, BufSize, "%02.3f s", seconds+tmsecs);
-        ts.append(QString().fromAscii(buf));
-    }
-
-    timeString = ts;
-
-    emit(ui->lineEdit_timeScale->setText(ts));
+    timeString = timeScale->calcTimeScale(iteration);
+    emit(ui->lineEdit_timeScale->setText(timeString));
 }
 
 void MainWindow::on_actionHelp_triggered() {
     QDesktopServices::openUrl(
-        QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v3/"));
+        QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v4/"));
 }
 
 void MainWindow::on_actionRestrict_Axes_triggered() {
@@ -1598,16 +1585,11 @@ void MainWindow::resetVisualViewpoint() {
     xoffset = 0.0;
     yoffset = 0.0;
     zoffset = 0.0;
-    // Read in agents with model dimensions
-    readZeroXML();
-    // Calculate offset
-    calcPositionOffset();
-    // Reread agents with offsets
-    readZeroXML();
-    // Calculate model to opengl dimension ratio
-    calcPositionRatio();
-    // Reread agents with opengl dimension using new ratio
-    readZeroXML();
+
+    for (int i = 0; i < visual_settings_model->rowCount(); i++)
+        visual_settings_model->getRule(i)->
+            copyAgentDrawDataToRuleAgentDrawData(agentDimension);
+    calcPositionOffsetAndRatio();
 }
 
 void MainWindow::on_pushButton_updateViewpoint_clicked() {
@@ -1669,4 +1651,23 @@ void MainWindow::on_actionDots_triggered() {
     ui->actionDots->setChecked(true);
     graph_style = 3;
     updateAllGraphs();
+}
+
+void MainWindow::backgroundColourChanged(QColor c) {
+    visualBackground = c;
+    if (opengl_window_open)
+        visual_window->setBackgroundColour(visualBackground);
+}
+
+void MainWindow::on_actionBackground_triggered() {
+    QColor savedColour = visualBackground;
+    QColorDialog *colourDialog = new QColorDialog(this);
+    colourDialog->setCurrentColor(visualBackground);
+    connect(colourDialog, SIGNAL(currentColorChanged(QColor)),
+            this, SLOT(backgroundColourChanged(QColor)));
+
+    int rc = colourDialog->exec();
+    if (rc == QDialog::Rejected)
+        backgroundColourChanged(savedColour);
+    delete colourDialog;
 }

@@ -6,14 +6,14 @@
 <name>a</name>
 <id>0</id>
 <x>0</x>
-<y>-1000</y>
+<y>-1500</y>
 <z>0</z>
 </xagent>
 <xagent>
 <name>a</name>
 <id>1</id>
-<x></x>
-<y>1000</y>
+<x>0</x>
+<y>500</y>
 <z>0</z>
 </xagent>
 </states>

@@ -68,7 +68,7 @@ Qt::ItemFlags GraphSettingsModel::flags(const QModelIndex &index) const {
      if (!index.isValid())
          return Qt::ItemIsEnabled;
 
-     if (index.column() == 4 || index.column() == 1)
+     if (index.column() == 4)
          return QAbstractItemModel::flags(index);
      else if (index.column() == 5) return (QAbstractItemModel::flags(index) |
              Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);

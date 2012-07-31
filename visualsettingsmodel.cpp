@@ -168,38 +168,3 @@ void VisualSettingsModel::switchEnabled(QModelIndex index) {
     emit dataChanged(createIndex(index.row(), index.column(), 0),
             createIndex(index.row(), index.column(), 0));
 }
-
-void VisualSettingsModel::transitionUpdated(QModelIndex /*topLeft*/,
-        QModelIndex /*bottomRight*/) {
-    // ui->label->setText(QString("transitionChanged r: %1 c: %2").
-    // arg(topLeft.row(), topLeft.column()));
-
-    // emit( updateScene() );
-
-    // If mpre was updated
-    /*if(topLeft.column() == 2)
-    {
-        //qDebug() << "mpre updated";
-
-        // If another branch from the same state exists
-        Transition * t = rules.at(topLeft.row());
-        for(int i = 0; i < rules.size(); i++)
-        {
-            Transition * t2 = rules.at(i);
-            if(t->currentState() == t2->currentState() && i != topLeft.row())
-            {
-                //qDebug() << "Found other branch: " << t2->name();
-                t2->getMprePointer()->setNot(false);
-                t2->getMprePointer()->setEnabled(t->mpre().enabled());
-                t2->getMprePointer()->setName(t->mpre().name());
-                if(t->mpre().op() == "==") t2->getMprePointer()->setOp("!=");
-                if(t->mpre().op() == "!=") t2->getMprePointer()->setOp("==");
-                if(t->mpre().op() == ">")  t2->getMprePointer()->setOp("<=");
-                if(t->mpre().op() == "<")  t2->getMprePointer()->setOp(">=");
-                if(t->mpre().op() == ">=") t2->getMprePointer()->setOp("<");
-                if(t->mpre().op() == "<=") t2->getMprePointer()->setOp(">");
-                t2->getMprePointer()->setValue(t->mpre().value());
-            }
-        }
-    }*/
-}
