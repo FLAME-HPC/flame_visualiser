@@ -1137,7 +1137,6 @@ bool MainWindow::writeConfigXML(QFile * file) {
         stream.writeEndElement();  // z
         stream.writeStartElement("shape");  // shape
         stream.writeTextElement("object", vsitem->shape().getShape());
-        if (QString::compare(vsitem->shape().getShape(), "sphere") == 0)
         stream.writeTextElement("dimension", QString("%1").arg(
                 vsitem->shape().getDimension()));
         if (vsitem->shape().getUseVariable())
@@ -1421,9 +1420,15 @@ void MainWindow::on_actionAbout_triggered() {
     QString aboutText;
     aboutText.append("<h1>FLAME Visualiser</h1>");
     aboutText.append("<h3>Simon Coakley</h3>");
-    aboutText.append("<h2>Version 3</h2>");
+    aboutText.append("<h2>Version 4</h2>");
     aboutText.append("<h3>Changelog</h3>");
     /* Add new release notes here */
+    aboutText.append("<h4>Version 4 (released 2012-07-31)</h4><ul>");
+    aboutText.append("<li>Beta fourth release</li>");
+    aboutText.append("<li>Better memory management so some speed up for larger models</li>");
+    aboutText.append("<li>Quality removed from shape as now automatic</li>");
+    aboutText.append("<li>Ability to change background colour</li>");
+    aboutText.append("<li>Bug fix: finding new agent types when opening another config file</li></ul>");
     aboutText.append("<h4>Version 3 (released 2012-02-22)</h4><ul>");
     aboutText.append("<li>Beta third release</li>");
     aboutText.append("<li>Added enable column for visual rules</li>");
@@ -1508,7 +1513,7 @@ void MainWindow::calcTimeScale() {
 
 void MainWindow::on_actionHelp_triggered() {
     QDesktopServices::openUrl(
-        QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v3/"));
+        QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v4/"));
 }
 
 void MainWindow::on_actionRestrict_Axes_triggered() {
