@@ -50,7 +50,7 @@
        </sizepolicy>
       </property>
       <property name="title">
-       <string>2. Visual Rules (What to draw)</string>
+       <string>2. Visual Rules</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
@@ -115,7 +115,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox_4">
       <property name="title">
-       <string>3. Graph plots</string>
+       <string>3. Graph Plots</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
@@ -145,7 +145,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox_3">
       <property name="title">
-       <string>4. Time step</string>
+       <string>4. Time Step</string>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
