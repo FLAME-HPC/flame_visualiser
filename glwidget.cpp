@@ -19,7 +19,8 @@
 #include "./agentdialog.h"
 
 GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-        Dimension * rd, float * oz, bool *ani, QWidget *parent)
+        Dimension * rd, float * oz, bool *ani, int *g, double *r,
+                   double *xo, double *yo, double *zo, QWidget *parent)
     : QGLWidget(parent) {
     agents = 0;
     setMouseTracking(true);
@@ -56,6 +57,17 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
     delayTime = 0;
     orthoZoom = oz;
     background = Qt::white;
+    gis = g;
+    ratio = r;
+    xoffset = xo;
+    yoffset = yo;
+    zoffset = zo;
+
+    /*float * gisa = g;
+    int k, l;
+    for (k = 0; k < 1000; ++k) for (l = 0; l < 600; ++l) {
+        printf("%f ", *gisa); ++gisa;
+    }*/
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -267,7 +279,89 @@ void GLWidget::paintGL() {
 
     drawAgents(GL_RENDER);
 
+    drawGIS();
+
     glPopMatrix();
+}
+
+int GLWidget::getHeight(int x, int y) {
+    int a = *(gis + (x*600) + y);
+    //qDebug() << a;
+    return a;
+}
+
+void setColour(int z) {
+    float c = (1.0f - (z/100.0f));
+    glColor3f(c, c, c);
+}
+
+void GLWidget::drawGIS() {
+    int lines = 0;
+    int X = 0, Y = 0;
+    int x, y, z0, z1, z2, z3;
+    int STEP_SIZE = 1;
+    glDisable(GL_LIGHTING);
+
+    if (lines) glBegin( GL_LINES );
+    else glBegin( GL_QUADS );
+
+    for ( X = 0; X < (1000-STEP_SIZE); X += STEP_SIZE )
+        for ( Y = 0; Y < (600-STEP_SIZE); Y += STEP_SIZE )
+        {
+            // Get The (X, Y, Z) Value For The Bottom Left Vertex
+
+            z0 = getHeight(X, Y);
+            z1 = getHeight(X, Y + STEP_SIZE );
+            z2 = getHeight(X + STEP_SIZE, Y + STEP_SIZE );
+            z3 = getHeight(X + STEP_SIZE, Y );
+
+            if (z0 + z1 + z2 + z3 > 0) {
+
+            x = X;
+            y = Y;
+
+            // Set The Color Value Of The Current Vertex
+            //SetVertexColor(pHeightMap, x, z);
+            setColour(z0);
+
+            glVertex3f((x+(*xoffset))*(*ratio), (y+(*yoffset))*(*ratio), (-z0+(*zoffset))*(*ratio));            // Send This Vertex To OpenGL To Be Rendered
+
+            // Get The (X, Y, Z) Value For The Top Left Vertex
+            x = X;
+            y = Y + STEP_SIZE ;
+
+            // Set The Color Value Of The Current Vertex
+       //     SetVertexColor(pHeightMap, x, z);
+            setColour(z1);
+
+            glVertex3f((x+(*xoffset))*(*ratio), (y+(*yoffset))*(*ratio), (-z1+(*zoffset))*(*ratio));            // Send This Vertex To OpenGL To Be Rendered
+
+            // Get The (X, Y, Z) Value For The Top Right Vertex
+            x = X + STEP_SIZE;
+            y = Y + STEP_SIZE ;
+
+            // Set The Color Value Of The Current Vertex
+       //     SetVertexColor(pHeightMap, x, z);
+            setColour(z2);
+
+            glVertex3f((x+(*xoffset))*(*ratio), (y+(*yoffset))*(*ratio), (-z2+(*zoffset))*(*ratio));            // Send This Vertex To OpenGL To Be Rendered
+
+            // Get The (X, Y, Z) Value For The Bottom Right Vertex
+            x = X + STEP_SIZE;
+            y = Y;
+
+            // Set The Color Value Of The Current Vertex
+       //     SetVertexColor(pHeightMap, x, z);
+            setColour(z3);
+
+            glVertex3f((x+(*xoffset))*(*ratio), (y+(*yoffset))*(*ratio), (-z3+(*zoffset))*(*ratio));            // Send This Vertex To OpenGL To Be Rendered
+
+            }
+        }
+    glEnd();
+
+    //glDisable(GL_LIGHTING);
+    glEnable(GL_LIGHTING);
 }
 
 void GLWidget::drawSphere(double size) {

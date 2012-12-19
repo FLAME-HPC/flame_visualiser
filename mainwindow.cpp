@@ -32,6 +32,46 @@
 #include "./enableddelegate.h"
 #include "./graphdelegate.h"
 
+void MainWindow::loadGIS() {
+    FILE * file;
+    int ip;
+    char * p = NULL;
+    int lineNo = 0;
+    int colNo = 0;
+    int rowNo = 0;
+    char line[10000];
+
+    QString fname;
+    fname.append(configPath);
+    fname.append("/");
+    fname.append(ui->lineEdit_ResultsLocation->text());
+    fname.append("../raster-data/Kattegat/bathy.asc");
+    //qDebug() << fname;
+
+    if (!(file = fopen (fname.toUtf8().constData(), "r"))) {
+        perror(fname.toUtf8().constData());
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        ++lineNo;
+        colNo = 0;
+        rowNo = lineNo - 6;
+        p = strtok(line, " \t \n \r");
+        while (p != NULL) {
+            ++colNo;
+            ip = atoi(p);
+            if (ip == -9999) ip = 0;
+            if (lineNo > 6) {
+                gis[rowNo-1][colNo-1] = ip;
+            }
+            p = strtok (NULL, " ");
+        }
+    }
+
+    fclose(file);
+}
+
 /*! \brief Setup the main window.
  *  \param *parent
  */
@@ -177,6 +217,8 @@ MainWindow::MainWindow(QWidget *parent)
     /* Try and find .flamevisualisersettings and load
      * last known model and iteration number */
     findLoadSettings();
+
+    loadGIS();
 }
 
 /*! \brief Destroy the main window.
@@ -557,7 +599,8 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
         resetVisualViewpoint();
 
         visual_window = new GLWidget(&xrotate, &yrotate, &xmove, &ymove, &zmove,
-                restrictDimension, &orthoZoom, &animation);
+                        restrictDimension, &orthoZoom, &animation, &gis[0][0], &ratio,
+                                     &xoffset, &yoffset, &zoffset);
         // Make the window destroy on close rather than hide
         visual_window->setAttribute(Qt::WA_DeleteOnClose);
         visual_window->resize(800, 600);
@@ -692,6 +735,12 @@ int MainWindow::readZeroXML() {
     if (openedValidIteration == false && opengl_window_open == true)
         resetVisualViewpoint();
     openedValidIteration = true;
+
+    // apply ratio to gis
+    //qDebug() << "ratio" << ratio;
+    //int k, l;
+    //for (k = 0; k < 1000; ++k) for (l = 0; l < 600; ++l) gis[k][l] *= ratio;
+
     return 0;
 }
 

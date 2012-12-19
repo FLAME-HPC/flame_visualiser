@@ -31,7 +31,8 @@ class GLWidget : public QGLWidget {
 
   public:
     GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-            Dimension * rd, float * oz, bool * ani, QWidget *parent = 0);
+             Dimension * rd, float * oz, bool * ani, int * g, double * r,
+             double * xo, double * yo, double * zo, QWidget *parent = 0);
     ~GLWidget();
     void update_agents(QList<Agent*> * a);
     void set_rules(VisualSettingsModel * m);
@@ -85,6 +86,8 @@ class GLWidget : public QGLWidget {
     void drawSphere(double size);
     float SphereInFrustum(float x, float y, float z, float radius);
     void ExtractFrustum();
+    void drawGIS();
+    int getHeight(int x, int y);
     QString name;
     QList<Agent*> * agents;
     bool block;
@@ -137,6 +140,11 @@ class GLWidget : public QGLWidget {
     GLUquadricObj * dl_qobj;
     float frustum[6][4];
     QColor background;
+    int * gis;
+    double * ratio;
+    double * xoffset;
+    double * yoffset;
+    double * zoffset;
 };
 
 #endif  // GLWIDGET_H_

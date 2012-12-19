@@ -122,6 +122,7 @@ class MainWindow : public QMainWindow {
     void on_actionBackground_triggered();
 
   private:
+    void loadGIS();
     int save_config_file_internal(QString fileName);
     int create_new_config_file(QString fileName);
     int readZeroXML();
@@ -187,6 +188,7 @@ class MainWindow : public QMainWindow {
     int graph_style;
     QColor visualBackground;
     bool openedValidIteration;
+    int gis[1000][600];
 };
 
 #endif  // MAINWINDOW_H_
