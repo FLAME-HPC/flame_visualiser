@@ -802,8 +802,8 @@ bool MainWindow::checkDirectoryForNextIteration(int it, int flag) {
         QString f = list.at(i);
         f.chop(4);
         bool s;
-        int i = f.toInt(&s);
-        if (s) ilist.append(i);
+        int j = f.toInt(&s);
+        if (s) ilist.append(j);
     }
     qSort(ilist);
     for (int i = 0; i < ilist.size(); i++) {
