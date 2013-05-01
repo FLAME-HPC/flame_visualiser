@@ -31,12 +31,13 @@ namespace Ui {
 
 /*! \brief Main window class.
   */
-class MainWindow : public QMainWindow {
+class VisualMainWindow : public QMainWindow {
     Q_OBJECT
 
   public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+    explicit VisualMainWindow(QWidget *parent = 0);
+    VisualMainWindow(QString config_xml_file, QString iterations_dir, QWidget *parent = 0);
+    ~VisualMainWindow();
     /* For testing allow test class to access private functions */
     #ifdef TESTBUILD
     friend class TestVisualiser;
@@ -122,6 +123,7 @@ class MainWindow : public QMainWindow {
     void on_actionBackground_triggered();
 
   private:
+    void setup();
     int save_config_file_internal(QString fileName);
     int create_new_config_file(QString fileName);
     int readZeroXML();
@@ -187,6 +189,7 @@ class MainWindow : public QMainWindow {
     int graph_style;
     QColor visualBackground;
     bool openedValidIteration;
+    bool isApp; /*!< True if single application */
 };
 
 #endif  // MAINWINDOW_H_

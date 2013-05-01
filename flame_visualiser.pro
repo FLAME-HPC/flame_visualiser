@@ -34,7 +34,7 @@ test {
     QMAKE_CXXFLAGS +=-DTESTBUILD
 }
 
-SOURCES += mainwindow.cpp \
+SOURCES += visualmainwindow.cpp \
     glwidget.cpp \
     zeroxmlreader.cpp \
     visualsettingsmodel.cpp \
@@ -63,7 +63,7 @@ SOURCES += mainwindow.cpp \
     iterationinfodialog.cpp \
     timescale.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS  += visualmainwindow.h \
     glwidget.h \
     zeroxmlreader.h \
     agent.h \

@@ -6,11 +6,11 @@
  *  \brief Implementation of \c main()
  */
 #include <QtGui/QApplication>
-#include "./mainwindow.h"
+#include "./visualmainwindow.h"
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
-    MainWindow w;
+    VisualMainWindow w;
     w.show();
 
     return a.exec();

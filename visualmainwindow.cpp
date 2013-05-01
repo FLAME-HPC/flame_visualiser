@@ -15,7 +15,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <math.h>
-#include "./mainwindow.h"
+#include "./visualmainwindow.h"
 #include "./ui_mainwindow.h"
 #include "./zeroxmlreader.h"
 #include "./visualsettingsmodel.h"
@@ -35,17 +35,70 @@
 /*! \brief Setup the main window.
  *  \param *parent
  */
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow) {
+VisualMainWindow::VisualMainWindow(QWidget *parent)
+  : QMainWindow(parent), ui(new Ui::MainWindow) {
+    isApp = true;
+    setup();
+}
+
+VisualMainWindow::VisualMainWindow(QString config_xml_file, QString iterations_dir, QWidget *parent)
+  : QMainWindow(parent), ui(new Ui::MainWindow) {
+    isApp = false;
+    setup();
+    // read config file
+    readConfigFile(config_xml_file, 0);
+    if (!isApp) {
+        // set its dir from dashboard
+        ui->lineEdit_ResultsLocation->setText(iterations_dir);
+        readZeroXML(); /* Read in new agent data */
+    }
+}
+
+/*! \brief Destroy the main window.
+ */
+VisualMainWindow::~VisualMainWindow() {
+    delete ui;
+
+    if (isApp) {
+        /* Output settings */
+        QFile file(".flamevisualisersettings");
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+         return;
+
+        if (fileOpen) {
+            QString configFile;
+            configFile.append(configPath);
+            configFile.append("/");
+            configFile.append(configName);
+
+            QTextStream out(&file);
+            out << "true|" << configFile << "|" << iteration << "\n";
+        } else {
+            QTextStream out(&file);
+            out << "false|\n";
+        }
+
+        file.close();
+    }
+}
+
+void VisualMainWindow::setup() {
     /* Setup User Interface */
     ui->setupUi(this);
     this->setWindowTitle("FLAME Visualiser - ");
+    if (!isApp) {
+        ui->actionOpen->setEnabled(false);
+        ui->actionNew->setEnabled(false);
+        ui->actionSave->setEnabled(false);
+        ui->actionSave_As->setEnabled(false);
+        ui->actionClose->setEnabled(false);
+    }
     enableInterface(false); /* Disable UI to start */
     /* Set the application icon (for linux) as mac and win
      * have platform-dependent techniques (see .pro file).
      */
     #ifdef Q_WS_X11
-    setWindowIcon(QIcon("flame-v.png"));
+    if (isApp) setWindowIcon(QIcon("flame-v.png"));
     #endif
     /* Initialise variables */
     itLocked = false;
@@ -176,42 +229,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     /* Try and find .flamevisualisersettings and load
      * last known model and iteration number */
-    findLoadSettings();
+    if (isApp) findLoadSettings();
 }
 
-/*! \brief Destroy the main window.
- */
-MainWindow::~MainWindow() {
-    delete ui;
-
-    /* Output settings */
-    QFile file(".flamevisualisersettings");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-     return;
-
-    if (fileOpen) {
-        QString configFile;
-        configFile.append(configPath);
-        configFile.append("/");
-        configFile.append(configName);
-
-        QTextStream out(&file);
-        out << "true|" << configFile << "|" << iteration << "\n";
-    } else {
-        QTextStream out(&file);
-        out << "false|\n";
-    }
-
-    file.close();
-}
-
-void MainWindow::closeEvent(QCloseEvent */*event*/) {
+void VisualMainWindow::closeEvent(QCloseEvent */*event*/) {
     on_actionQuit_triggered();
 }
 
 /*! \brief Try and find .flamevisualisersettings and load last known model and iteration number.
  */
-void MainWindow::findLoadSettings() {
+void VisualMainWindow::findLoadSettings() {
     /* Try and open file, return if fail */
     QFile file(".flamevisualisersettings");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -233,7 +260,7 @@ void MainWindow::findLoadSettings() {
 
 /*! \brief When the visual window is closed, disconnect all signal/slots and set variables.
  */
-void MainWindow::visual_window_closed() {
+void VisualMainWindow::visual_window_closed() {
     disconnect(this, SIGNAL(updateVisual()),
             visual_window, SLOT(updateGL()));
     disconnect(visual_window, SIGNAL(increase_iteration()),
@@ -270,7 +297,7 @@ void MainWindow::visual_window_closed() {
 
 /*! \brief When the image dialog is closed, disconnect all signal/slots and set variables.
  */
-void MainWindow::image_dialog_closed() {
+void VisualMainWindow::image_dialog_closed() {
     disconnect(images_dialog, SIGNAL(image_dialog_closed()),
             this, SLOT(image_dialog_closed()));
     disconnect(images_dialog, SIGNAL(take_snapshot()),
@@ -287,7 +314,7 @@ void MainWindow::image_dialog_closed() {
 
 /*! \brief When the time dialog is closed, disconnect all signal/slots and set variables.
  */
-void MainWindow::time_dialog_closed() {
+void VisualMainWindow::time_dialog_closed() {
     disconnect(time_dialog, SIGNAL(time_dialog_closed()),
             this, SLOT(time_dialog_closed()));
     time_dialog_open = false;
@@ -298,7 +325,7 @@ void MainWindow::time_dialog_closed() {
 /*! \brief When the iteration info dialog is closed, disconnect all signal/slots
  *  and set variables.
  */
-void MainWindow::iterationInfoDialog_closed() {
+void VisualMainWindow::iterationInfoDialog_closed() {
     disconnect(this, SIGNAL(updateIterationInfoDialog()),
             iterationInfo_dialog, SLOT(update_info()));
     disconnect(iterationInfo_dialog, SIGNAL(iterationInfoDialog_closed()),
@@ -306,7 +333,7 @@ void MainWindow::iterationInfoDialog_closed() {
     iterationInfo_dialog_open = false;
 }
 
-void MainWindow::restrict_axes_closed() {
+void VisualMainWindow::restrict_axes_closed() {
     restrict_dimension_open = false;
     disconnect(restrictAxesDialog, SIGNAL(closed()),
             this, SLOT(restrict_axes_closed()));
@@ -318,34 +345,36 @@ void MainWindow::restrict_axes_closed() {
 /*! \brief When a graph window is closed, close all windows with the same graph name.
  *  \param graphName The graph name.
  */
-void MainWindow::graph_window_closed(QString graphName) {
+void VisualMainWindow::graph_window_closed(QString graphName) {
     closeGraphWindows(graphName);
 }
 
 /*! \brief Enable and disable the user interface when a file is open or closed.
  *  \param enable True for enabled, false for disabled.
  */
-void MainWindow::enableInterface(bool enable) {
+void VisualMainWindow::enableInterface(bool enable) {
     /* Enable/Disable UI */
     emit(ui->groupBox->setEnabled(enable));
     emit(ui->groupBox_2->setEnabled(enable));
     emit(ui->groupBox_3->setEnabled(enable));
     emit(ui->groupBox_4->setEnabled(enable));
     /* Enable/Disable menu items */
-    emit(ui->actionClose->setEnabled(enable));
     emit(ui->actionSave->setEnabled(enable));
-    emit(ui->actionSave_As->setEnabled(enable));
+    if (isApp) {
+        emit(ui->actionClose->setEnabled(enable));
+        emit(ui->actionSave_As->setEnabled(enable));
+    }
 }
 
 /*! \brief Add a new plot to the graph model.
  */
-void MainWindow::addPlot() {
+void VisualMainWindow::addPlot() {
     graph_settings_model->addPlot();
 }
 
 /*! \brief Create a new graph window, setup.
  */
-void MainWindow::createGraphWindow(GraphWidget *graph_window) {
+void VisualMainWindow::createGraphWindow(GraphWidget *graph_window) {
     graphs.append(graph_window);
     graph_window->updateData(iteration);
     graph_window->resize(720, 380);
@@ -363,7 +392,7 @@ void MainWindow::createGraphWindow(GraphWidget *graph_window) {
  *         remove all associated graph windows.
  *  \param graphName The graph name
  */
-void MainWindow::closeGraphWindows(QString graphName) {
+void VisualMainWindow::closeGraphWindows(QString graphName) {
     graph_settings_model->setDisabled(graphName);
 
     /* Check open graphs */
@@ -380,7 +409,7 @@ void MainWindow::closeGraphWindows(QString graphName) {
  *  of the visual rule table is clicked.
  *  \param index The index of the cell clicked.
  */
-void MainWindow::enabledRule(QModelIndex index) {
+void VisualMainWindow::enabledRule(QModelIndex index) {
     /* If the enabled column */
     if (index.column() == 7) {
         /* Switch the enabled value */
@@ -398,7 +427,7 @@ void MainWindow::enabledRule(QModelIndex index) {
 /*! \brief Show or hide a graph window when the enabled cell of the graph table is clicked.
  *  \param index The index of the cell clicked.
  */
-void MainWindow::enabledGraph(QModelIndex index) {
+void VisualMainWindow::enabledGraph(QModelIndex index) {
     bool enabled;
 
     if (index.column() == 5) {
@@ -426,7 +455,7 @@ void MainWindow::enabledGraph(QModelIndex index) {
  *  \param oldGraph The old graph name
  *  \param newGraph The new graph name
  */
-void MainWindow::plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph,
+void VisualMainWindow::plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph,
         QString newGraph) {
     for (int i = 0; i < graphs.count(); i++) {
         qDebug() << i << graphs[i]->getGraph() << newGraph;
@@ -449,7 +478,7 @@ void MainWindow::plotGraphChanged(GraphSettingsItem * gsi, QString oldGraph,
 /*! \brief Show the colour dialog when the colour cell of the visual table is clicked.
  *  \param index The index of the cell clicked.
  */
-void MainWindow::getColourVisual(QModelIndex index) {
+void VisualMainWindow::getColourVisual(QModelIndex index) {
     if (index.column() == 6) {
         colourIndex = index;
         colour = qVariantValue<QColor>(index.data());
@@ -471,7 +500,7 @@ void MainWindow::getColourVisual(QModelIndex index) {
 /*! \brief Update the visual settings model with any change in colour.
  *  \param c The new colour.
  */
-void MainWindow::colourChanged(QColor c) {
+void VisualMainWindow::colourChanged(QColor c) {
     visual_settings_model->setData(colourIndex, qVariantFromValue(c));
 }
 
@@ -479,7 +508,7 @@ void MainWindow::colourChanged(QColor c) {
  *         colour cell of the graph table is clicked.
  *  \param index The index of the cell clicked.
  */
-void MainWindow::getColourGraph(QModelIndex index) {
+void VisualMainWindow::getColourGraph(QModelIndex index) {
     if (index.column() == 4) {
         QColor colour = QColorDialog::getColor(
                 qVariantValue<QColor>(index.data()));
@@ -492,14 +521,14 @@ void MainWindow::getColourGraph(QModelIndex index) {
 
 /*! \brief Connect the add rule button with the data model.
  */
-void MainWindow::addRule() {
+void VisualMainWindow::addRule() {
     visual_settings_model->addRule();
 }
 
 /*! \brief Connect the delete rule button with the data model and
  *         keep deleting all selected rows.
  */
-void MainWindow::deleteRule() {
+void VisualMainWindow::deleteRule() {
      QModelIndexList indexList =
              ui->tableViewVisual->selectionModel()->selectedRows();
 
@@ -512,7 +541,7 @@ void MainWindow::deleteRule() {
 /*! \brief Connect the delete plot button with the data model and
  *         keep deleting all selected rows.
  */
-void MainWindow::deletePlot() {
+void VisualMainWindow::deletePlot() {
      QModelIndexList indexList =
              ui->tableViewGraph->selectionModel()->selectedRows();
 
@@ -525,7 +554,7 @@ void MainWindow::deletePlot() {
 /** \brief Provide a dialog to select the folder location of the 0.xml
  *         and make the path relative to the config xml location.
  */
-void MainWindow::on_pushButton_LocationFind_clicked() {
+void VisualMainWindow::on_pushButton_LocationFind_clicked() {
     QString s = configPath;
     s.append("/");
     s.append(ui->lineEdit_ResultsLocation->text());
@@ -551,7 +580,7 @@ void MainWindow::on_pushButton_LocationFind_clicked() {
 
 /*! \brief Switch between the visual window being shown or hidden.
  */
-void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
+void VisualMainWindow::on_pushButton_OpenCloseVisual_clicked() {
     if (opengl_window_open == false) {
         /* Calculate viewpoint */
         resetVisualViewpoint();
@@ -612,7 +641,7 @@ void MainWindow::on_pushButton_OpenCloseVisual_clicked() {
 /*! \brief Read the 0 xml defined by the current iteration.
  *  \return False if the file could not be found.
  */
-int MainWindow::readZeroXML() {
+int VisualMainWindow::readZeroXML() {
     if (itLocked) return 3;
 
     itLocked = true;
@@ -698,7 +727,7 @@ int MainWindow::readZeroXML() {
 /*! \brief Change the iteration number to the number of the spin box.
  *  \param arg1 The value of the spin box
  */
-void MainWindow::on_spinBox_valueChanged(int arg1) {
+void VisualMainWindow::on_spinBox_valueChanged(int arg1) {
     // qDebug() << "on_spinBox_valueChanged" << arg1;
     if (iteration != arg1) {
         iteration = arg1;
@@ -709,7 +738,7 @@ void MainWindow::on_spinBox_valueChanged(int arg1) {
 
 /*! \brief Increment the iteration number, read in new agent data, set the spin box value, update all graphs.
  */
-void MainWindow::increment_iteration() {
+void VisualMainWindow::increment_iteration() {
     int rc;
     /* increase iteration number */
     iteration++;
@@ -750,7 +779,7 @@ void MainWindow::increment_iteration() {
 
 /*! \brief Decrement the iteration number, set the spin box value, read in new agent data.
  */
-void MainWindow::decrement_iteration() {
+void VisualMainWindow::decrement_iteration() {
     int rc;
 
     if (iteration > 0) iteration--;
@@ -774,7 +803,7 @@ void MainWindow::decrement_iteration() {
 
 /*! \brief Provide a dialog to select a config file to open.
  */
-void MainWindow::open_config_file() {
+void VisualMainWindow::open_config_file() {
     QString fileName =
              QFileDialog::getOpenFileName(this, tr("Open config file..."),
                      "", tr("XML Files (*.xml)"));
@@ -785,7 +814,7 @@ void MainWindow::open_config_file() {
      readConfigFile(fileName, 0);
 }
 
-bool MainWindow::checkDirectoryForNextIteration(int it, int flag) {
+bool VisualMainWindow::checkDirectoryForNextIteration(int it, int flag) {
     QString fileName;
     fileName.append(configPath);
     fileName.append("/");
@@ -822,7 +851,7 @@ bool MainWindow::checkDirectoryForNextIteration(int it, int flag) {
  *  \param fileName The file name
  *  \param it The iteration number to be set
  */
-int MainWindow::readConfigFile(QString fileName, int it) {
+int VisualMainWindow::readConfigFile(QString fileName, int it) {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         QString error = tr("Cannot read file %1:\n%2.")
@@ -902,7 +931,7 @@ int MainWindow::readConfigFile(QString fileName, int it) {
 /*! \brief Enable or disable the time scale UI.
  *  \param b The enable or disable flag
  */
-void MainWindow::enableTimeScale(bool b) {
+void VisualMainWindow::enableTimeScale(bool b) {
     timeScale->enabled = b;
     ui->checkBox_timeScale->setChecked(b);
     ui->lineEdit_timeScale->setEnabled(b);
@@ -921,7 +950,7 @@ void MainWindow::enableTimeScale(bool b) {
         emit(ui->lineEdit_timeScale->setText(""));
 }
 
-int MainWindow::create_new_config_file(QString fileName) {
+int VisualMainWindow::create_new_config_file(QString fileName) {
     if (fileName.isEmpty())
         return 1;
 
@@ -948,7 +977,7 @@ int MainWindow::create_new_config_file(QString fileName) {
 
 /*! \brief Open a new config file.
  */
-void MainWindow::new_config_file() {
+void VisualMainWindow::new_config_file() {
     QString fileName =
              QFileDialog::getSaveFileName(this, tr("New config file..."),
                                           "",
@@ -956,7 +985,7 @@ void MainWindow::new_config_file() {
     create_new_config_file(fileName);
 }
 
-int MainWindow::save_config_file_internal(QString fileName) {
+int VisualMainWindow::save_config_file_internal(QString fileName) {
     if (fileName.isEmpty())
         return 1;
 
@@ -979,7 +1008,7 @@ int MainWindow::save_config_file_internal(QString fileName) {
 
 /*! \brief Provide a dialog to save a config file.
  */
-void MainWindow::save_as_config_file() {
+void VisualMainWindow::save_as_config_file() {
     QString configFile = "";
     if (fileOpen) {
         configFile.append(configPath);
@@ -996,13 +1025,13 @@ void MainWindow::save_as_config_file() {
 
 /*! \brief Save a config file.
  */
-void MainWindow::save_config_file() {
+void VisualMainWindow::save_config_file() {
     save_as_config_file();
 }
 
 /*! \brief Close the config file and disable the user interface.
  */
-void MainWindow::close_config_file() {
+void VisualMainWindow::close_config_file() {
     this->setWindowTitle("FLAME Visualiser - ");
     visual_settings_model->deleteRules();
     graph_settings_model->deletePlots();
@@ -1042,7 +1071,7 @@ void MainWindow::close_config_file() {
  *  \param file The QFile to write to.
  *  \return False if error, true if worked.
  */
-bool MainWindow::writeConfigXML(QFile * file) {
+bool VisualMainWindow::writeConfigXML(QFile * file) {
     fileOpen = true;
 
     QXmlStreamWriter stream(file);
@@ -1264,7 +1293,7 @@ bool MainWindow::writeConfigXML(QFile * file) {
 /*! \brief Handle any key press events.
  *  \param event The key press event
  */
-void MainWindow::keyPressEvent(QKeyEvent* event) {
+void VisualMainWindow::keyPressEvent(QKeyEvent* event) {
     switch (event->key()) {
         case Qt::Key_Escape:
             close();
@@ -1287,7 +1316,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event) {
 /*! \brief Automatically work out the offset of the scene to position
  *  centre at origin.
  */
-void MainWindow::calcPositionOffsetAndRatio() {
+void VisualMainWindow::calcPositionOffsetAndRatio() {
     double smallest_x = 0.0;
     double largest_x = 0.0;
     double smallest_y = 0.0;
@@ -1351,7 +1380,7 @@ void MainWindow::calcPositionOffsetAndRatio() {
     }
 }
 
-void MainWindow::slot_toggleAnimation() {
+void VisualMainWindow::slot_toggleAnimation() {
     if (opengl_window_open) {
         animation = !animation;
         if (animation)
@@ -1363,7 +1392,7 @@ void MainWindow::slot_toggleAnimation() {
 
 /*! \brief Emit animate signal when the animate button is pressed.
  */
-void MainWindow::on_pushButton_Animate_clicked() {
+void VisualMainWindow::on_pushButton_Animate_clicked() {
     slot_toggleAnimation();
     /*if (animation) {
         slot_stopAnimation();
@@ -1376,7 +1405,7 @@ void MainWindow::on_pushButton_Animate_clicked() {
 
 /*! \brief Open or close the image settings dialog.
  */
-void MainWindow::on_pushButton_ImageSettings_clicked() {
+void VisualMainWindow::on_pushButton_ImageSettings_clicked() {
     if (images_dialog_open == false) {
         images_dialog_open = true;
         images_dialog = new ImagesDialog();
@@ -1404,35 +1433,35 @@ void MainWindow::on_pushButton_ImageSettings_clicked() {
 
 /*! \brief Emit take snapshot signal if snapshot button is pressed.
  */
-void MainWindow::takeSnapshotSlot() {
+void VisualMainWindow::takeSnapshotSlot() {
     if (opengl_window_open) emit(takeSnapshotSignal());
 }
 
-void MainWindow::imageStatusSlot(QString s) {
+void VisualMainWindow::imageStatusSlot(QString s) {
     if (images_dialog_open) emit(imageStatusSignal(s));
 }
 
-void MainWindow::takeAnimationSlot(bool b) {
+void VisualMainWindow::takeAnimationSlot(bool b) {
     if (opengl_window_open) emit(takeAnimationSignal(b));
 }
 
-void MainWindow::updateImagesLocationSlot(QString s) {
+void VisualMainWindow::updateImagesLocationSlot(QString s) {
     if (opengl_window_open) emit(updateImagesLocationSignal(s));
 }
 
-void MainWindow::ruleUpdated(int /*row*/) {
+void VisualMainWindow::ruleUpdated(int /*row*/) {
     // Reread agents using updated rules
     if (opengl_window_open) readZeroXML();
 }
 
-void MainWindow::on_actionQuit_triggered() {
+void VisualMainWindow::on_actionQuit_triggered() {
     if (opengl_window_open) visual_window->close();
     if (images_dialog_open) images_dialog->close();
     if (restrict_dimension_open) restrictAxesDialog->close();
     close();
 }
 
-void MainWindow::on_actionAbout_triggered() {
+void VisualMainWindow::on_actionAbout_triggered() {
     QTextEdit *about = new QTextEdit(this);
     about->setWindowFlags(Qt::Dialog);
     about->setReadOnly(true);
@@ -1513,7 +1542,7 @@ void MainWindow::on_actionAbout_triggered() {
     about->show();
 }
 
-void MainWindow::on_pushButton_timeScale_clicked() {
+void VisualMainWindow::on_pushButton_timeScale_clicked() {
     if (time_dialog_open == false) {
         time_dialog_open = true;
         time_dialog = new TimeDialog(timeScale);
@@ -1529,17 +1558,17 @@ void MainWindow::on_pushButton_timeScale_clicked() {
     }
 }
 
-void MainWindow::calcTimeScale() {
+void VisualMainWindow::calcTimeScale() {
     timeString = timeScale->calcTimeScale(iteration);
     emit(ui->lineEdit_timeScale->setText(timeString));
 }
 
-void MainWindow::on_actionHelp_triggered() {
+void VisualMainWindow::on_actionHelp_triggered() {
     QDesktopServices::openUrl(
         QUrl("http://www.flame.ac.uk/docs/flamevisualiser/v4/"));
 }
 
-void MainWindow::on_actionRestrict_Axes_triggered() {
+void VisualMainWindow::on_actionRestrict_Axes_triggered() {
     if (!restrict_dimension_open) {
         restrict_dimension_open = true;
         restrictAxesDialog = new RestrictAxesDialog(restrictDimension,
@@ -1553,7 +1582,7 @@ void MainWindow::on_actionRestrict_Axes_triggered() {
     restrictAxesDialog->show();
 }
 
-void MainWindow::on_horizontalSlider_delay_valueChanged(int value) {
+void VisualMainWindow::on_horizontalSlider_delay_valueChanged(int value) {
     // qDebug() << "slider value: " << value;
     /* value range 0-99 */
     delayTime = (99-value)/99.0 * 1000.0; /* 1000 = 1s */
@@ -1561,7 +1590,7 @@ void MainWindow::on_horizontalSlider_delay_valueChanged(int value) {
     emit(updateDelayTime(delayTime));
 }
 
-void MainWindow::on_actionIteration_Info_triggered() {
+void VisualMainWindow::on_actionIteration_Info_triggered() {
     /* If no iteration data window then create one */
     if (iterationInfo_dialog_open == false) {
         iterationInfo_dialog = new IterationInfoDialog(&agentTypeCounts,
@@ -1578,7 +1607,7 @@ void MainWindow::on_actionIteration_Info_triggered() {
     }
 }
 
-void MainWindow::resetVisualViewpoint() {
+void VisualMainWindow::resetVisualViewpoint() {
     // Set ratio to be 1
     ratio = 1.0;
     // Reset offsets
@@ -1592,32 +1621,32 @@ void MainWindow::resetVisualViewpoint() {
     calcPositionOffsetAndRatio();
 }
 
-void MainWindow::on_pushButton_updateViewpoint_clicked() {
+void VisualMainWindow::on_pushButton_updateViewpoint_clicked() {
     visual_window->reset_camera();
     resetVisualViewpoint();
 }
 
-void MainWindow::on_actionPerspective_triggered() {
+void VisualMainWindow::on_actionPerspective_triggered() {
     ui->actionOrthogonal->setChecked(false);
     ui->actionPerspective->setChecked(true);
     visual_dimension = 3;
     if (opengl_window_open) visual_window->setDimension(3);
 }
 
-void MainWindow::on_actionOrthogonal_triggered() {
+void VisualMainWindow::on_actionOrthogonal_triggered() {
     ui->actionOrthogonal->setChecked(true);
     ui->actionPerspective->setChecked(false);
     visual_dimension = 2;
     if (opengl_window_open) visual_window->setDimension(2);
 }
 
-void MainWindow::updateAllGraphs() {
+void VisualMainWindow::updateAllGraphs() {
     int i;
     for (i = 0; i < graphs.size(); i++)
         graphs.at(i)->update();
 }
 
-void MainWindow::on_actionLines_triggered() {
+void VisualMainWindow::on_actionLines_triggered() {
     ui->actionLines->setChecked(true);
     ui->actionPoints->setChecked(false);
     ui->actionLinespoints->setChecked(false);
@@ -1626,7 +1655,7 @@ void MainWindow::on_actionLines_triggered() {
     updateAllGraphs();
 }
 
-void MainWindow::on_actionPoints_triggered() {
+void VisualMainWindow::on_actionPoints_triggered() {
     ui->actionLines->setChecked(false);
     ui->actionPoints->setChecked(true);
     ui->actionLinespoints->setChecked(false);
@@ -1635,7 +1664,7 @@ void MainWindow::on_actionPoints_triggered() {
     updateAllGraphs();
 }
 
-void MainWindow::on_actionLinespoints_triggered() {
+void VisualMainWindow::on_actionLinespoints_triggered() {
     ui->actionLines->setChecked(false);
     ui->actionPoints->setChecked(false);
     ui->actionLinespoints->setChecked(true);
@@ -1644,7 +1673,7 @@ void MainWindow::on_actionLinespoints_triggered() {
     updateAllGraphs();
 }
 
-void MainWindow::on_actionDots_triggered() {
+void VisualMainWindow::on_actionDots_triggered() {
     ui->actionLines->setChecked(false);
     ui->actionPoints->setChecked(false);
     ui->actionLinespoints->setChecked(false);
@@ -1653,13 +1682,13 @@ void MainWindow::on_actionDots_triggered() {
     updateAllGraphs();
 }
 
-void MainWindow::backgroundColourChanged(QColor c) {
+void VisualMainWindow::backgroundColourChanged(QColor c) {
     visualBackground = c;
     if (opengl_window_open)
         visual_window->setBackgroundColour(visualBackground);
 }
 
-void MainWindow::on_actionBackground_triggered() {
+void VisualMainWindow::on_actionBackground_triggered() {
     QColor savedColour = visualBackground;
     QColorDialog *colourDialog = new QColorDialog(this);
     colourDialog->setCurrentColor(visualBackground);
