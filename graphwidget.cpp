@@ -12,14 +12,12 @@
 #include "./graphwidget.h"
 #include "./condition.h"
 
-GraphWidget::GraphWidget(QList<Agent*> *a, int * gs,
-    TimeScale * ts, QWidget *parent)
+GraphWidget::GraphWidget(QList<Agent> *a, int * gs, QWidget *parent)
     : QWidget(parent) {
     agents = a;
     topValue = 0;
     topIteration = 0;
     style = gs;
-    timeScale = ts;
     setFocus();
 }
 
@@ -89,7 +87,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     QSize windowSize = size();
     int width = windowSize.width();
     int height = windowSize.height();
-    int xleft = 0;
+    int xleft = 40;
     int xright = width-40;
     int ytop = 20;
     int ybottom = height-40;
@@ -101,8 +99,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
         painter.setPen(QPen(plots.at(j)->getColour()));
         QString text = QString("%1").arg(plots[j]->getYaxis());
         if (plots[j]->condition().enable)
-            text.append(QString(" (%2)").
-                arg(plots[j]->condition().getString()));
+        text.append(QString(" (%2)").arg(plots[j]->condition().getString()));
         /* Add space for points symbol */
         text.append(" ");
 
@@ -116,77 +113,7 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
 
         painter.drawText(width-bbox.width()-10, 20+(j*bbox.height()), text);
 
-        if (xright > (width-bbox.width()-10)) xright = width-bbox.width()-10;
-    }
-
-    // Use topValue to position xright and xleft
-    const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
-            Qt::AlignLeft, QString("%1").arg(topValue)));
-    xright -= bbox.width() + 10;
-    xleft += bbox.width() + 15;
-
-    painter.setPen(QPen(Qt::black));
-    /* Draw graph markers */
-    // Y-axis
-    painter.drawText(5, ytop-5, bbox.width(), 10,
-            Qt::AlignRight | Qt::AlignVCenter, QString("%1").arg(topValue));
-    painter.drawLine(xleft, ytop, xleft-5, ytop);
-    /*int mod = 1;
-    int tp = topValue;
-    while(mod != 0 && tp > 0) {
-        mod = tp%10;
-        if(mod != 0) tp--;
-    }
-    qDebug() << tp;
-    if(tp > 9) {
-        int tip = ybottom-(((tp/static_cast<double>(topValue)))*(ybottom-ytop));
-        painter.drawLine(xleft, tip, xleft-5, tip);
-        painter.drawText(5, tip+5, QString("%1").arg(tp));
-        int tip5 = ybottom-((((tp/2.0)/static_cast<double>(topValue)))*(ybottom-ytop));
-        painter.drawLine(xleft, tip5, xleft-5, tip5);
-        painter.drawText(5, tip5+5, QString("%1").arg(tp/2.0));
-
-    }*/
-    painter.drawText(5, ybottom-5, bbox.width(), 10,
-            Qt::AlignRight | Qt::AlignVCenter, QString("0"));
-    painter.drawLine(xleft, ybottom, xleft-5, ybottom);
-
-
-    // X-axis
-    // 0
-    painter.drawLine(xleft, ybottom, xleft, ybottom+5);
-    painter.drawText(xleft-15, ybottom+10, bbox.width(), 10,
-                     Qt::AlignCenter, QString("0"));
-    // tics
-    /*if (timeScale->days >= 4) {
-        int mod = 1;
-        int topDays = timeScale->days;
-        while(mod != 0 && topDays > 0) {
-            mod = topDays%4;
-            if(mod != 0) topDays--;
-        }
-
-        int mdays = topDays/2.0;
-        int x1 = xleft+( ((mdays)/static_cast<double>(topIteration))*(xright-xleft));
-        painter.drawLine(x1, ybottom, x1, ybottom+5);
-        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
-                Qt::AlignLeft, QString("%1").arg(mdays)));
-        painter.drawText(x1-bbox.width(), ybottom+10, bbox.width(), 10, Qt::AlignCenter, QString("%1").arg(mdays));
-    }*/
-    // end
-    painter.drawLine(xright, ybottom, xright, ybottom+5);
-    if (plotsContainTimeScale()) {
-        // Time
-        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
-                Qt::AlignLeft, timeScale->timeString));
-        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(),
-                         Qt::AlignCenter, timeScale->timeString);
-    } else {
-        // Iterations
-        const QRect bbox(painter.boundingRect(QRect(0, 0, 0, 0),
-                Qt::AlignLeft, QString("%1 iterations").arg(topIteration)));
-        painter.drawText(xright-5, ybottom+10, bbox.width(), bbox.height(),
-            Qt::AlignCenter, QString("%1 iterations").arg(topIteration));
+        if (xright > (width-bbox.width()-40)) xright = width-bbox.width()-40;
     }
 
     int last_valid_x;
@@ -241,14 +168,13 @@ void GraphWidget::paintEvent(QPaintEvent */*event*/) {
     painter.setPen(QPen(Qt::black));
     painter.drawLine(xleft, ytop, xleft, ybottom);
     painter.drawLine(xleft, ybottom, xright, ybottom);
-}
-
-bool GraphWidget::plotsContainTimeScale() {
-    bool ts = false;
-    for (int j = 0; j < plots.count(); j ++) {
-        if (plots.at(j)->getXaxis() == "time scale") ts = true;
-    }
-    return ts;
+    /* Draw graph markers */
+    painter.drawLine(xleft, ytop, xleft-5, ytop);
+    painter.drawText(5, ytop-5, 30, 10, Qt::AlignCenter,
+            QString("%1").arg(topValue));
+    painter.drawLine(xright, ybottom, xright, ybottom+5);
+    painter.drawText(xright-15, ybottom+10, 30, 10, Qt::AlignCenter,
+            QString("%1").arg(topIteration));
 }
 
 void GraphWidget::updateData(int it) {
@@ -260,30 +186,30 @@ void GraphWidget::updateData(int it) {
         count = 0;
 
         for (int i = 0; i < agents->count(); i++) {
-            if (QString::compare(agents->at(i)->agentType,
+            if (QString::compare(agents->at(i).agentType,
                     plots.at(j)->getYaxis()) == 0) {
                 /* If a condition is enabled then check it */
                 if (plots.at(j)->condition().enable) {
-                    for (int k = 0; k < agents->at(i)->tags.count(); k++) {
+                    for (int k = 0; k < agents->at(i).tags.count(); k++) {
                         if (QString::compare(plots.at(j)->condition().variable,
-                                agents->at(i)->tags.at(k)) == 0) {
+                                agents->at(i).tags.at(k)) == 0) {
                             if (plots.at(j)->condition().op == "==" &&
-                                    agents->at(i)->values.at(k).toDouble() ==
+                                    agents->at(i).values.at(k).toDouble() ==
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == "!=" &&
-                                    agents->at(i)->values.at(k).toDouble() !=
+                                    agents->at(i).values.at(k).toDouble() !=
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == ">" &&
-                                    agents->at(i)->values.at(k).toDouble() >
+                                    agents->at(i).values.at(k).toDouble() >
                             plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == "<" &&
-                                    agents->at(i)->values.at(k).toDouble() <
+                                    agents->at(i).values.at(k).toDouble() <
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == ">=" &&
-                                    agents->at(i)->values.at(k).toDouble() >=
+                                    agents->at(i).values.at(k).toDouble() >=
                                     plots.at(j)->condition().value) count++;
                             else if (plots.at(j)->condition().op == "<=" &&
-                                    agents->at(i)->values.at(k).toDouble() <=
+                                    agents->at(i).values.at(k).toDouble() <=
                                     plots.at(j)->condition().value) count++;
                         }
                     }
@@ -315,9 +241,6 @@ void GraphWidget::keyPressEvent(QKeyEvent* event) {
             break;
         case Qt::Key_X:
             emit(increase_iteration());
-            break;
-        case Qt::Key_A:
-            emit(signal_toggleAnimation());
             break;
         default:
             event->ignore();

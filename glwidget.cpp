@@ -19,7 +19,7 @@
 #include "./agentdialog.h"
 
 GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
-        Dimension * rd, float * oz, bool *ani, QWidget *parent)
+        Dimension * rd, float * oz, QWidget *parent)
     : QGLWidget(parent) {
     agents = 0;
     setMouseTracking(true);
@@ -41,7 +41,7 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
     itforward = false;
     itback = false;
     block = false;
-    animation = ani;
+    animation = false;
     locked = false;
     animationImages = false;
     imageLock = false;
@@ -55,7 +55,6 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
     delayLock = false;
     delayTime = 0;
     orthoZoom = oz;
-    background = Qt::white;
 
     time = QTime::currentTime();
     timer = new QTimer(this);
@@ -72,19 +71,12 @@ GLWidget::GLWidget(float * xr, float * yr, float * xm, float * ym, float * zm,
 }
 
 GLWidget::~GLWidget() {
-    // Delete display lists
-    glDeleteLists(nPartsList, 5);
     emit(visual_window_closed());
 }
 
 void GLWidget::closeEvent(QCloseEvent *event) {
     emit(visual_window_closed());
     event->accept();
-}
-
-void GLWidget::setBackgroundColour(QColor b) {
-    background = b;
-    initializeGL();
 }
 
 void GLWidget::updateDelayTime(int d) {
@@ -134,6 +126,14 @@ void GLWidget::takeSnapshot() {
     imageLock = false;
 }
 
+void GLWidget::stopAnimation() {
+    animation = false;
+}
+
+void GLWidget::startAnimation() {
+    animation = true;
+}
+
 void GLWidget::takeAnimation(bool b) {
     animationImages = b;
 }
@@ -146,7 +146,7 @@ void GLWidget::nextIteration() {
     emit(increase_iteration());
 }
 
-void GLWidget::update_agents(QList<Agent *> *a) {
+void GLWidget::update_agents(QList<Agent> * a) {
     agents = a;
 }
 
@@ -189,7 +189,7 @@ void GLWidget::initializeGL() {
     // glEnable(GL_BLEND);
     // glEnable(GL_POLYGON_SMOOTH);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(background.redF(), background.greenF(), background.blueF(), 0);
+    glClearColor(1, 1, 1, 0);
     glShadeModel(GL_SMOOTH);
     glClearDepth(1.0f);
     // glEnable( GL_DEPTH_TEST );
@@ -207,30 +207,6 @@ void GLWidget::initializeGL() {
     glEnable(GL_LIGHT0);
     // glEnable(GL_BLEND);
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Display lists
-    nPartsList = glGenLists(5);
-    SPHERE_4  = nPartsList;
-    SPHERE_8  = nPartsList+1;
-    SPHERE_16 = nPartsList+2;
-    SPHERE_32 = nPartsList+3;
-    SPHERE_64 = nPartsList+4;
-    dl_qobj = gluNewQuadric();
-    glNewList(SPHERE_4, GL_COMPILE);
-        gluSphere(dl_qobj, 1.0, 4, 4);
-    glEndList();
-    glNewList(SPHERE_8, GL_COMPILE);
-        gluSphere(dl_qobj, 1.0, 8, 8);
-    glEndList();
-    glNewList(SPHERE_16, GL_COMPILE);
-        gluSphere(dl_qobj, 1.0, 16, 16);
-    glEndList();
-    glNewList(SPHERE_32, GL_COMPILE);
-        gluSphere(dl_qobj, 1.0, 32, 32);
-    glEndList();
-    glNewList(SPHERE_64, GL_COMPILE);
-        gluSphere(dl_qobj, 1.0, 64, 64);
-    glEndList();
 }
 
 void GLWidget::resizeGL(int w, int h) {
@@ -261,20 +237,9 @@ void GLWidget::paintGL() {
     glRotatef(*yrotate, 1.0f, 0.0f, 0.0f);
     glRotatef(*xrotate, 0.0f, 0.0f, 1.0f);
 
-    // Does not include translation and rotation of scene
-    // at the moment so leave out
-    // ExtractFrustum();
-
     drawAgents(GL_RENDER);
 
     glPopMatrix();
-}
-
-void GLWidget::drawSphere(double size) {
-    if (size > 0.4)
-        glCallList(SPHERE_64);
-    else
-        glCallList(SPHERE_16);
 }
 
 void GLWidget::drawAgents(GLenum mode) {
@@ -285,19 +250,19 @@ void GLWidget::drawAgents(GLenum mode) {
     int name = 0;
     GLfloat mat_ambientA[4];
     nameAgents.clear();
-    /*int style = 0;
-    GLUquadricObj * qobj = gluNewQuadric();
 
+    int style = 0;
+    GLUquadricObj * qobj = gluNewQuadric();
     if (style == 0) {
-        gluQuadricDrawStyle(qobj, GLU_FILL); // smooth shaded
+        gluQuadricDrawStyle(qobj, GLU_FILL); /* smooth shaded */
         gluQuadricNormals(qobj, GLU_SMOOTH);
     } else if (style == 1) {
-        gluQuadricDrawStyle(qobj, GLU_FILL); // flat shaded
+        gluQuadricDrawStyle(qobj, GLU_FILL); /* flat shaded */
         gluQuadricNormals(qobj, GLU_FLAT);
     } else if (style == 2) {
-        gluQuadricDrawStyle(qobj, GLU_LINE); // all polygons wireframe
+        gluQuadricDrawStyle(qobj, GLU_LINE); /* all polygons wireframe */
         gluQuadricNormals(qobj, GLU_NONE);
-    }*/
+    }
 
     for (int pass = 1; pass < 4; pass++) {
         if (pass == 1) {
@@ -321,22 +286,22 @@ void GLWidget::drawAgents(GLenum mode) {
                 /* Check the restrict dimensions */
                 if (!restrictAxesOn || (restrictAxesOn &&
                 ( (!restrictDimension->xminon ||
-                        (restrictDimension->xminon && rule->agents.at(i)->x >
+                        (restrictDimension->xminon && rule->agents.at(i).x >
                             restrictDimension->xmin)) &&
                     (!restrictDimension->xmaxon ||
-                        (restrictDimension->xmaxon && rule->agents.at(i)->x <
+                        (restrictDimension->xmaxon && rule->agents.at(i).x <
                             restrictDimension->xmax)) &&
                     (!restrictDimension->yminon ||
-                        (restrictDimension->yminon && rule->agents.at(i)->y >
+                        (restrictDimension->yminon && rule->agents.at(i).y >
                             restrictDimension->ymin)) &&
                     (!restrictDimension->ymaxon ||
-                        (restrictDimension->ymaxon && rule->agents.at(i)->y <
+                        (restrictDimension->ymaxon && rule->agents.at(i).y <
                             restrictDimension->ymax)) &&
                     (!restrictDimension->zminon ||
-                        (restrictDimension->zminon && rule->agents.at(i)->z >
+                        (restrictDimension->zminon && rule->agents.at(i).z >
                             restrictDimension->zmin)) &&
                     (!restrictDimension->zmaxon ||
-                        (restrictDimension->zmaxon && rule->agents.at(i)->z <
+                        (restrictDimension->zmaxon && rule->agents.at(i).z <
                             restrictDimension->zmax)) ))) {
                     /* If the object is opaque and first pass, or
                        if the object is transparent and is the second or third pass */
@@ -344,11 +309,10 @@ void GLWidget::drawAgents(GLenum mode) {
                             (rule->colour().alphaF() < 0.95 && pass >= 2))) {
                         glPushMatrix();
 
-                        glTranslatef(rule->agents.at(i)->x,
-                                     rule->agents.at(i)->y,
-                                     rule->agents.at(i)->z);
+                        glTranslatef(rule->agents.at(i).x, rule->agents.at(i).y,
+                                rule->agents.at(i).z);
 
-                        if (rule->agents.at(i)->isPicked) {
+                        if (rule->agents.at(i).isPicked) {
                             mat_ambientA[0] = 1.0-rule->colour().redF();
                             mat_ambientA[1] = 1.0-rule->colour().greenF();
                             mat_ambientA[2] = 1.0-rule->colour().blueF();
@@ -366,36 +330,32 @@ void GLWidget::drawAgents(GLenum mode) {
                         else
                             glColor4fv(mat_ambientA);
 
-                        size = rule->agents.at(i)->shapeDimension/2.0;
-                        sizeY = rule->agents.at(i)->shapeDimensionY/2.0;
-                        sizeZ = rule->agents.at(i)->shapeDimensionZ/2.0;
+                        size = rule->agents.at(i).shapeDimension;
+                        sizeY = rule->agents.at(i).shapeDimensionY;
+                        sizeZ = rule->agents.at(i).shapeDimensionZ;
 
                         if (QString::compare("sphere", rule->shape().
                                 getShape()) == 0) {
+                            // if the sphere is large then draw with a
+                            // higher grade
+                            /*grade = 16;
+                            if(size > 0.1) grade = 32;*/
+                            int grade = rule->shape().getQuality();
+
                             glEnable(GL_CULL_FACE);
                             if (pass == 2) {
                                 if (mode == GL_SELECT) glLoadName(0);
                                 // Draw back face
                                 glCullFace(GL_FRONT);
-                                glPushMatrix();
-                                glScalef(size, size, size);
-                                glEnable(GL_NORMALIZE);
-                                drawSphere(size);
-                                glDisable(GL_NORMALIZE);
-                                glPopMatrix();
+                                gluSphere(qobj, size/2.0, grade, grade);
                             } else {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
-                                    nameAgents.insert(name, rule->agents.at(i));
+                                    nameAgents.insert(name, &rule->agents[i]);
                                 }
                                 // Draw front face
                                 glCullFace(GL_BACK);
-                                glPushMatrix();
-                                glScalef(size, size, size);
-                                glEnable(GL_NORMALIZE);
-                                drawSphere(size);
-                                glDisable(GL_NORMALIZE);
-                                glPopMatrix();
+                                gluSphere(qobj, size/2.0, grade, grade);
                             }
                             glDisable(GL_CULL_FACE);
                         } else if (QString::compare("point", rule->shape().
@@ -403,13 +363,12 @@ void GLWidget::drawAgents(GLenum mode) {
                             if (pass != 2) {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
-                                    nameAgents.insert(name, rule->agents[i]);
+                                    nameAgents.insert(name, &rule->agents[i]);
                                 }
 
                                 glDisable(GL_LIGHTING);
                                 glColor4fv(mat_ambientA);
-                                glPointSize(static_cast<int>
-                                    (rule->agents.at(i)->shapeDimension));
+                                glPointSize(static_cast<int>(size));
                                 glBegin(GL_POINTS);
                                 glVertex3f(0.0, 0.0, 0.0);
                                 glEnd();
@@ -426,7 +385,7 @@ void GLWidget::drawAgents(GLenum mode) {
                             } else {
                                 if (mode == GL_SELECT) {
                                     glLoadName(++name);
-                                    nameAgents.insert(name, rule->agents[i]);
+                                    nameAgents.insert(name, &rule->agents[i]);
                                 }
                                 // Draw front face
                                 glCullFace(GL_BACK);
@@ -447,40 +406,40 @@ void GLWidget::drawAgents(GLenum mode) {
 void GLWidget::drawCube(float size, float sizeY, float sizeZ) {
     glBegin(GL_QUADS);  // Draw using quads, T-Top B-Bottom
     glNormal3f(0.0f, 0.5f, 0.0f);
-    glVertex3f(size, sizeY, -sizeZ);  // T-right of the quad (T)
-    glVertex3f(-size, sizeY, -sizeZ);  // T-left of the quad (T)
-    glVertex3f(-size, sizeY,  sizeZ);  // B-left of the quad (T)
-    glVertex3f(size, sizeY,  sizeZ);  // B-right of the quad (T)
+    glVertex3f(size/2.0, sizeY/2.0, -sizeZ/2.0);  // T-right of the quad (T)
+    glVertex3f(-size/2.0, sizeY/2.0, -sizeZ/2.0);  // T-left of the quad (T)
+    glVertex3f(-size/2.0, sizeY/2.0,  sizeZ/2.0);  // B-left of the quad (T)
+    glVertex3f(size/2.0, sizeY/2.0,  sizeZ/2.0);  // B-right of the quad (T)
 
     glNormal3f(0.0f, -0.5f, 0.0f);
-    glVertex3f(size, -sizeY,  sizeZ);  // T-right of the quad (B)
-    glVertex3f(-size, -sizeY,  sizeZ);  // T-left of the quad (B)
-    glVertex3f(-size, -sizeY, -sizeZ);  // B-left of the quad (B)
-    glVertex3f(size, -sizeY, -sizeZ);  // B-right of the quad (B)
+    glVertex3f(size/2.0, -sizeY/2.0,  sizeZ/2.0);  // T-right of the quad (B)
+    glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0);  // T-left of the quad (B)
+    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-left of the quad (B)
+    glVertex3f(size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-right of the quad (B)
 
     glNormal3f(0.0f, 0.0f, 0.5f);
-    glVertex3f(size,  sizeY, sizeZ);  // T-right of the quad (F)
-    glVertex3f(-size,  sizeY, sizeZ);  // T-left of the quad (F)
-    glVertex3f(-size, -sizeY, sizeZ);  // B-left of the quad (F)
-    glVertex3f(size, -sizeY, sizeZ);  // B-right of the quad (F)
+    glVertex3f(size/2.0,  sizeY/2.0, sizeZ/2.0);  // T-right of the quad (F)
+    glVertex3f(-size/2.0,  sizeY/2.0, sizeZ/2.0);  // T-left of the quad (F)
+    glVertex3f(-size/2.0, -sizeY/2.0, sizeZ/2.0);  // B-left of the quad (F)
+    glVertex3f(size/2.0, -sizeY/2.0, sizeZ/2.0);  // B-right of the quad (F)
 
     glNormal3f(0.0f, 0.0f, -0.5f);
-    glVertex3f(size, -sizeY, -sizeZ);  // B-left of the quad (B)
-    glVertex3f(-size, -sizeY, -sizeZ);  // B-right of the quad (B)
-    glVertex3f(-size,  sizeY, -sizeZ);  // T-right of the quad (B)
-    glVertex3f(size,  sizeY, -sizeZ);  // T-left of the quad (B)
+    glVertex3f(size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-left of the quad (B)
+    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-right of the quad (B)
+    glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-right of the quad (B)
+    glVertex3f(size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-left of the quad (B)
 
     glNormal3f(-0.5f, 0.0f, 0.0f);
-    glVertex3f(-size,  sizeY,  sizeZ);  // T-right of the quad (L)
-    glVertex3f(-size,  sizeY, -sizeZ);  // T-left of the quad (L)
-    glVertex3f(-size, -sizeY, -sizeZ);  // B-left of the quad (L)
-    glVertex3f(-size, -sizeY,  sizeZ);  // B-right of the quad (L)
+    glVertex3f(-size/2.0,  sizeY/2.0,  sizeZ/2.0);  // T-right of the quad (L)
+    glVertex3f(-size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-left of the quad (L)
+    glVertex3f(-size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-left of the quad (L)
+    glVertex3f(-size/2.0, -sizeY/2.0,  sizeZ/2.0);  // B-right of the quad (L)
 
     glNormal3f(0.5f, 0.0f, 0.0f);
-    glVertex3f(size,  sizeY, -sizeZ);  // T-right of the quad (R)
-    glVertex3f(size,  sizeY,  sizeZ);  // T-left of the quad (R)
-    glVertex3f(size, -sizeY,  sizeZ);  // B-left of the quad (R)
-    glVertex3f(size, -sizeY, -sizeZ);  // B-right of the quad (R)
+    glVertex3f(size/2.0,  sizeY/2.0, -sizeZ/2.0);  // T-right of the quad (R)
+    glVertex3f(size/2.0,  sizeY/2.0,  sizeZ/2.0);  // T-left of the quad (R)
+    glVertex3f(size/2.0, -sizeY/2.0,  sizeZ/2.0);  // B-left of the quad (R)
+    glVertex3f(size/2.0, -sizeY/2.0, -sizeZ/2.0);  // B-right of the quad (R)
     glEnd();   // Done drawing the color cube
 }
 
@@ -523,7 +482,7 @@ void GLWidget::paintEvent(QPaintEvent */*event*/) {
     /* Start the timer with timeout units of milliseconds */
     timer->start(qMax(0, 20 - delay));
 
-    if (*animation && !locked && !imageLock && !delayLock) {
+    if (animation && !locked && !imageLock && !delayLock) {
         if (delayTime > 0) {
             delayLock = true;
             delayTimer->start(delayTime);
@@ -605,7 +564,13 @@ void GLWidget::keyPressEvent(QKeyEvent* event) {
             emit(increase_iteration());
             break;
         case Qt::Key_A:
-            emit(signal_toggleAnimation());
+            if (animation) {
+                animation = false;
+                emit(signal_stopAnimation());
+            } else {
+                animation = true;
+                emit(signal_startAnimation());
+            }
             break;
         case Qt::Key_P:
             pickOn = true;
@@ -690,18 +655,16 @@ void GLWidget::processSelection(int mx, int my) {
     drawNameAgent = false;
 
     int i, j;
-    int nitems, zmin, item = 0;
-    //  int zmax;
+    int nitems, zmin, zmax, item = 0;
     int minimumDepth = 0;
-    int pickItem = -1;
+    int pickItem;
 
     // qDebug() << "hits = " << hits;
     int index = 0;
     for (i = 0; i < hits; i++) {
         nitems = select_buf[index++];
         zmin = select_buf[index++];
-        //  zmax = select_buf[index++];
-        index++;
+        zmax = select_buf[index++];
 
         // qDebug() << zmin << zmax;
         for (j = 0; j < nitems; j++) {
@@ -722,10 +685,10 @@ void GLWidget::processSelection(int mx, int my) {
             }
         }
     }
-    if (pickItem != -1) {
-        RuleAgent * a = nameAgents.value(pickItem);
-        nameAgent.tags = QStringList(a->agent->tags);
-        nameAgent.values = QStringList(a->agent->values);
+    if (hits > 0) {
+        Agent * a = nameAgents.value(pickItem);
+        nameAgent.tags = QStringList(a->tags);
+        nameAgent.values = QStringList(a->values);
         drawNameAgent = false;  // true;
 
         a->isPicked = true;
@@ -734,7 +697,7 @@ void GLWidget::processSelection(int mx, int my) {
          * agent dialog */
         pickOn = false;
         /* Create dialog */
-        AgentDialog * agentDialog = new AgentDialog(a->agent, this);
+        AgentDialog * agentDialog = new AgentDialog(a, this);
         agentDialog->show();
     }
 
@@ -743,150 +706,4 @@ void GLWidget::processSelection(int mx, int my) {
 
 void GLWidget::restrictAxes(bool b) {
     restrictAxesOn = b;
-}
-
-float GLWidget::SphereInFrustum(float x, float y, float z, float radius) {
-    int p;
-    float d;
-
-    for (p = 0; p < 6; p++) {
-        d = frustum[p][0] * x + frustum[p][1] * y +
-            frustum[p][2] * z + frustum[p][3];
-        if (d <= -radius) return 0;
-    }
-    return d + radius;
-}
-
-void GLWidget::ExtractFrustum() {
-    float   proj[16];
-    float   modl[16];
-    float   clip[16];
-    float   t;
-
-    /* Get the current PROJECTION matrix from OpenGL */
-    glGetFloatv(GL_PROJECTION_MATRIX, proj);
-
-    /* Get the current MODELVIEW matrix from OpenGL */
-    glGetFloatv(GL_MODELVIEW_MATRIX, modl);
-
-    /* Combine the two matrices (multiply projection by modelview) */
-    clip[ 0] = modl[ 0] * proj[ 0] + modl[ 1] * proj[ 4] +
-               modl[ 2] * proj[ 8] + modl[ 3] * proj[12];
-    clip[ 1] = modl[ 0] * proj[ 1] + modl[ 1] * proj[ 5] +
-               modl[ 2] * proj[ 9] + modl[ 3] * proj[13];
-    clip[ 2] = modl[ 0] * proj[ 2] + modl[ 1] * proj[ 6] +
-               modl[ 2] * proj[10] + modl[ 3] * proj[14];
-    clip[ 3] = modl[ 0] * proj[ 3] + modl[ 1] * proj[ 7] +
-               modl[ 2] * proj[11] + modl[ 3] * proj[15];
-
-    clip[ 4] = modl[ 4] * proj[ 0] + modl[ 5] * proj[ 4] +
-               modl[ 6] * proj[ 8] + modl[ 7] * proj[12];
-    clip[ 5] = modl[ 4] * proj[ 1] + modl[ 5] * proj[ 5] +
-               modl[ 6] * proj[ 9] + modl[ 7] * proj[13];
-    clip[ 6] = modl[ 4] * proj[ 2] + modl[ 5] * proj[ 6] +
-               modl[ 6] * proj[10] + modl[ 7] * proj[14];
-    clip[ 7] = modl[ 4] * proj[ 3] + modl[ 5] * proj[ 7] +
-               modl[ 6] * proj[11] + modl[ 7] * proj[15];
-
-    clip[ 8] = modl[ 8] * proj[ 0] + modl[ 9] * proj[ 4] +
-               modl[10] * proj[ 8] + modl[11] * proj[12];
-    clip[ 9] = modl[ 8] * proj[ 1] + modl[ 9] * proj[ 5] +
-               modl[10] * proj[ 9] + modl[11] * proj[13];
-    clip[10] = modl[ 8] * proj[ 2] + modl[ 9] * proj[ 6] +
-               modl[10] * proj[10] + modl[11] * proj[14];
-    clip[11] = modl[ 8] * proj[ 3] + modl[ 9] * proj[ 7] +
-               modl[10] * proj[11] + modl[11] * proj[15];
-
-    clip[12] = modl[12] * proj[ 0] + modl[13] * proj[ 4] +
-               modl[14] * proj[ 8] + modl[15] * proj[12];
-    clip[13] = modl[12] * proj[ 1] + modl[13] * proj[ 5] +
-               modl[14] * proj[ 9] + modl[15] * proj[13];
-    clip[14] = modl[12] * proj[ 2] + modl[13] * proj[ 6] +
-               modl[14] * proj[10] + modl[15] * proj[14];
-    clip[15] = modl[12] * proj[ 3] + modl[13] * proj[ 7] +
-               modl[14] * proj[11] + modl[15] * proj[15];
-
-    /* Extract the numbers for the RIGHT plane */
-    frustum[0][0] = clip[ 3] - clip[ 0];
-    frustum[0][1] = clip[ 7] - clip[ 4];
-    frustum[0][2] = clip[11] - clip[ 8];
-    frustum[0][3] = clip[15] - clip[12];
-
-    /* Normalize the result */
-    t = sqrt(frustum[0][0] * frustum[0][0] + frustum[0][1] *
-             frustum[0][1] + frustum[0][2] * frustum[0][2]);
-    frustum[0][0] /= t;
-    frustum[0][1] /= t;
-    frustum[0][2] /= t;
-    frustum[0][3] /= t;
-
-    /* Extract the numbers for the LEFT plane */
-    frustum[1][0] = clip[ 3] + clip[ 0];
-    frustum[1][1] = clip[ 7] + clip[ 4];
-    frustum[1][2] = clip[11] + clip[ 8];
-    frustum[1][3] = clip[15] + clip[12];
-
-    /* Normalize the result */
-    t = sqrt(frustum[1][0] * frustum[1][0] + frustum[1][1] *
-             frustum[1][1] + frustum[1][2] * frustum[1][2]);
-    frustum[1][0] /= t;
-    frustum[1][1] /= t;
-    frustum[1][2] /= t;
-    frustum[1][3] /= t;
-
-    /* Extract the BOTTOM plane */
-    frustum[2][0] = clip[ 3] + clip[ 1];
-    frustum[2][1] = clip[ 7] + clip[ 5];
-    frustum[2][2] = clip[11] + clip[ 9];
-    frustum[2][3] = clip[15] + clip[13];
-
-    /* Normalize the result */
-    t = sqrt(frustum[2][0] * frustum[2][0] + frustum[2][1] *
-             frustum[2][1] + frustum[2][2] * frustum[2][2]);
-    frustum[2][0] /= t;
-    frustum[2][1] /= t;
-    frustum[2][2] /= t;
-    frustum[2][3] /= t;
-
-    /* Extract the TOP plane */
-    frustum[3][0] = clip[ 3] - clip[ 1];
-    frustum[3][1] = clip[ 7] - clip[ 5];
-    frustum[3][2] = clip[11] - clip[ 9];
-    frustum[3][3] = clip[15] - clip[13];
-
-    /* Normalize the result */
-    t = sqrt(frustum[3][0] * frustum[3][0] + frustum[3][1] *
-             frustum[3][1] + frustum[3][2] * frustum[3][2]);
-    frustum[3][0] /= t;
-    frustum[3][1] /= t;
-    frustum[3][2] /= t;
-    frustum[3][3] /= t;
-
-    /* Extract the FAR plane */
-    frustum[4][0] = clip[ 3] - clip[ 2];
-    frustum[4][1] = clip[ 7] - clip[ 6];
-    frustum[4][2] = clip[11] - clip[10];
-    frustum[4][3] = clip[15] - clip[14];
-
-    /* Normalize the result */
-    t = sqrt(frustum[4][0] * frustum[4][0] + frustum[4][1] *
-             frustum[4][1] + frustum[4][2] * frustum[4][2]);
-    frustum[4][0] /= t;
-    frustum[4][1] /= t;
-    frustum[4][2] /= t;
-    frustum[4][3] /= t;
-
-    /* Extract the NEAR plane */
-    frustum[5][0] = clip[ 3] + clip[ 2];
-    frustum[5][1] = clip[ 7] + clip[ 6];
-    frustum[5][2] = clip[11] + clip[10];
-    frustum[5][3] = clip[15] + clip[14];
-
-    /* Normalize the result */
-    t = sqrt(frustum[5][0] * frustum[5][0] + frustum[5][1] *
-             frustum[5][1] + frustum[5][2] * frustum[5][2]);
-    frustum[5][0] /= t;
-    frustum[5][1] /= t;
-    frustum[5][2] /= t;
-    frustum[5][3] /= t;
 }

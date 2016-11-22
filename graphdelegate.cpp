@@ -8,10 +8,9 @@
 #include <QComboBox>
 #include "./graphdelegate.h"
 
-GraphDelegate::GraphDelegate(GraphSettingsModel *gsm, int type, QObject *parent)
+GraphDelegate::GraphDelegate(GraphSettingsModel *gsm, QObject *parent)
     : QItemDelegate(parent) {
     gsmodel = gsm;
-    type_ = type;
 }
 
 
@@ -19,15 +18,9 @@ QWidget *GraphDelegate::createEditor(QWidget *parent,
     const QStyleOptionViewItem &/*option*/,
     const QModelIndex &/*index*/) const {
     QComboBox *editor = new QComboBox(parent);
-    if (type_ == 0) {
-        for (int i = 0; i < gsmodel->getPlots().count(); i++) {
-            QString text = QString("Graph %1").arg(i+1);
-            editor->insertItem(i, text);
-        }
-    }
-    if (type_ == 1) {
-        editor->insertItem(0, "iteration");
-        editor->insertItem(1, "time scale");
+    for (int i = 0; i < gsmodel->getPlots().count(); i++) {
+        QString text = QString("Graph %1").arg(i+1);
+        editor->insertItem(i, text);
     }
     return editor;
 }

@@ -20,7 +20,7 @@ class ConfigXMLReader : public QXmlStreamReader {
     ConfigXMLReader(VisualSettingsModel * vsm, GraphSettingsModel * gsm,
         QString * rD, TimeScale * ts, double * r,
         float * xr, float *yr, float *xm, float * ym, float * zm,
-        int * delay, float * oz, int * vd, QColor *vbg);
+        int * delay, float * oz, int * vd);
 
     bool read(QIODevice * device);
 
@@ -57,7 +57,6 @@ class ConfigXMLReader : public QXmlStreamReader {
     int * delayTime;
     float * orthoZoom;
     int * visual_dimension;
-    QColor * backgroundColour;
 };
 
 #endif  // CONFIGXMLREADER_H_

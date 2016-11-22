@@ -12,10 +12,34 @@
 
 class TimeScale {
   public:
-    TimeScale();
-    void calcTotalSeconds();
-    void reset();
-    QString calcTimeScale(int iteration);
+    TimeScale() {
+        reset();
+    }
+
+    void calcTotalSeconds() {
+        totalseconds = second;
+        totalseconds += minute*60;
+        totalseconds += hour*60*60;
+        totalseconds += day*60*60*24;
+
+        if (millisecond > 0) lowestScale = 0;
+        else if (second > 0) lowestScale = 1;
+        else if (minute > 0) lowestScale = 2;
+        else if (hour   > 0) lowestScale = 3;
+        else if (day    > 0) lowestScale = 4;
+    }
+
+    void reset() {
+        lowestScale = 0;
+        millisecond = 0;
+        second = 0;
+        minute = 0;
+        hour = 0;
+        day = 0;
+        totalseconds = 0;
+        enabled = false;
+        displayInVisual = false;
+    }
 
     int millisecond;
     int second;
@@ -26,12 +50,6 @@ class TimeScale {
     bool enabled;
     bool displayInVisual;
     int lowestScale;
-    double milliseconds;
-    int seconds;
-    int minutes;
-    int hours;
-    int days;
-    QString timeString;
 };
 
 #endif  // TIMESCALE_H_

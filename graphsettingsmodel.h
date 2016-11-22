@@ -18,7 +18,7 @@ class GraphSettingsModel : public QAbstractTableModel {
     Q_OBJECT
 
   public:
-    GraphSettingsModel(QList<Agent*> *a = 0, QObject *parent = 0)
+    GraphSettingsModel(QList<Agent> *a = 0, QObject *parent = 0)
         : QAbstractTableModel(parent) { agents = a; }
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
@@ -55,7 +55,7 @@ class GraphSettingsModel : public QAbstractTableModel {
      // void graph_window_closed();
 
   private:
-    QList<Agent*> *agents;
+    QList<Agent> *agents;
     QList<GraphSettingsItem *> plots;
     // QList<GraphWidget *> graphs;
 };

@@ -14,7 +14,7 @@
 ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
         GraphSettingsModel *gsm, QString *rD, TimeScale * ts, double *r,
              float * xr, float *yr, float *xm, float * ym, float * zm,
-             int * delay, float * oz, int * vd, QColor * vbg) {
+             int * delay, float * oz, int * vd) {
     vsmodel = vsm;
     gsmodel = gsm;
     resultsData = rD;
@@ -28,7 +28,6 @@ ConfigXMLReader::ConfigXMLReader(VisualSettingsModel *vsm,
     delayTime = delay;
     orthoZoom = oz;
     visual_dimension = vd;
-    backgroundColour = vbg;
 }
 
 bool ConfigXMLReader::read(QIODevice * device) {
@@ -64,11 +63,6 @@ void ConfigXMLReader::readUnknownElement() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config xml
- *
- * Read flame visualiser config xml.
- */
 void ConfigXMLReader::readConfig() {
     Q_ASSERT(isStartElement() && name() == "flame_visualiser_config");
 
@@ -95,11 +89,6 @@ void ConfigXMLReader::readConfig() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config results data xml
- *
- * Read flame visualiser config results data xml.
- */
 void ConfigXMLReader::readResultsData() {
     while (!atEnd()) {
          readNext();
@@ -116,11 +105,6 @@ void ConfigXMLReader::readResultsData() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config time scale xml
- *
- * Read flame visualiser config time scale xml.
- */
 void ConfigXMLReader::readTimeScale() {
     QString enable;
 
@@ -160,11 +144,6 @@ void ConfigXMLReader::readTimeScale() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config animation xml
- *
- * Read flame visualiser config animation xml.
- */
 void ConfigXMLReader::readAnimation() {
     while (!atEnd()) {
          readNext();
@@ -182,16 +161,10 @@ void ConfigXMLReader::readAnimation() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config visual xml
- *
- * Read flame visualiser config visual xml.
- */
 void ConfigXMLReader::readVisual() {
     /* Defaults if tags missing */
     *visual_dimension = 3;
     *orthoZoom = 1.0;
-    *backgroundColour = Qt::white;
 
     while (!atEnd()) {
          readNext();
@@ -216,8 +189,6 @@ void ConfigXMLReader::readVisual() {
                  *zmove = readElementText().toFloat();
              else if (name() == "orthoZoom")
                  *orthoZoom = readElementText().toFloat();
-             else if (name() == "backgroundColour")
-                 *backgroundColour = readColour();
              else if (name() == "rules")
                  readRules();
              else
@@ -226,11 +197,6 @@ void ConfigXMLReader::readVisual() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config rules xml
- *
- * Read flame visualiser config rules xml.
- */
 void ConfigXMLReader::readRules() {
     while (!atEnd()) {
          readNext();
@@ -247,11 +213,6 @@ void ConfigXMLReader::readRules() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config rule xml
- *
- * Read flame visualiser config rule xml.
- */
 void ConfigXMLReader::readRule() {
     QString agentType;
     Condition condition;
@@ -297,11 +258,6 @@ void ConfigXMLReader::readRule() {
     vsmodel->addRule(agentType, condition, x, y, z, shape, colour, enabled);
 }
 
-/*!
- * \brief Read flame visualiser config shape xml
- *
- * Read flame visualiser config shape xml.
- */
 Shape ConfigXMLReader::readShape() {
     Shape shape;
     QString enable;
@@ -318,6 +274,8 @@ Shape ConfigXMLReader::readShape() {
                  shape.setShape(readElementText());
              } else if (name() == "dimension") {
                  shape.setDimension((readElementText().toDouble()));
+             } else if (name() == "quality") {
+                 shape.setQuality((readElementText().toInt()));
              } else if (name() == "useVariable") {
                  enable = readElementText();
                  if (QString::compare(enable, "true") == 0)
@@ -378,11 +336,6 @@ Shape ConfigXMLReader::readShape() {
     return shape;
 }
 
-/*!
- * \brief Read flame visualiser config position xml
- *
- * Read flame visualiser config position xml.
- */
 Position ConfigXMLReader::readPosition() {
     Position position;
     QString enable;
@@ -413,11 +366,6 @@ Position ConfigXMLReader::readPosition() {
     return position;
 }
 
-/*!
- * \brief Read flame visualiser config condition xml
- *
- * Read flame visualiser config condition xml.
- */
 Condition ConfigXMLReader::readCondition() {
     Condition condition;
     QString enable;
@@ -450,11 +398,6 @@ Condition ConfigXMLReader::readCondition() {
     return condition;
 }
 
-/*!
- * \brief Read flame visualiser config colour xml
- *
- * Read flame visualiser config colour xml.
- */
 QColor ConfigXMLReader::readColour() {
     QColor colour;
 
@@ -481,11 +424,6 @@ QColor ConfigXMLReader::readColour() {
     return colour;
 }
 
-/*!
- * \brief Read flame visualiser config lhs variable xml
- *
- * Read flame visualiser config lhs variable xml.
- */
 QString ConfigXMLReader::readLhs() {
     QString agentType;
 
@@ -506,11 +444,6 @@ QString ConfigXMLReader::readLhs() {
     return agentType;
 }
 
-/*!
- * \brief Read flame visualiser config rhs value xml
- *
- * Read flame visualiser config rhs value xml.
- */
 double ConfigXMLReader::readRhs() {
     double value = 0.0;
 
@@ -531,11 +464,6 @@ double ConfigXMLReader::readRhs() {
     return value;
 }
 
-/*!
- * \brief Read flame visualiser config graph xml
- *
- * Read flame visualiser config graph xml.
- */
 void ConfigXMLReader::readGraph() {
     while (!atEnd()) {
          readNext();
@@ -552,11 +480,6 @@ void ConfigXMLReader::readGraph() {
      }
 }
 
-/*!
- * \brief Read flame visualiser config plot xml
- *
- * Read flame visualiser config plot xml.
- */
 void ConfigXMLReader::readPlot() {
     QString graphNumber;
     QString xAxis;
@@ -589,11 +512,6 @@ void ConfigXMLReader::readPlot() {
     gsmodel->addPlot(graphNumber, xAxis, yAxis, condition, colour, false);
 }
 
-/*!
- * \brief Read flame visualiser config x-axis xml
- *
- * Read flame visualiser config x-axis xml.
- */
 QString ConfigXMLReader::readXaxis() {
     QString type;
 
@@ -614,11 +532,6 @@ QString ConfigXMLReader::readXaxis() {
     return type;
 }
 
-/*!
- * \brief Read flame visualiser config y-axis xml
- *
- * Read flame visualiser config y-axis xml.
- */
 QString ConfigXMLReader::readYaxis() {
     QString agentType;
 

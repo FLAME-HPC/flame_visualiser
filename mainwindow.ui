@@ -50,7 +50,7 @@
        </sizepolicy>
       </property>
       <property name="title">
-       <string>2. Visual Rules</string>
+       <string>2. Visual Rules (What to draw)</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
@@ -115,7 +115,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox_4">
       <property name="title">
-       <string>3. Graph Plots</string>
+       <string>3. Graph plots</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
@@ -145,7 +145,7 @@
     <item>
      <widget class="QGroupBox" name="groupBox_3">
       <property name="title">
-       <string>4. Time Step</string>
+       <string>4. Time step</string>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
@@ -388,7 +388,6 @@
     </widget>
     <addaction name="actionRestrict_Axes"/>
     <addaction name="menuView"/>
-    <addaction name="actionBackground"/>
    </widget>
    <widget class="QMenu" name="menuGraph">
     <property name="title">
@@ -536,11 +535,6 @@
    </property>
    <property name="text">
     <string>dots</string>
-   </property>
-  </action>
-  <action name="actionBackground">
-   <property name="text">
-    <string>Background...</string>
    </property>
   </action>
  </widget>

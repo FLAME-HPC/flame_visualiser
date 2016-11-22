@@ -14,7 +14,6 @@ RestrictAxesDialog::RestrictAxesDialog(Dimension * rd, Dimension * ad,
     QDialog(parent), ui(new Ui::RestrictAxesDialog) {
     ui->setupUi(this);
 
-    /* Initialise variables */
     restrictDimension = rd;
     agentDimension = ad;
     restrictAgentDimension = rad;
@@ -27,10 +26,8 @@ RestrictAxesDialog::RestrictAxesDialog(Dimension * rd, Dimension * ad,
     zmaxBlock = false;
     firstDim = true;
 
-    /* Set range of sliders */
     updatedAgentDimensions();
 
-    /* Connect ui spin box changes to functions */
     connect(ui->doubleSpinBox_xMax, SIGNAL(valueChanged(double)),
             this, SLOT(updateXMax(double)));
     connect(ui->doubleSpinBox_xMin, SIGNAL(valueChanged(double)),
@@ -43,7 +40,7 @@ RestrictAxesDialog::RestrictAxesDialog(Dimension * rd, Dimension * ad,
             this, SLOT(updateZMax(double)));
     connect(ui->doubleSpinBox_zMin, SIGNAL(valueChanged(double)),
             this, SLOT(updateZMin(double)));
-    /* Connect ui sliders changes to functions */
+
     connect(ui->horizontalSlider_xMin, SIGNAL(sliderMoved(int)),
             this, SLOT(updateXMinS(int)));
     connect(ui->horizontalSlider_xMax, SIGNAL(sliderMoved(int)),
@@ -56,7 +53,7 @@ RestrictAxesDialog::RestrictAxesDialog(Dimension * rd, Dimension * ad,
             this, SLOT(updateZMinS(int)));
     connect(ui->horizontalSlider_zMax, SIGNAL(sliderMoved(int)),
             this, SLOT(updateZMaxS(int)));
-    /* Connect accept reject buttons to close function */
+
     connect(this, SIGNAL(accepted()), this, SLOT(close()));
     connect(this, SIGNAL(rejected()), this, SLOT(close()));
 }
@@ -65,13 +62,7 @@ RestrictAxesDialog::~RestrictAxesDialog() {
     delete ui;
 }
 
-/*!
- * \brief Calculate min and max dimensions of agents and apply to ui
- *
- * Calculate min and max dimensions of agents and update spin box and slider config.
- */
 void RestrictAxesDialog::updatedAgentDimensions() {
-    /* Get agent space dimensions and add buffer */
     xStartK = agentDimension->xmin*1.1;
     xEndK   = agentDimension->xmax*1.1;
     yStartK = agentDimension->ymin*1.1;
@@ -79,9 +70,6 @@ void RestrictAxesDialog::updatedAgentDimensions() {
     zStartK = agentDimension->zmin*1.1;
     zEndK   = agentDimension->zmax*1.1;
 
-    /* If first run then make values the extreme
-       else only if they are larger then the extreme
-       then reposition them at the extreme */
     if (firstDim) {
         xStart = xStartK;
         xEnd = xEndK;
@@ -99,11 +87,10 @@ void RestrictAxesDialog::updatedAgentDimensions() {
         if (zEndK   > zEnd  ) zEnd   = zEndK;
     }
 
-    /* Calculate value step size */
     xStep = ((xEnd)-(xStart))/100.0;
     yStep = ((yEnd)-(yStart))/100.0;
     zStep = ((zEnd)-(zStart))/100.0;
-    /* Set the range and step of spin boxes */
+
     ui->doubleSpinBox_xMin->setRange(xStart, xEnd);
     ui->doubleSpinBox_xMin->setSingleStep(xStep);
     ui->doubleSpinBox_xMax->setRange(xStart, xEnd);
@@ -116,7 +103,7 @@ void RestrictAxesDialog::updatedAgentDimensions() {
     ui->doubleSpinBox_zMin->setSingleStep(zStep);
     ui->doubleSpinBox_zMax->setRange(zStart, zEnd);
     ui->doubleSpinBox_zMax->setSingleStep(zStep);
-    /* Update ui */
+
     if (!(restrictAgentDimension->xminon)) {
         ui->doubleSpinBox_xMin->setValue(xStart);
         ui->horizontalSlider_xMin->setValue(0);

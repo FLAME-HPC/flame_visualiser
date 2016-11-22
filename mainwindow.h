@@ -37,10 +37,6 @@ class MainWindow : public QMainWindow {
   public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    /* For testing allow test class to access private functions */
-    #ifdef TESTBUILD
-    friend class TestVisualiser;
-    #endif
 
   protected:
     void keyPressEvent(QKeyEvent *event);
@@ -59,10 +55,10 @@ class MainWindow : public QMainWindow {
     void takeAnimationSlot(bool);
     void updateImagesLocationSlot(QString);
     void colourChanged(QColor);
-    void backgroundColourChanged(QColor c);
     void calcTimeScale();
     void restrict_axes_closed();
-    void slot_toggleAnimation();
+    void slot_stopAnimation();
+    void slot_startAnimation();
     void iterationInfoDialog_closed();
 
   signals:
@@ -119,17 +115,15 @@ class MainWindow : public QMainWindow {
     void on_actionPoints_triggered();
     void on_actionLinespoints_triggered();
     void on_actionDots_triggered();
-    void on_actionBackground_triggered();
 
   private:
-    int save_config_file_internal(QString fileName);
-    int create_new_config_file(QString fileName);
     int readZeroXML();
     bool writeConfigXML(QFile * file);
     void createGraphWindow(GraphWidget * graph_window);
-    int readConfigFile(QString fileName, int it);
+    void readConfigFile(QString fileName, int it);
     void closeGraphWindows(QString graphName);
-    void calcPositionOffsetAndRatio();
+    void calcPositionOffset();
+    void calcPositionRatio();
     void findLoadSettings();
     bool checkDirectoryForNextIteration(int it, int flag);
     void resetVisualViewpoint();
@@ -143,7 +137,7 @@ class MainWindow : public QMainWindow {
     GLWidget *visual_window;  /*!< The visual window */
     int iteration;  /*!< The current iteration number */
     bool fileOpen;  /*!< Indicates if a file is open */
-    QList<Agent*> agents;  /*!< The list of agents */
+    QList<Agent> agents;  /*!< The list of agents */
     QList<AgentType> agentTypes;  /*!< The list of agent types */
     /*! A string list of agent type names  */
     QStringList stringAgentTypes;
@@ -172,9 +166,9 @@ class MainWindow : public QMainWindow {
     float xmove;
     float ymove;
     float zmove;
-    double xoffset;
-    double yoffset;
-    double zoffset;
+    float xoffset;
+    float yoffset;
+    float zoffset;
     float orthoZoom;
     Dimension * restrictAgentDimension;
     Dimension * restrictDimension;
@@ -185,8 +179,6 @@ class MainWindow : public QMainWindow {
     int delayTime; /*!< The animation delay time in millisecs */
     int visual_dimension;
     int graph_style;
-    QColor visualBackground;
-    bool openedValidIteration;
 };
 
 #endif  // MAINWINDOW_H_

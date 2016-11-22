@@ -37,6 +37,8 @@ class Shape {
     bool getUseVariableY() { return useVariableY; }
     void setUseVariableZ(bool b) { useVariableZ = b; }
     bool getUseVariableZ() { return useVariableZ; }
+    void setQuality(int q) { quality = q; }
+    int getQuality() { return quality; }
     void setFromCentreX(bool b) { fromCentreX = b; }
     bool getFromCentreX() { return fromCentreX; }
     void setFromCentreY(bool b) { fromCentreY = b; }
@@ -59,6 +61,7 @@ class Shape {
     bool useVariable;
     bool useVariableY;
     bool useVariableZ;
+    int quality;
     bool fromCentreX;
     bool fromCentreY;
     bool fromCentreZ;
