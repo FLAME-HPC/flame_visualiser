@@ -1,7 +1,9 @@
 FLAME Visualiser
+================
+Please note that FLAME Visualiser has been migrated from an svn repository. It is possible, therefore, that some of the branches might not have all the expected shared history with their parent branch etc.
 
-*** LINUX ***
-
+LINUX
+-----
 To compile you will need Qt4.
 The package for Ubuntu is called: libqt4-dev
 You will also need a C++ compiler.
@@ -19,8 +21,8 @@ To run:
 
 	./FLAME\ Visualiser
 
-*** MAC OSX ***
-
+MAC OSX
+-------
 To compile you will need Qt4.
 Download from the Qt web site.
 Normally qmake creates xcode projects on mac.
@@ -39,8 +41,8 @@ To run:
 
 If you have any problems try using Qt Creator.
 
-*** WINDOWS ***
-
+WINDOWS
+-------
 To compile you will need Qt4.
 Download from the Qt web site.
 If you don't have MinGW already installed select the version of Qt Creator
