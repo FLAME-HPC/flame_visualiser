@@ -17,9 +17,9 @@ To compile type:
 	qmake flame_visualiser.pro
 	make
 
-To run:
+To run (requires sudo or options will be greyed out):
 
-	./FLAME\ Visualiser
+	sudo ./FLAME\ Visualiser
 
 MAC OSX
 -------
